@@ -90,11 +90,15 @@ export const ProductCard = memo(
                     event.stopPropagation();
                     onToggleSelect(product, event);
                   }}
-                  className={`transition-all duration-300 ${
-                    isSelected ? 'text-yellow-400' : 'text-white hover:text-yellow-400'
+                  className={`flex items-center justify-center w-14 h-14 border border-white/20 rounded-none transition-all duration-300 ${
+                    isSelected
+                      ? 'text-yellow-400 border-yellow-400 bg-yellow-400/10'
+                      : 'text-white hover:text-yellow-400 hover:border-yellow-400 hover:bg-white/5'
                   }`}
+                  type="button"
+                  aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
                 >
-                  {isSelected ? <Check size={24} strokeWidth={4} /> : <Plus size={24} strokeWidth={4} />}
+                  {isSelected ? <Check size={30} strokeWidth={4} /> : <Plus size={30} strokeWidth={4} />}
                 </button>
               </>
             ) : (

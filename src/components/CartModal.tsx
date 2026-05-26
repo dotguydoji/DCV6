@@ -205,8 +205,10 @@ export const CartModal: React.FC<CartModalProps> = ({
               </div>
 
               <div className="bg-brand-yellow/5 border border-brand-yellow/20 rounded-sm p-4 mb-6">
-                <h4 className="text-sm font-bold text-brand-yellow uppercase tracking-wider mb-2">How to Purchase</h4>
-                <p className="text-brand-gray/80 text-sm leading-relaxed">
+                <h4 className="text-base sm:text-lg font-bold text-brand-yellow uppercase tracking-wider mb-2">
+                  How to Purchase
+                </h4>
+                <p className="text-brand-gray/80 text-base sm:text-lg leading-relaxed">
                   Click the copy button to copy your order. Then, send it to our Facebook page. You can click the
                   button below if you&apos;re using mobile or desktop.
                 </p>
