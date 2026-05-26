@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-black: #000000;
+  --color-brand-yellow: #FF6B00;
+  --color-brand-gray: #9CA3AF;
+  --color-brand-light: #E5E7EB;
+  --color-brand-white: #FFFFFF;
+  --font-sans: "Poppins", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --breakpoint-xs: 30rem;
+  --breakpoint-laptop: 85.375rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 160px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      scroll-padding-top: 200px;
+    }
+  }
+
+  body {
+    @apply bg-[#0D0D0D] text-[#E5E7EB] overflow-x-hidden font-sans;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+}
+
+.f-heading {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 800;
+}
+
+.f-body {
+  font-size: 0.95rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+.f-small {
+  font-size: 0.7rem;
+  line-height: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.f-price {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.75rem;
+  line-height: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+@media (min-width: 768px) {
+  .f-heading {
+    font-size: 2rem;
+    line-height: 2.5rem;
+    font-weight: 800;
+  }
+}
+
+@media (min-width: 1024px) {
+  .f-heading {
+    font-size: 2.25rem;
+    line-height: 2.75rem;
+    font-weight: 800;
+  }
+
+  .f-body {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 400;
+  }
+
+  .f-small {
+    font-size: 0.85rem;
+    line-height: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+  }
+
+  .f-price {
+    font-family: "Poppins", sans-serif;
+    font-size: 2.25rem;
+    line-height: 2.25rem;
+    font-weight: 400;
+    letter-spacing: -0.05em;
+  }
+}
+
+@media (min-width: 1440px) {
+  .f-heading {
+    font-size: 2.5rem;
+    line-height: 3rem;
+    font-weight: 800;
+  }
+
+  .f-small {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .f-price {
+    font-family: "Poppins", sans-serif;
+    font-size: 2.75rem;
+    line-height: 2.75rem;
+    font-weight: 400;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D0D0D;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F2937;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FF6B00;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes highlightBlink {
+  0% {
+    border-color: #FF6B00;
+    box-shadow: 0 0px 0px #FF6B00;
+  }
+
+  50% {
+    border-color: #FF6B00;
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.4);
+  }
+
+  100% {
+    border-color: #1F2937;
+    box-shadow: 0 0 0px #FF6B00;
+  }
+}
+
+.animate-highlight {
+  animation: highlightBlink 1.5s ease-in-out 2;
+}
+
+@keyframes flyToCart {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--fly-end-x), var(--fly-end-y)) scale(0.2) rotate(720deg);
+  }
+}
+
+.fly-to-cart {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  animation: flyToCart 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes cartBounce {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1.25);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  70% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-bounce {
+  animation: cartBounce 0.5s ease-in-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1A1A1A;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #FF6B00;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ff8533;
+}
+
+.ambient-glow {
+  background: radial-gradient(circle at center, rgba(255, 107, 0, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}

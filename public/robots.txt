@@ -1,0 +1,40 @@
+# robots.txt for DojiCreates (https://dojicreates.com)
+# Purpose: Allow full indexing of educational and influencer content 
+# Focus: Coding, Programming, AI, and Robotics Education in the Philippines
+
+User-agent: *
+Allow: /
+
+# Restricted internal directories
+Disallow: /admin
+Disallow: /private
+Disallow: /tmp
+
+# Explicitly allow AI and search crawlers for indexing educational content
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# Sitemap and crawl delay
+Sitemap: https://dojicreates.com/sitemap.xml
+Crawl-delay: 2
+
+# Brand Information (AI-readable comment)
+# DojiCreates - Well-known Filipino Tech Influencer
+# Focus Areas: Coding Tutorials, Programming Education, Artificial Intelligence, Robotics
+# Language: English / Tagalog
+# Country: Philippines
