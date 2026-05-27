@@ -120,7 +120,6 @@ export const NeuralNetwork: React.FC = () => {
       }
     };
 
-    // Performance: Only animate when visible
     const observer = new IntersectionObserver((entries) => {
       isVisible.current = entries[0].isIntersecting;
       ensureAnimation();

@@ -66,9 +66,6 @@ interface ProductivityItemMeta {
   available: boolean;
 }
 
-/**
- * EDIT THIS SECTION TO CHANGE GLOBAL SITE TEXT
- */
 export const SITE_CONTENT: SiteContent = {
   brandName: 'DC NOTES',
   brandTagline: 'Notes',
@@ -86,9 +83,6 @@ export const SITE_CONTENT: SiteContent = {
   }
 };
 
-/**
- * EDIT THIS SECTION TO MANAGE PRODUCT CATEGORIES (Order matters)
- */
 export const CATEGORIES = [
   PROGRAMMING_LANGUAGES_CATEGORY,
   PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY,
@@ -424,9 +418,6 @@ const productivityProducts = PRODUCTIVITY_ITEMS.map((item) =>
   })
 );
 
-/**
- * EDIT THIS SECTION TO MANAGE ALL STORE ITEMS
- */
 export const PRODUCTS: Product[] = [
   ...programmingLanguageProducts,
   ...programmingLanguagePackageProducts,
@@ -436,9 +427,6 @@ export const PRODUCTS: Product[] = [
   ...productivityProducts
 ];
 
-/**
- * EDIT THIS SECTION TO MANAGE THE FAQ
- */
 export const FAQS: FAQItem[] = [
   {
     question: 'What format are the notes in?',

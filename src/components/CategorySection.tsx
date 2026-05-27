@@ -17,6 +17,7 @@ interface CategorySectionProps {
   selectedProducts: Product[];
   selectedProductIds: Set<string>;
   onToggleSelect: (product: Product) => void;
+  hideCommerce?: boolean;
 }
 
 const LEVEL_ORDER: ProductLevel[] = [
@@ -59,7 +60,7 @@ const getFocusIndex = (products: Product[], focus: PendingFocus | null) => {
 };
 
 export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProps>(
-  ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect }, ref) => {
+  ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false }, ref) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
     const pendingFocusRef = useRef<PendingFocus | null>(null);
@@ -405,6 +406,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                         isHighlighted={product.id === highlightedProductId}
                         isSelected={selectedProductIds.has(product.id)}
                         onToggleSelect={onToggleSelect}
+                        hideCommerce={hideCommerce}
                       />
                     </div>
                   ))}

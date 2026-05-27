@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
-import { Check, Plus } from 'lucide-react';
+import { Check, Download, Plus } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductCardProps {
@@ -7,10 +7,11 @@ interface ProductCardProps {
   isHighlighted?: boolean;
   isSelected: boolean;
   onToggleSelect: (product: Product, event?: React.MouseEvent) => void;
+  hideCommerce?: boolean;
 }
 
 export const ProductCard = memo(
-  ({ product, isHighlighted, isSelected, onToggleSelect }: ProductCardProps) => {
+  ({ product, isHighlighted, isSelected, onToggleSelect, hideCommerce = false }: ProductCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const scrollTimeoutRef = useRef<number | null>(null);
     const isAvailable = product.available !== false;
@@ -75,31 +76,41 @@ export const ProductCard = memo(
           <div className="mt-auto pt-3 border-t border-black/10 bg-black rounded-b-lg -mx-5 -mb-5 px-5 pb-5 flex items-center justify-between h-[80px]">
             {isAvailable ? (
               <>
-                <div className="flex flex-col">
-                  {typeof product.originalPrice === 'number' && (
-                    <span className="text-xs font-bold tracking-wide text-white/45 line-through">
-                      P {product.originalPrice.toLocaleString()}
+                {hideCommerce ? (
+                  <div className="w-full flex items-center justify-start">
+                    <span className="flex items-center justify-center w-12 h-12 border border-white/15 text-white/45">
+                      <Download size={22} strokeWidth={2.5} />
                     </span>
-                  )}
-                  <span className="f-price text-green-400 drop-shadow-none text-2xl lg:text-3xl font-semibold leading-none">
-                    P {product.price.toLocaleString()}
-                  </span>
-                </div>
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onToggleSelect(product, event);
-                  }}
-                  className={`flex items-center justify-center w-14 h-14 border border-white/20 rounded-none transition-all duration-300 ${
-                    isSelected
-                      ? 'text-yellow-400 border-yellow-400 bg-yellow-400/10'
-                      : 'text-white hover:text-yellow-400 hover:border-yellow-400 hover:bg-white/5'
-                  }`}
-                  type="button"
-                  aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
-                >
-                  {isSelected ? <Check size={30} strokeWidth={4} /> : <Plus size={30} strokeWidth={4} />}
-                </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col">
+                      {typeof product.originalPrice === 'number' && (
+                        <span className="text-xs font-bold tracking-wide text-white/45 line-through">
+                          P {product.originalPrice.toLocaleString()}
+                        </span>
+                      )}
+                      <span className="f-price text-green-400 drop-shadow-none text-2xl lg:text-3xl font-semibold leading-none">
+                        P {product.price.toLocaleString()}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleSelect(product, event);
+                      }}
+                      className={`flex items-center justify-center w-14 h-14 border border-white/20 rounded-none transition-all duration-300 ${
+                        isSelected
+                          ? 'text-yellow-400 border-yellow-400 bg-yellow-400/10'
+                          : 'text-white hover:text-yellow-400 hover:border-yellow-400 hover:bg-white/5'
+                      }`}
+                      type="button"
+                      aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
+                    >
+                      {isSelected ? <Check size={30} strokeWidth={4} /> : <Plus size={30} strokeWidth={4} />}
+                    </button>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -121,7 +132,8 @@ export const ProductCard = memo(
       prevProps.product.id === nextProps.product.id &&
       prevProps.product.available === nextProps.product.available &&
       prevProps.isHighlighted === nextProps.isHighlighted &&
-      prevProps.isSelected === nextProps.isSelected
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.hideCommerce === nextProps.hideCommerce
     );
   }
 );

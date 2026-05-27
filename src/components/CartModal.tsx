@@ -7,6 +7,7 @@ interface CartModalProps {
   onClose: () => void;
   selectedProducts: Product[];
   onToggleSelect: (product: Product, event?: React.MouseEvent) => void;
+  hideCommerce?: boolean;
 }
 
 const getLanguageLabel = (product: Product) => {
@@ -28,7 +29,8 @@ export const CartModal: React.FC<CartModalProps> = ({
   isOpen,
   onClose,
   selectedProducts,
-  onToggleSelect
+  onToggleSelect,
+  hideCommerce = false
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -131,7 +133,7 @@ export const CartModal: React.FC<CartModalProps> = ({
     window.open(url, '_blank');
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || hideCommerce) return null;
 
   const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
 

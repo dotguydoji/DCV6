@@ -15,6 +15,14 @@ interface FlyingItem {
   thumbnail: string;
 }
 
+const ADMIN_PASSWORD_KEY = 92;
+const ADMIN_PASSWORD_CODES = [104, 100, 108, 106, 105, 108, 24, 31, 28, 29, 24, 17, 21, 18, 15];
+const DEVTOOLS_THRESHOLD = 160;
+const DEVTOOLS_DEBUGGER_THRESHOLD = 150;
+
+const getAdminRecordingPassword = () =>
+  ADMIN_PASSWORD_CODES.map((code) => String.fromCharCode(code ^ ADMIN_PASSWORD_KEY)).join('');
+
 const App: React.FC = () => {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     [CATEGORIES[0]]: true
@@ -25,11 +33,17 @@ const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [cartBounceKey, setCartBounceKey] = useState(0);
+  const [isAdminRecordingMode, setIsAdminRecordingMode] = useState(false);
+  const [isAdminPromptOpen, setIsAdminPromptOpen] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordError, setAdminPasswordError] = useState('');
+  const [isInspectionBlocked, setIsInspectionBlocked] = useState(false);
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const catContainerRef = useRef<HTMLDivElement>(null);
   const catButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const cartButtonRef = useRef<HTMLButtonElement>(null);
+  const adminPasswordInputRef = useRef<HTMLInputElement>(null);
 
   const activeCategoryRef = useRef<string | null>(CATEGORIES[0]);
   const selectedProductIds = useMemo(
@@ -50,7 +64,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // Create flying animation when adding item
     if (!selectedProductIds.has(product.id) && event) {
       const startRect = (event.target as HTMLElement).getBoundingClientRect();
       const cartRect = cartButtonRef.current?.getBoundingClientRect();
@@ -64,13 +77,11 @@ const App: React.FC = () => {
         };
         
         setFlyingItems(prev => [...prev, flyingItem]);
-        
-        // Trigger cart bounce animation after the item hits the cart (1000ms delay to match flight time)
+
         setTimeout(() => {
           setCartBounceKey(prev => prev + 1);
         }, 1000);
-        
-        // Remove the flying item after animation completes
+
         setTimeout(() => {
           setFlyingItems(prev => prev.filter(item => item.id !== flyingItem.id));
         }, 1000);
@@ -91,7 +102,135 @@ const App: React.FC = () => {
     activeCategoryRef.current = activeCategory;
   }, [activeCategory]);
 
-  // Performance optimized scroll spy using IntersectionObserver
+  useEffect(() => {
+    const handleAdminRecordingToggle = (event: KeyboardEvent) => {
+      if (!event.altKey || event.key !== '0') {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (isAdminRecordingMode) {
+        setIsAdminRecordingMode(false);
+        setIsAdminPromptOpen(false);
+        setAdminPasswordInput('');
+        setAdminPasswordError('');
+        return;
+      }
+
+      setIsAdminPromptOpen(true);
+      setAdminPasswordInput('');
+      setAdminPasswordError('');
+    };
+
+    window.addEventListener('keydown', handleAdminRecordingToggle);
+    return () => window.removeEventListener('keydown', handleAdminRecordingToggle);
+  }, [isAdminRecordingMode]);
+
+  useEffect(() => {
+    if (isAdminRecordingMode) {
+      setIsCartOpen(false);
+    }
+  }, [isAdminRecordingMode]);
+
+  useEffect(() => {
+    if (isInspectionBlocked) {
+      setIsCartOpen(false);
+      setIsAdminPromptOpen(false);
+      setAdminPasswordInput('');
+      setAdminPasswordError('');
+    }
+  }, [isInspectionBlocked]);
+
+  useEffect(() => {
+    if (!isAdminPromptOpen) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      adminPasswordInputRef.current?.focus();
+    }, 10);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isAdminPromptOpen]);
+
+  useEffect(() => {
+    const detectDevtools = () => {
+      const widthGap = window.outerWidth - window.innerWidth;
+      const heightGap = window.outerHeight - window.innerHeight;
+      const beforeDebugger = performance.now();
+      debugger;
+      const afterDebugger = performance.now();
+      const debuggerTriggered = afterDebugger - beforeDebugger > DEVTOOLS_DEBUGGER_THRESHOLD;
+      const isOpen =
+        widthGap > DEVTOOLS_THRESHOLD ||
+        heightGap > DEVTOOLS_THRESHOLD ||
+        debuggerTriggered;
+      setIsInspectionBlocked(isOpen);
+    };
+
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+
+    const handleBlockedShortcuts = (event: KeyboardEvent) => {
+      const lowerKey = event.key.toLowerCase();
+      const isShortcutBlocked =
+        event.key === 'F12' ||
+        (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(lowerKey)) ||
+        (event.ctrlKey && lowerKey === 'u');
+
+      if (isShortcutBlocked) {
+        event.preventDefault();
+        setIsInspectionBlocked(true);
+      }
+    };
+
+    detectDevtools();
+
+    const intervalId = window.setInterval(detectDevtools, 1000);
+    window.addEventListener('resize', detectDevtools);
+    window.addEventListener('contextmenu', handleContextMenu);
+    window.addEventListener('keydown', handleBlockedShortcuts);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('resize', detectDevtools);
+      window.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener('keydown', handleBlockedShortcuts);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isInspectionBlocked ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isInspectionBlocked]);
+
+  const closeAdminPrompt = useCallback(() => {
+    setIsAdminPromptOpen(false);
+    setAdminPasswordInput('');
+    setAdminPasswordError('');
+  }, []);
+
+  const handleAdminPasswordSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (adminPasswordInput === getAdminRecordingPassword()) {
+        setIsAdminRecordingMode(true);
+        closeAdminPrompt();
+        return;
+      }
+
+      setAdminPasswordError('Incorrect password.');
+      setAdminPasswordInput('');
+      window.setTimeout(() => adminPasswordInputRef.current?.focus(), 10);
+    },
+    [adminPasswordInput, closeAdminPrompt]
+  );
+
   useEffect(() => {
     const observerOptions = {
       root: null,
@@ -157,7 +296,6 @@ const App: React.FC = () => {
   const scrollToCategory = useCallback((catName: string) => {
     const element = categoryRefs.current[catName];
     if (element) {
-      // Get the header element within the category section
       const headerElement = element.querySelector('.category-header');
       const targetElement = headerElement || element;
       
@@ -178,17 +316,14 @@ const App: React.FC = () => {
     
     setOpenCategories(prev => {
       if (isOpening) {
-        // Close all other categories and open only the selected one
         return { [catName]: true };
       }
-      // If closing, just remove this category
       const newState = { ...prev };
       delete newState[catName];
       return newState;
     });
 
     if (isOpening) {
-      // Scroll after the expansion animation completes (500ms + small buffer)
       setTimeout(() => scrollToCategory(catName), 600);
     }
   }, [openCategories, scrollToCategory]);
@@ -289,6 +424,7 @@ const App: React.FC = () => {
                 selectedProducts={selectedProducts}
                 selectedProductIds={selectedProductIds}
                 onToggleSelect={handleToggleSelect}
+                hideCommerce={isAdminRecordingMode}
               />
             ))}
           </div>
@@ -313,23 +449,23 @@ const App: React.FC = () => {
           </div>
         </footer>
 
-        {/* Floating Cart Button */}
-        <button
-          ref={cartButtonRef}
-          onClick={() => setIsCartOpen(true)}
-          key={cartBounceKey}
-          className="fixed bottom-6 right-6 z-[99] bg-white text-black p-4 rounded-full shadow-2xl hover:bg-yellow-400 transition-all duration-300 active:scale-95 group cart-bounce"
-          aria-label="Open cart"
-        >
-          <ShoppingCart size={28} strokeWidth={2.5} />
-          {selectedProducts.length > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-[#0D0D0D]">
-              {selectedProducts.length}
-            </span>
-          )}
-        </button>
+        {!isAdminRecordingMode && (
+          <button
+            ref={cartButtonRef}
+            onClick={() => setIsCartOpen(true)}
+            key={cartBounceKey}
+            className="fixed bottom-6 right-6 z-[99] bg-white text-black p-4 rounded-full shadow-2xl hover:bg-yellow-400 transition-all duration-300 active:scale-95 group cart-bounce"
+            aria-label="Open cart"
+          >
+            <ShoppingCart size={28} strokeWidth={2.5} />
+            {selectedProducts.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-[#0D0D0D]">
+                {selectedProducts.length}
+              </span>
+            )}
+          </button>
+        )}
 
-        {/* Flying Items Animation */}
         {flyingItems.map(item => {
           const cartRect = cartButtonRef.current?.getBoundingClientRect();
           if (!cartRect) return null;
@@ -354,13 +490,87 @@ const App: React.FC = () => {
         })}
       </div>
 
-      {/* Cart Modal */}
       <CartModal 
-        isOpen={isCartOpen}
+        isOpen={isCartOpen && !isAdminRecordingMode}
         onClose={() => setIsCartOpen(false)}
         selectedProducts={selectedProducts}
         onToggleSelect={handleToggleSelect}
+        hideCommerce={isAdminRecordingMode}
       />
+
+      {isAdminPromptOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={closeAdminPrompt}
+          />
+          <div className="relative w-full max-w-md rounded-lg border border-white/10 bg-[#222222] shadow-2xl overflow-hidden">
+            <div className="border-b border-white/10 bg-[#1A1A1A] px-6 py-4">
+              <h2 className="text-lg font-black uppercase tracking-[0.18em] text-white">
+                Admin Access
+              </h2>
+              <p className="mt-2 text-sm text-brand-gray/70">
+                Enter the admin password to hide prices and the cart icon.
+              </p>
+            </div>
+
+            <form onSubmit={handleAdminPasswordSubmit} className="px-6 py-5">
+              <label className="block text-xs font-bold uppercase tracking-[0.18em] text-white/60 mb-2">
+                Password
+              </label>
+              <input
+                ref={adminPasswordInputRef}
+                type="password"
+                value={adminPasswordInput}
+                onChange={(event) => {
+                  setAdminPasswordInput(event.target.value);
+                  if (adminPasswordError) {
+                    setAdminPasswordError('');
+                  }
+                }}
+                className="w-full rounded-sm border border-white/10 bg-black px-4 py-3 text-white outline-none transition-all focus:border-brand-yellow"
+                autoComplete="off"
+              />
+
+              <div className="min-h-6 pt-2 text-sm text-red-400">
+                {adminPasswordError}
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeAdminPrompt}
+                  className="rounded-sm border border-white/10 bg-transparent px-4 py-2 text-sm font-bold uppercase tracking-[0.14em] text-white/70 transition-colors hover:border-white/30 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-sm border border-brand-yellow bg-brand-yellow px-4 py-2 text-sm font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-transparent hover:text-brand-yellow"
+                >
+                  Unlock
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isInspectionBlocked && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-[#050505] px-6 text-center">
+          <div className="max-w-xl">
+            <div className="text-sm font-black uppercase tracking-[0.35em] text-brand-yellow/80">
+              Access Restricted
+            </div>
+            <h2 className="mt-5 text-3xl font-black uppercase tracking-[0.08em] text-white sm:text-4xl">
+              Close Developer Tools To Continue
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-brand-gray/75 sm:text-lg">
+              This website is temporarily paused while browser inspection tools are open.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

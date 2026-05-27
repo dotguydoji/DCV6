@@ -17,14 +17,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
-  // --- SECURITY: INPUT SANITIZATION ---
   const sanitizeInput = (val: string) => {
-    // Remove HTML tags, script tags, and suspicious characters
     return val
-      .replace(/<[^>]*>?/gm, '') // Strip HTML
-      .replace(/[<>]/g, '')     // Strip brackets
-      .replace(/javascript:/gi, '') // Prevent javascript protocol
-      .substring(0, 100);       // Max length validation
+      .replace(/<[^>]*>?/gm, '')
+      .replace(/[<>]/g, '')
+      .replace(/javascript:/gi, '')
+      .substring(0, 100);
   };
 
   const getSearchMeta = (product: Product) => {
@@ -58,7 +56,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           setIsSearchVisible(false);
         }
       } else if (searchRef.current?.contains(target)) {
-        // Ensure focus is set when clicking inside the search area
         setIsSearchFocused(true);
       }
     }, [searchQuery]);
@@ -124,7 +121,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         <div className="max-w-[1580px] mx-auto px-6 lg:px-10 laptop:px-8 h-full flex items-center justify-between gap-6 laptop:gap-8">
           
           <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">
-            {/* ONLY IMAGE LOGO */}
             <img 
               src="favicon.svg" 
               alt="DC Notes Logo" 
