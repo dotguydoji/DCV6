@@ -17,8 +17,7 @@ interface FlyingItem {
 
 const ADMIN_PASSWORD_KEY = 92;
 const ADMIN_PASSWORD_CODES = [104, 100, 108, 106, 105, 108, 24, 31, 28, 29, 24, 17, 21, 18, 15];
-const DEVTOOLS_THRESHOLD = 160;
-const DEVTOOLS_DEBUGGER_THRESHOLD = 150;
+const DEVTOOLS_DESKTOP_THRESHOLD = 220;
 
 const getAdminRecordingPassword = () =>
   ADMIN_PASSWORD_CODES.map((code) => String.fromCharCode(code ^ ADMIN_PASSWORD_KEY)).join('');
@@ -158,14 +157,10 @@ const App: React.FC = () => {
     const detectDevtools = () => {
       const widthGap = window.outerWidth - window.innerWidth;
       const heightGap = window.outerHeight - window.innerHeight;
-      const beforeDebugger = performance.now();
-      debugger;
-      const afterDebugger = performance.now();
-      const debuggerTriggered = afterDebugger - beforeDebugger > DEVTOOLS_DEBUGGER_THRESHOLD;
+      const isDesktopViewport = window.innerWidth >= 1024;
       const isOpen =
-        widthGap > DEVTOOLS_THRESHOLD ||
-        heightGap > DEVTOOLS_THRESHOLD ||
-        debuggerTriggered;
+        isDesktopViewport &&
+        (widthGap > DEVTOOLS_DESKTOP_THRESHOLD || heightGap > DEVTOOLS_DESKTOP_THRESHOLD);
       setIsInspectionBlocked(isOpen);
     };
 
