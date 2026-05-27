@@ -17,7 +17,6 @@ interface FlyingItem {
 
 const ADMIN_PASSWORD_KEY = 92;
 const ADMIN_PASSWORD_CODES = [104, 100, 108, 106, 105, 108, 24, 31, 28, 29, 24, 17, 21, 18, 15];
-const DEVTOOLS_DESKTOP_THRESHOLD = 220;
 
 const getAdminRecordingPassword = () =>
   ADMIN_PASSWORD_CODES.map((code) => String.fromCharCode(code ^ ADMIN_PASSWORD_KEY)).join('');
@@ -36,7 +35,6 @@ const App: React.FC = () => {
   const [isAdminPromptOpen, setIsAdminPromptOpen] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [adminPasswordError, setAdminPasswordError] = useState('');
-  const [isInspectionBlocked, setIsInspectionBlocked] = useState(false);
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const catContainerRef = useRef<HTMLDivElement>(null);
@@ -133,15 +131,6 @@ const App: React.FC = () => {
   }, [isAdminRecordingMode]);
 
   useEffect(() => {
-    if (isInspectionBlocked) {
-      setIsCartOpen(false);
-      setIsAdminPromptOpen(false);
-      setAdminPasswordInput('');
-      setAdminPasswordError('');
-    }
-  }, [isInspectionBlocked]);
-
-  useEffect(() => {
     if (!isAdminPromptOpen) {
       return;
     }
@@ -154,16 +143,6 @@ const App: React.FC = () => {
   }, [isAdminPromptOpen]);
 
   useEffect(() => {
-    const detectDevtools = () => {
-      const widthGap = window.outerWidth - window.innerWidth;
-      const heightGap = window.outerHeight - window.innerHeight;
-      const isDesktopViewport = window.innerWidth >= 1024;
-      const isOpen =
-        isDesktopViewport &&
-        (widthGap > DEVTOOLS_DESKTOP_THRESHOLD || heightGap > DEVTOOLS_DESKTOP_THRESHOLD);
-      setIsInspectionBlocked(isOpen);
-    };
-
     const handleContextMenu = (event: MouseEvent) => {
       event.preventDefault();
     };
@@ -177,31 +156,17 @@ const App: React.FC = () => {
 
       if (isShortcutBlocked) {
         event.preventDefault();
-        setIsInspectionBlocked(true);
       }
     };
 
-    detectDevtools();
-
-    const intervalId = window.setInterval(detectDevtools, 1000);
-    window.addEventListener('resize', detectDevtools);
     window.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener('keydown', handleBlockedShortcuts);
 
     return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('resize', detectDevtools);
       window.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('keydown', handleBlockedShortcuts);
     };
   }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = isInspectionBlocked ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isInspectionBlocked]);
 
   const closeAdminPrompt = useCallback(() => {
     setIsAdminPromptOpen(false);
@@ -547,22 +512,6 @@ const App: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {isInspectionBlocked && (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-[#050505] px-6 text-center">
-          <div className="max-w-xl">
-            <div className="text-sm font-black uppercase tracking-[0.35em] text-brand-yellow/80">
-              Access Restricted
-            </div>
-            <h2 className="mt-5 text-3xl font-black uppercase tracking-[0.08em] text-white sm:text-4xl">
-              Close Developer Tools To Continue
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-brand-gray/75 sm:text-lg">
-              This website is temporarily paused while browser inspection tools are open.
-            </p>
           </div>
         </div>
       )}
