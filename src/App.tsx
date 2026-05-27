@@ -4,6 +4,7 @@ import { CategorySection } from './components/CategorySection';
 import { FAQSection } from './components/FAQSection';
 import { NeuralNetwork } from './components/NeuralNetwork';
 import { CartModal } from './components/CartModal';
+import { NotFoundPage } from './components/NotFoundPage';
 import { PRODUCTS, CATEGORIES, SITE_CONTENT } from "./constants";  
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
@@ -21,7 +22,21 @@ const ADMIN_PASSWORD_CODES = [104, 100, 108, 106, 105, 108, 24, 31, 28, 29, 24, 
 const getAdminRecordingPassword = () =>
   ADMIN_PASSWORD_CODES.map((code) => String.fromCharCode(code ^ ADMIN_PASSWORD_KEY)).join('');
 
+const normalizePathname = (pathname: string) => {
+  const trimmed = pathname.replace(/\/+$/, '');
+  return trimmed === '' ? '/' : trimmed;
+};
+
 const App: React.FC = () => {
+  const isNotFound = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    const pathname = normalizePathname(window.location.pathname);
+    return pathname !== '/' && pathname !== '/index.html' && pathname !== '/index.htm';
+  }, []);
+
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     [CATEGORIES[0]]: true
   });
@@ -43,6 +58,7 @@ const App: React.FC = () => {
   const adminPasswordInputRef = useRef<HTMLInputElement>(null);
 
   const activeCategoryRef = useRef<string | null>(CATEGORIES[0]);
+
   const selectedProductIds = useMemo(
     () => new Set(selectedProducts.map((product) => product.id)),
     [selectedProducts]
@@ -303,6 +319,32 @@ const App: React.FC = () => {
     jumpToCategory(product.category);
     setTimeout(() => setHighlightedProductId(null), 3500);
   }, [jumpToCategory]);
+
+  useEffect(() => {
+    if (!isNotFound) {
+      return;
+    }
+
+    const previousTitle = document.title;
+    const robotsMeta = document.querySelector('meta[name="robots"]');
+    const previousRobots = robotsMeta?.getAttribute('content') ?? null;
+
+    document.title = "404 | Doji's Library";
+    if (robotsMeta) {
+      robotsMeta.setAttribute('content', 'noindex, nofollow');
+    }
+
+    return () => {
+      document.title = previousTitle;
+      if (robotsMeta && previousRobots !== null) {
+        robotsMeta.setAttribute('content', previousRobots);
+      }
+    };
+  }, [isNotFound]);
+
+  if (isNotFound) {
+    return <NotFoundPage />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] font-sans selection:bg-brand-yellow selection:text-black relative">

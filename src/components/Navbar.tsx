@@ -122,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           
           <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">
             <img 
-              src="favicon.svg" 
+              src="/favicon.svg" 
               alt="DC Notes Logo" 
               className="w-10 h-10 laptop:w-12 laptop:h-12 object-contain"
             />

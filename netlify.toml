@@ -2,12 +2,6 @@
   command = "npm run build"
   publish = "dist"
 
-# Handling Single Page Application (SPA) routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 # Optional: Headers for security and caching
 [[headers]]
   for = "/*"
