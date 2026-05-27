@@ -1,7 +1,7 @@
 import { FAQItem, Product, ProductLanguage, ProductLevel, SiteContent } from './types';
 
 const MOBILE_URL = 'https://m.me/103186496068437';
-const DESKTOP_URL = 'https://www.facebook.com/share/p/18DmuzbFKk/';
+const DESKTOP_URL = 'https://www.facebook.com/share/p/1HMaPSeaty/';
 
 const PROGRAMMING_LANGUAGES_CATEGORY = 'Programming Languages';
 const PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY = 'Programming Language Packages';

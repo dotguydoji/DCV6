@@ -128,7 +128,7 @@ export const CartModal: React.FC<CartModalProps> = ({
     const url =
       platform === 'mobile'
         ? 'https://m.me/103186496068437'
-        : 'https://www.facebook.com/share/p/18DmuzbFKk/';
+        : 'https://www.facebook.com/share/p/1HMaPSeaty/';
 
     window.open(url, '_blank');
   };
