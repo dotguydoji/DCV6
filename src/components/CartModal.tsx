@@ -114,6 +114,19 @@ export const CartModal: React.FC<CartModalProps> = ({
     }
   };
 
+  const copyOrderBeforeRedirect = () => {
+    if (selectedProducts.length === 0) return;
+
+    const fullText = buildOrderText();
+
+    try {
+      fallbackCopy(fullText, false);
+    } catch (error) {
+      console.error('Synchronous copy before redirect failed:', error);
+      copyOrderToClipboard(false);
+    }
+  };
+
   const handleCopyOrder = (event: React.MouseEvent) => {
     event.stopPropagation();
     event.preventDefault();
@@ -123,14 +136,19 @@ export const CartModal: React.FC<CartModalProps> = ({
   const handleBuyNow = (platform: 'mobile' | 'desktop') => {
     if (selectedProducts.length === 0) return;
 
-    copyOrderToClipboard(false);
+    copyOrderBeforeRedirect();
 
     const url =
       platform === 'mobile'
-        ? 'https://m.me/103186496068437'
-        : 'https://www.facebook.com/share/p/1HMaPSeaty/';
+        ? (selectedProducts[0]?.mobileUrl ?? 'https://m.me/103186496068437')
+        : (selectedProducts[0]?.desktopUrl ?? 'https://www.facebook.com/share/p/1HMaPSeaty/');
 
-    window.open(url, '_blank');
+    if (platform === 'mobile') {
+      window.location.assign(url);
+      return;
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   if (!isOpen || hideCommerce) return null;
