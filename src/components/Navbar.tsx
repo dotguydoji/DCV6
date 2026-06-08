@@ -125,6 +125,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               src="/favicon.svg" 
               alt="DC Notes Logo" 
               className="w-10 h-10 laptop:w-12 laptop:h-12 object-contain"
+              loading="eager"
+              decoding="async"
+              referrerPolicy="no-referrer"
             />
             <span className="text-sm md:text-lg laptop:text-lg xl:text-xl font-extrabold text-white uppercase tracking-[0.3em]">
               Doji's <span className="text-brand-yellow">Library</span>
@@ -169,7 +172,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                       onClick={() => handleSelect(product)}
                     >
                       <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-sm bg-black overflow-hidden shrink-0 border border-gray-800 group-hover:border-brand-yellow/40 transition-colors">
-                        <img src={product.thumbnail} alt="" className={`w-full h-full object-cover transition-all duration-700 ${index === selectedIndex ? 'scale-110 opacity-100' : 'opacity-40 group-hover:opacity-100'}`} />
+                        <img
+                          src={product.thumbnail}
+                          alt=""
+                          className={`w-full h-full object-cover transition-all duration-700 ${index === selectedIndex ? 'scale-110 opacity-100' : 'opacity-40 group-hover:opacity-100'}`}
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
                       <div className="overflow-hidden">
                         <div className={`f-body font-black truncate transition-colors ${index === selectedIndex ? 'text-brand-yellow' : 'text-white'}`}>{product.title}</div>
@@ -235,7 +245,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                       onClick={() => handleSelect(product)}
                     >
                       <div className="w-16 h-16 rounded-sm bg-black overflow-hidden shrink-0 border border-gray-800">
-                        <img src={product.thumbnail} alt="" className="w-full h-full object-cover" />
+                        <img
+                          src={product.thumbnail}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                        />
                       </div>
                       <div className="overflow-hidden">
                         <div className="f-body font-black text-white truncate">{product.title}</div>

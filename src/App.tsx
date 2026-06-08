@@ -481,6 +481,9 @@ const App: React.FC = () => {
               src={item.thumbnail}
               alt=""
               className="fly-to-cart"
+              loading="eager"
+              decoding="async"
+              referrerPolicy="no-referrer"
               style={{
                 left: item.startX,
                 top: item.startY,

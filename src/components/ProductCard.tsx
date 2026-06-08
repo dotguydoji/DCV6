@@ -60,6 +60,7 @@ export const ProductCard = memo(
             className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110 will-change-transform"
             loading="lazy"
             decoding="async"
+            referrerPolicy="no-referrer"
             onLoad={handleImageLoad}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#F5F5DC] to-transparent opacity-40"></div>

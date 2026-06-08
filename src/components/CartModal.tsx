@@ -196,6 +196,9 @@ export const CartModal: React.FC<CartModalProps> = ({
                         src={product.thumbnail}
                         alt={product.title}
                         className="w-16 h-10 object-cover rounded-sm flex-shrink-0"
+                        loading="lazy"
+                        decoding="async"
+                        referrerPolicy="no-referrer"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{product.title}</p>
