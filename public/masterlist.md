@@ -104,7 +104,7 @@ This file contains the complete product list based on the current store data.
 - CSS | English | Standard | P199
 - CSS | Tagalog | Standard | P220
 - JSDOM | English | Standard | P299
-- JSDOM | Tagalog | Standard | P320
+- JSDOM | Tagalog | Standard | P350
 - Web Development Package | English | Package | P500
   Note: The card also shows a crossed-out amount of P97.
 - Web Development Package | Tagalog | Package | P600

@@ -174,7 +174,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'JavaScript DOM lessons that focus on events, interactivity, and the practical logic behind dynamic interfaces.',
       tl: 'Tagalog JavaScript DOM lessons na nakatuon sa events, interactivity, at praktikal na logic sa likod ng dynamic interfaces.'
     },
-    price: { en: 299, tl: 320 }
+    price: { en: 299, tl: 350 }
   },
   {
     itemKey: 'package',
