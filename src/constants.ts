@@ -108,7 +108,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Beginner',
     folder: 'programming-languages-beginners',
     fileSuffix: 'beginners',
-    price: { en: 99, tl: 120 },
+    price: { en: 120, tl: 140 },
     available: true
   },
   {
@@ -116,7 +116,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Intermediate',
     folder: 'programming-languages-intermediate',
     fileSuffix: 'intermediate',
-    price: { en: 149, tl: 170 },
+    price: { en: 170, tl: 190 },
     available: true
   },
   {
@@ -124,7 +124,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Advanced',
     folder: 'programming-languages-advanced',
     fileSuffix: 'advanced',
-    price: { en: 199, tl: 220 },
+    price: { en: 220, tl: 240 },
     available: true
   },
   {
@@ -140,7 +140,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 99, tl: 119 },
+    price: { en: 120, tl: 140 },
     available: true
   }
 ];
@@ -154,7 +154,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Structured HTML lessons focused on semantic layout, clean markup, and solid page-building fundamentals.',
       tl: 'Tagalog HTML lessons na nakatuon sa semantic layout, malinaw na markup, at matibay na page-building fundamentals.'
     },
-    price: { en: 99, tl: 120 }
+    price: { en: 120, tl: 140 }
   },
   {
     itemKey: 'css',
@@ -164,7 +164,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Modern CSS coverage for responsive layout, spacing systems, components, and polished visual styling.',
       tl: 'Tagalog CSS coverage para sa responsive layout, spacing systems, components, at mas maayos na visual styling.'
     },
-    price: { en: 199, tl: 220 }
+    price: { en: 220, tl: 240 }
   },
   {
     itemKey: 'jsdom',
@@ -184,7 +184,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'A combined web development package that brings HTML, CSS, and JavaScript DOM notes together in one set.',
       tl: 'Isang pinagsamang web development package na magkakasama ang HTML, CSS, at JavaScript DOM notes sa iisang set.'
     },
-    price: { en: 500, tl: 600 }
+    price: { en: 520, tl: 620 }
   }
 ];
 
@@ -196,7 +196,7 @@ const TOOLS_ITEMS: readonly ToolsItemMeta[] = [
       en: 'Git and GitHub notes focused on version control, repositories, commits, branches, and practical collaboration workflows.',
       tl: 'Git at GitHub notes sa Tagalog na nakatuon sa version control, repositories, commits, branches, at praktikal na collaboration workflows.'
     },
-    price: { en: 149, tl: 199 }
+    price: { en: 299, tl: 350 }
   }
 ];
 
@@ -365,8 +365,8 @@ const webDevelopmentProducts = WEB_DEVELOPMENT_ITEMS.flatMap((item) =>
       originalPrice:
         item.itemKey === 'package'
           ? language === 'tl'
-            ? 60
-            : 97
+            ? 80
+            : 120
           : undefined,
       thumbnail: getWebDevelopmentThumbnail(item.fileStem, language),
       category: WEB_DEVELOPMENT_CATEGORY,
