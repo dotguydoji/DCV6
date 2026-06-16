@@ -123,7 +123,12 @@ This file contains the complete product list based on the current store data.
 
 - Claude Notes | English | Standard | P299
 - Claude Notes | Tagalog | Standard | P350
+- Claude MCP | English | Standard | P150
+- Claude MCP | Tagalog | Standard | P200
+- Claude Subagents | English | Standard | P150
+- Claude Subagents | Tagalog | Standard | P200
 
 ## Productivity
 
-- Freshman Prep | Standard | Coming Soon
+- Freshman Prep | Standard | P150
+  Note: This item is pre-order.

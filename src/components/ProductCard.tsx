@@ -63,6 +63,11 @@ export const ProductCard = memo(
             referrerPolicy="no-referrer"
             onLoad={handleImageLoad}
           />
+          {product.preOrder && (
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-lg shadow-black/30">
+              Pre-order
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#F5F5DC] to-transparent opacity-40"></div>
         </div>
 
@@ -132,6 +137,7 @@ export const ProductCard = memo(
     return (
       prevProps.product.id === nextProps.product.id &&
       prevProps.product.available === nextProps.product.available &&
+      prevProps.product.preOrder === nextProps.product.preOrder &&
       prevProps.isHighlighted === nextProps.isHighlighted &&
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.hideCommerce === nextProps.hideCommerce

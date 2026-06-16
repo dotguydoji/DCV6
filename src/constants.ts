@@ -10,6 +10,7 @@ const TOOLS_CATEGORY = 'Tools';
 const FRAMEWORKS_CATEGORY = 'Frameworks';
 const AI_TOOLS_CATEGORY = 'AI Tools';
 const PRODUCTIVITY_CATEGORY = 'Productivity';
+const PREORDER_THUMBNAIL = '/favicon.svg';
 
 const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
   en: 'english',
@@ -19,7 +20,7 @@ const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
 type ProgrammingLanguageKey = 'c' | 'cpp' | 'csharp' | 'java' | 'javascript' | 'python';
 type WebDevelopmentKey = 'html' | 'css' | 'jsdom' | 'package';
 type ToolsItemKey = 'git-github-notes';
-type AIItemKey = 'claude-code-notes';
+type AIItemKey = 'claude-code-notes' | 'claude-mcp' | 'claude-subagents';
 type ProductivityItemKey = 'freshman-prep';
 
 interface ProgrammingLanguageMeta {
@@ -63,7 +64,9 @@ interface ProductivityItemMeta {
   title: string;
   description: string;
   thumbnail: string;
+  price: number;
   available: boolean;
+  preOrder?: boolean;
 }
 
 export const SITE_CONTENT: SiteContent = {
@@ -209,6 +212,24 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       tl: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.'
     },
     price: { en: 299, tl: 350 }
+  },
+  {
+    itemKey: 'claude-mcp',
+    title: 'Claude MCP',
+    description: {
+      en: 'Claude MCP notes focused on connecting Claude with external tools and structured workflows.',
+      tl: 'Claude MCP notes na nakatuon sa pag-connect ng Claude sa external tools at structured workflows.'
+    },
+    price: { en: 150, tl: 200 }
+  },
+  {
+    itemKey: 'claude-subagents',
+    title: 'Claude Subagents',
+    description: {
+      en: 'Claude Subagents notes for breaking tasks into smaller helpers and improving multi-step coding support.',
+      tl: 'Claude Subagents notes para hati-hatiin ang tasks sa mas maliliit na helpers at mas mapaganda ang multi-step coding support.'
+    },
+    price: { en: 150, tl: 200 }
   }
 ];
 
@@ -219,7 +240,9 @@ const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
     thumbnail: '/productivity/freshmen-prep.png',
-    available: false
+    price: 150,
+    available: true,
+    preOrder: true
   }
 ];
 
@@ -229,7 +252,8 @@ const createProduct = (product: ProductSeed): Product => ({
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
   available: true,
-  ...product
+  ...product,
+  thumbnail: product.preOrder ? PREORDER_THUMBNAIL : product.thumbnail
 });
 
 const getProgrammingLanguageTitle = (languageName: string, level: ProductLevel) => {
@@ -312,6 +336,9 @@ const getAiThumbnail = (itemKey: AIItemKey, language: ProductLanguage) => {
   switch (itemKey) {
     case 'claude-code-notes':
       return `/images/ai-tools/claude-code-${LANGUAGE_FILE_SEGMENT[language]}.png`;
+    case 'claude-mcp':
+    case 'claude-subagents':
+      return '/favicon.svg';
     default:
       return '/web-app-manifest-512x512.png';
   }
@@ -370,7 +397,8 @@ const webDevelopmentProducts = WEB_DEVELOPMENT_ITEMS.flatMap((item) =>
           : undefined,
       thumbnail: getWebDevelopmentThumbnail(item.fileStem, language),
       category: WEB_DEVELOPMENT_CATEGORY,
-      language
+      language,
+      preOrder: item.itemKey === 'jsdom' || item.itemKey === 'package'
     })
   )
 );
@@ -400,7 +428,8 @@ const aiProducts = AI_ITEMS.flatMap((item) =>
       price: item.price[language],
       thumbnail: getAiThumbnail(item.itemKey, language),
       category: AI_TOOLS_CATEGORY,
-      language
+      language,
+      preOrder: item.itemKey === 'claude-mcp' || item.itemKey === 'claude-subagents'
     })
   )
 );
@@ -411,10 +440,11 @@ const productivityProducts = PRODUCTIVITY_ITEMS.map((item) =>
     itemKey: item.itemKey,
     title: item.title,
     description: item.description,
-    price: 0,
+    price: item.price,
     thumbnail: item.thumbnail,
     category: PRODUCTIVITY_CATEGORY,
-    available: item.available
+    available: item.available,
+    preOrder: item.preOrder
   })
 );
 

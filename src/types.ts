@@ -22,6 +22,7 @@ export interface Product {
   level?: ProductLevel;
   itemKey?: string;
   available?: boolean;
+  preOrder?: boolean;
 }
 
 export interface FAQItem {
