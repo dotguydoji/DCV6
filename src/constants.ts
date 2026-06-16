@@ -203,12 +203,12 @@ const TOOLS_ITEMS: readonly ToolsItemMeta[] = [
 const AI_ITEMS: readonly AIItemMeta[] = [
   {
     itemKey: 'claude-code-notes',
-    title: 'Claude Code Notes',
+    title: 'Claude Notes',
     description: {
-      en: 'Claude Code notes with practical guidance for prompts, workflows, and everyday coding support.',
-      tl: 'Claude Code notes sa Tagalog na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.'
+      en: 'First release of Claude Notes with practical guidance for prompts, workflows, and everyday coding support.',
+      tl: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.'
     },
-    price: { en: 149, tl: 199 }
+    price: { en: 299, tl: 350 }
   }
 ];
 

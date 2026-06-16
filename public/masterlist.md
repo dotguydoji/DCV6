@@ -121,8 +121,8 @@ This file contains the complete product list based on the current store data.
 
 ## AI Tools
 
-- Claude Code Notes | English | Standard | P149
-- Claude Code Notes | Tagalog | Standard | P199
+- Claude Notes | English | Standard | P299
+- Claude Notes | Tagalog | Standard | P350
 
 ## Productivity
 
