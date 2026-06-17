@@ -46,10 +46,7 @@ const getFocusIndex = (products: Product[], focus: PendingFocus | null) => {
     const matchedIndex = products.findIndex(
       (product) => getProductFocusKey(product) === focus.itemKey
     );
-
-    if (matchedIndex >= 0) {
-      return matchedIndex;
-    }
+    if (matchedIndex >= 0) return matchedIndex;
   }
 
   if (typeof focus.index === 'number') {
@@ -61,8 +58,10 @@ const getFocusIndex = (products: Product[], focus: PendingFocus | null) => {
 
 export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProps>(
   ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false }, ref) => {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const mobileScrollRef = useRef<HTMLDivElement>(null);
+    const desktopScrollRef = useRef<HTMLDivElement>(null);
+    const mobileCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const desktopCardRefs = useRef<(HTMLDivElement | null)[]>([]);
     const pendingFocusRef = useRef<PendingFocus | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<ProductLanguage | null>('en');
     const [selectedLevel, setSelectedLevel] = useState<ProductLevel | null>(null);
@@ -78,10 +77,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       [products]
     );
     const availableLevels = useMemo(
-      () =>
-        LEVEL_ORDER.filter((level) =>
-          products.some((product) => product.level === level)
-        ),
+      () => LEVEL_ORDER.filter((level) => products.some((product) => product.level === level)),
       [products]
     );
     const hasVersionToggle = availableLanguages.length > 1;
@@ -91,19 +87,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       : (availableLanguages[0] ?? null);
     const defaultLevel = hasLevelToggle ? availableLevels[0] : null;
 
-    const filterProducts = (
-      language: ProductLanguage | null,
-      level: ProductLevel | null
-    ) =>
+    const filterProducts = (language: ProductLanguage | null, level: ProductLevel | null) =>
       products.filter((product) => {
-        if (language && product.language !== language) {
-          return false;
-        }
-
-        if (hasLevelToggle && level && product.level !== level) {
-          return false;
-        }
-
+        if (language && product.language !== language) return false;
+        if (hasLevelToggle && level && product.level !== level) return false;
         return true;
       });
 
@@ -115,7 +102,6 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
     useEffect(() => {
       if (!isOpen) return;
-
       pendingFocusRef.current = { index: 0 };
       setSelectedLanguage(defaultLanguage);
       setSelectedLevel(defaultLevel);
@@ -123,21 +109,18 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
     useEffect(() => {
       if (!isOpen || !highlightedProductId) return;
-
       const highlightedProduct = products.find((product) => product.id === highlightedProductId);
       if (!highlightedProduct) return;
-
-      pendingFocusRef.current = {
-        itemKey: getProductFocusKey(highlightedProduct)
-      };
+      pendingFocusRef.current = { itemKey: getProductFocusKey(highlightedProduct) };
       setSelectedLanguage(highlightedProduct.language ?? defaultLanguage);
       setSelectedLevel(highlightedProduct.level ?? defaultLevel);
     }, [defaultLanguage, defaultLevel, highlightedProductId, isOpen, products]);
 
+    // Mobile carousel scroll effect
     useEffect(() => {
-      if (!isOpen || !scrollRef.current || visibleProducts.length === 0) return;
+      if (!isOpen || !mobileScrollRef.current || visibleProducts.length === 0) return;
 
-      const container = scrollRef.current;
+      const container = mobileScrollRef.current;
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let lastActiveIndex = -1;
       const nextIndex = getFocusIndex(visibleProducts, pendingFocusRef.current);
@@ -156,21 +139,15 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
           entries.forEach((entry) => {
             const target = entry.target as HTMLElement;
             const index = parseInt(target.dataset.index || '0', 10);
-
             if (index === 0) {
               setCanScrollLeft(!entry.isIntersecting || entry.intersectionRatio < 0.9);
             }
-
             if (index === visibleProducts.length - 1) {
               setCanScrollRight(!entry.isIntersecting || entry.intersectionRatio < 0.9);
             }
           });
         },
-        {
-          root: container,
-          threshold: [0.1, 0.9, 1.0],
-          rootMargin: '0px -5px 0px -5px'
-        }
+        { root: container, threshold: [0.1, 0.9, 1.0], rootMargin: '0px -5px 0px -5px' }
       );
 
       const activeObserver = new IntersectionObserver(
@@ -181,11 +158,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
           if (mostVisibleEntry && mostVisibleEntry.intersectionRatio > 0.7) {
             const newIndex = parseInt((mostVisibleEntry.target as HTMLElement).dataset.index || '0', 10);
-
-            if (debounceTimer) {
-              clearTimeout(debounceTimer);
-            }
-
+            if (debounceTimer) clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
               if (newIndex !== lastActiveIndex) {
                 lastActiveIndex = newIndex;
@@ -194,13 +167,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
             }, 50);
           }
         },
-        {
-          root: container,
-          threshold: [0.5, 0.7, 0.9]
-        }
+        { root: container, threshold: [0.5, 0.7, 0.9] }
       );
 
-      const cards = container.querySelectorAll('.product-card-item');
+      const cards = container.querySelectorAll('.mobile-card-item');
       cards.forEach((card) => {
         navObserver.observe(card);
         activeObserver.observe(card);
@@ -209,68 +179,60 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       container.addEventListener('scroll', updateScrollStates, { passive: true });
 
       rafId = window.requestAnimationFrame(() => {
-        const target = cardRefs.current[nextIndex];
+        const target = mobileCardRefs.current[nextIndex];
         const containerStyle = window.getComputedStyle(container);
         const paddingLeft = parseInt(containerStyle.paddingLeft || '0', 10) || 0;
-
         container.scrollTo({
           left: target ? target.offsetLeft - paddingLeft : 0,
           behavior: 'auto'
         });
-
         updateScrollStates();
       });
 
       return () => {
-        if (debounceTimer) {
-          clearTimeout(debounceTimer);
-        }
-        if (rafId) {
-          window.cancelAnimationFrame(rafId);
-        }
+        if (debounceTimer) clearTimeout(debounceTimer);
+        if (rafId) window.cancelAnimationFrame(rafId);
         navObserver.disconnect();
         activeObserver.disconnect();
         container.removeEventListener('scroll', updateScrollStates);
       };
     }, [isOpen, selectedLanguage, selectedLevel, visibleProducts.length]);
 
+    // Desktop highlight scroll effect
+    useEffect(() => {
+      if (!isOpen || !highlightedProductId || !desktopScrollRef.current) return;
+      const index = visibleProducts.findIndex((p) => p.id === highlightedProductId);
+      if (index < 0) return;
+      const rafId = window.requestAnimationFrame(() => {
+        desktopCardRefs.current[index]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      return () => window.cancelAnimationFrame(rafId);
+    }, [isOpen, highlightedProductId, visibleProducts]);
+
     const scroll = (direction: 'left' | 'right') => {
-      const container = scrollRef.current;
+      const container = mobileScrollRef.current;
       if (!container) return;
-
-      const clientWidth = container.clientWidth;
-      const scrollAmount = direction === 'left' ? -clientWidth * 0.8 : clientWidth * 0.8;
-
       container.scrollBy({
-        left: scrollAmount,
+        left: direction === 'left' ? -container.clientWidth * 0.8 : container.clientWidth * 0.8,
         behavior: 'smooth'
       });
     };
 
     const jumpToCard = (index: number) => {
-      const container = scrollRef.current;
-      const target = cardRefs.current[index];
+      const container = mobileScrollRef.current;
+      const target = mobileCardRefs.current[index];
       if (target && container) {
         const containerStyle = window.getComputedStyle(container);
         const paddingLeft = parseInt(containerStyle.paddingLeft || '0', 10) || 0;
-
-        container.scrollTo({
-          left: target.offsetLeft - paddingLeft,
-          behavior: 'smooth'
-        });
+        container.scrollTo({ left: target.offsetLeft - paddingLeft, behavior: 'smooth' });
       }
     };
 
     const storeCurrentFocus = () => {
       const currentProduct = visibleProducts[activeIndex] ?? visibleProducts[0];
       pendingFocusRef.current = currentProduct
-        ? {
-            itemKey: getProductFocusKey(currentProduct),
-            index: activeIndex
-          }
-        : {
-            index: activeIndex
-          };
+        ? { itemKey: getProductFocusKey(currentProduct), index: activeIndex }
+        : { index: activeIndex };
     };
 
     const handleLanguageChange = (nextLanguage: ProductLanguage) => {
@@ -320,8 +282,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         </div>
 
         <div
-          className={`overflow-hidden transition-all duration-500 ease-out will-change-[max-height,opacity] ${
-            isOpen ? 'max-h-[3200px] opacity-100 p-4 lg:p-6' : 'max-h-0 opacity-0 pointer-events-none'
+          className={`transition-all duration-500 ease-out will-change-[max-height,opacity] ${
+            isOpen ? 'overflow-visible max-h-[3200px] opacity-100 p-4 lg:p-6' : 'overflow-hidden max-h-0 opacity-0 pointer-events-none'
           }`}
         >
           {hasVersionToggle && (
@@ -387,79 +349,101 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
           {visibleProducts.length > 0 ? (
             <>
-              <div className="relative">
-                <div
-                  ref={scrollRef}
-                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-4 pt-2 scroll-smooth max-lg:px-[calc(50vw-140px-24px)] sm:max-lg:px-[calc(50vw-160px-24px)] lg:px-2 will-change-transform"
-                >
-                  {visibleProducts.map((product, idx) => (
-                    <div
-                      key={product.id}
-                      className="product-card-item flex-shrink-0 snap-center lg:snap-start"
-                      data-index={idx}
-                      ref={(el) => {
-                        cardRefs.current[idx] = el;
-                      }}
-                    >
-                      <ProductCard
-                        product={product}
-                        isHighlighted={product.id === highlightedProductId}
-                        isSelected={selectedProductIds.has(product.id)}
-                        onToggleSelect={onToggleSelect}
-                        hideCommerce={hideCommerce}
-                      />
-                    </div>
+              {/* Mobile: horizontal carousel */}
+              <div className="md:hidden">
+                <div className="relative">
+                  <div
+                    ref={mobileScrollRef}
+                    className="flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-4 pt-2 scroll-smooth max-lg:px-[calc(50vw-140px-24px)] sm:max-lg:px-[calc(50vw-160px-24px)] will-change-transform"
+                  >
+                    {visibleProducts.map((product, idx) => (
+                      <div
+                        key={product.id}
+                        className="mobile-card-item flex-shrink-0 snap-center"
+                        data-index={idx}
+                        ref={(el) => { mobileCardRefs.current[idx] = el; }}
+                      >
+                        <ProductCard
+                          product={product}
+                          isHighlighted={product.id === highlightedProductId}
+                          isSelected={selectedProductIds.has(product.id)}
+                          onToggleSelect={onToggleSelect}
+                          hideCommerce={hideCommerce}
+                        />
+                      </div>
+                    ))}
+                    <div className="flex-shrink-0 w-1"></div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center items-center gap-3 mt-3">
+                  {visibleProducts.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => jumpToCard(index)}
+                      className={`transition-all duration-300 rounded-full h-1 ${
+                        activeIndex === index
+                          ? 'bg-brand-yellow w-10 shadow-[0_0_10px_rgba(255,107,0,0.5)]'
+                          : 'bg-white/10 w-2 hover:bg-white/30'
+                      }`}
+                      aria-label={`Go to item ${index + 1}`}
+                    />
                   ))}
-                  <div className="flex-shrink-0 w-1 lg:hidden"></div>
+                </div>
+
+                <div className="flex justify-center items-center gap-2 mt-3">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); scroll('left'); }}
+                    disabled={!canScrollLeft}
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-black border transition-all active:scale-90 ${
+                      !canScrollLeft
+                        ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
+                        : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                    }`}
+                    aria-label="Previous"
+                  >
+                    <ChevronLeft size={20} strokeWidth={3} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); scroll('right'); }}
+                    disabled={!canScrollRight}
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-black border transition-all active:scale-90 ${
+                      !canScrollRight
+                        ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
+                        : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                    }`}
+                    aria-label="Next"
+                  >
+                    <ChevronRight size={20} strokeWidth={3} />
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-center items-center gap-3 mt-3 laptop:mt-4">
-                {visibleProducts.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => jumpToCard(index)}
-                    className={`transition-all duration-300 rounded-full h-1 ${
-                      activeIndex === index
-                        ? 'bg-brand-yellow w-10 shadow-[0_0_10px_rgba(255,107,0,0.5)]'
-                        : 'bg-white/10 w-2 hover:bg-white/30'
-                    }`}
-                    aria-label={`Go to item ${index + 1}`}
-                  />
-                ))}
-              </div>
-
-              <div className="flex justify-center items-center gap-2 mt-3">
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    scroll('left');
-                  }}
-                  disabled={!canScrollLeft}
-                  className={`flex items-center justify-center w-10 h-10 laptop:w-12 laptop:h-12 rounded-sm bg-black border transition-all active:scale-90 ${
-                    !canScrollLeft
-                      ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
-                      : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
-                  }`}
-                  aria-label="Previous"
+              {/* Tablet / Desktop: vertical scrolling grid */}
+              <div className="hidden md:block">
+                <div
+                  ref={desktopScrollRef}
+                  className="overflow-y-auto max-h-[820px] no-scrollbar"
                 >
-                  <ChevronLeft size={20} strokeWidth={3} />
-                </button>
-                <button
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    scroll('right');
-                  }}
-                  disabled={!canScrollRight}
-                  className={`flex items-center justify-center w-10 h-10 laptop:w-12 laptop:h-12 rounded-sm bg-black border transition-all active:scale-90 ${
-                    !canScrollRight
-                      ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
-                      : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
-                  }`}
-                  aria-label="Next"
-                >
-                  <ChevronRight size={20} strokeWidth={3} />
-                </button>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                    {visibleProducts.map((product, idx) => (
+                      <div
+                        key={product.id}
+                        className="product-card-item min-w-0 [&>*]:!w-full"
+                        data-index={idx}
+                        ref={(el) => { desktopCardRefs.current[idx] = el; }}
+                      >
+                        <ProductCard
+                          product={product}
+                          isHighlighted={product.id === highlightedProductId}
+                          isSelected={selectedProductIds.has(product.id)}
+                          onToggleSelect={onToggleSelect}
+                          hideCommerce={hideCommerce}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </>
           ) : (
