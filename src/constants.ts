@@ -111,7 +111,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Beginner',
     folder: 'programming-languages-beginners',
     fileSuffix: 'beginners',
-    price: { en: 120, tl: 140 },
+    price: { en: 99, tl: 120 },
     available: true
   },
   {
@@ -119,7 +119,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Intermediate',
     folder: 'programming-languages-intermediate',
     fileSuffix: 'intermediate',
-    price: { en: 170, tl: 190 },
+    price: { en: 150, tl: 180 },
     available: true
   },
   {
@@ -127,7 +127,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Advanced',
     folder: 'programming-languages-advanced',
     fileSuffix: 'advanced',
-    price: { en: 220, tl: 240 },
+    price: { en: 200, tl: 220 },
     available: true
   },
   {
@@ -143,7 +143,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 120, tl: 140 },
+    price: { en: 99, tl: 99 },
     available: true
   }
 ];
@@ -157,7 +157,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Structured HTML lessons focused on semantic layout, clean markup, and solid page-building fundamentals.',
       tl: 'Tagalog HTML lessons na nakatuon sa semantic layout, malinaw na markup, at matibay na page-building fundamentals.'
     },
-    price: { en: 120, tl: 140 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'css',
@@ -167,7 +167,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Modern CSS coverage for responsive layout, spacing systems, components, and polished visual styling.',
       tl: 'Tagalog CSS coverage para sa responsive layout, spacing systems, components, at mas maayos na visual styling.'
     },
-    price: { en: 220, tl: 240 }
+    price: { en: 199, tl: 220 }
   },
   {
     itemKey: 'jsdom',
@@ -177,7 +177,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'JavaScript DOM lessons that focus on events, interactivity, and the practical logic behind dynamic interfaces.',
       tl: 'Tagalog JavaScript DOM lessons na nakatuon sa events, interactivity, at praktikal na logic sa likod ng dynamic interfaces.'
     },
-    price: { en: 299, tl: 350 }
+    price: { en: 299, tl: 320 }
   },
   {
     itemKey: 'package',
@@ -187,7 +187,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'A combined web development package that brings HTML, CSS, and JavaScript DOM notes together in one set.',
       tl: 'Isang pinagsamang web development package na magkakasama ang HTML, CSS, at JavaScript DOM notes sa iisang set.'
     },
-    price: { en: 520, tl: 620 }
+    price: { en: 500, tl: 600 }
   }
 ];
 
