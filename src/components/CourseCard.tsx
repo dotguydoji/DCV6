@@ -56,14 +56,14 @@ export const CourseCard = memo(
           <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/30 to-transparent" />
 
           {/* Course badge — top left */}
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-brand-yellow px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-lg">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg">
             <Play size={9} fill="currentColor" strokeWidth={0} />
             Course
           </div>
 
           {/* Pre-register badge — top right */}
           {product.preOrder && (
-            <div className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-lg">
+            <div className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg">
               Pre-register
             </div>
           )}
@@ -82,11 +82,11 @@ export const CourseCard = memo(
 
         {/* Body */}
         <div className="px-4 pt-4 pb-3 flex flex-col flex-grow min-h-0">
-          <h3 className="font-poppins font-bold text-base lg:text-xl text-white leading-tight mb-1 group-hover:text-brand-yellow transition-colors duration-300">
+          <h3 className="font-poppins font-bold text-lg lg:text-2xl text-white leading-tight mb-1 group-hover:text-brand-yellow transition-colors duration-300">
             {product.title}
           </h3>
 
-          <p className="text-sm text-brand-gray/50 leading-relaxed line-clamp-2 tracking-normal normal-case mb-3">
+          <p className="text-base text-brand-gray/50 leading-relaxed line-clamp-2 tracking-normal normal-case mb-3">
             {product.description}
           </p>
 
@@ -106,7 +106,7 @@ export const CourseCard = memo(
                   ) : (
                     <FileText size={13} className="shrink-0 text-sky-400/80" />
                   )}
-                  <span className="text-sm text-white/60 truncate font-medium leading-snug">
+                  <span className="text-base text-white/60 truncate font-medium leading-snug">
                     {material.title}
                   </span>
                 </div>
@@ -126,7 +126,7 @@ export const CourseCard = memo(
               </div>
             ) : (
               <>
-                <span className="f-price text-green-400 text-2xl lg:text-3xl font-semibold leading-none drop-shadow-none">
+                <span className="f-price text-green-400 font-semibold leading-none drop-shadow-none">
                   P {product.price.toLocaleString()}
                 </span>
                 <button

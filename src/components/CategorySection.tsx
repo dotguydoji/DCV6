@@ -254,7 +254,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     return (
       <section
         ref={ref}
-        className={`transition-all rounded-xl overflow-hidden border mb-8 lg:mb-12 will-change-transform ${
+        className={`transition-all rounded-xl overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform ${
           isCourseCategory
             ? 'bg-[#D95F00] border-[#D95F00] shadow-2xl'
             : 'bg-[#333333] border-white/5 shadow-2xl'
@@ -293,12 +293,12 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               </div>
               {/* Content-type label */}
               {isCourseCategory ? (
-                <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-black border border-black/20 bg-black/10 px-2.5 py-1 rounded-sm">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-black border border-black/20 bg-black/10 px-2.5 py-1 rounded-sm">
                   <Play size={9} fill="currentColor" strokeWidth={0} />
                   Video Course
                 </span>
               ) : (
-                <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-white/25 border border-white/8 bg-black/20 px-2.5 py-1 rounded-sm">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-white/25 border border-white/8 bg-black/20 px-2.5 py-1 rounded-sm">
                   <FileText size={9} strokeWidth={2} />
                   PDF
                 </span>
@@ -307,7 +307,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
             <div className="flex items-center justify-between sm:justify-end gap-6">
               <div className="hidden sm:flex flex-col items-end">
-                <span className={`f-small px-3 py-1.5 rounded-sm border font-extrabold whitespace-nowrap shadow-xl text-lg ${
+                <span className={`f-small px-3 py-1.5 rounded-sm border font-extrabold whitespace-nowrap shadow-xl text-xl ${
                   isCourseCategory
                     ? 'bg-black/10 text-black border-black/15'
                     : 'bg-black/60 text-yellow-300 border-white/5'
@@ -326,13 +326,13 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         >
           {hasVersionToggle && (
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <span className="text-sm font-bold text-white/70 tracking-wide">Versions:</span>
+              <span className="text-base font-bold text-white/70 tracking-wide">Versions:</span>
               <button
                 type="button"
                 onClick={() => handleLanguageChange('en')}
                 disabled={!availableLanguages.includes('en')}
                 aria-pressed={selectedLanguage === 'en'}
-                className={`text-sm font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'en'
                     ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
                     : availableLanguages.includes('en')
@@ -348,7 +348,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                 onClick={() => handleLanguageChange('tl')}
                 disabled={!availableLanguages.includes('tl')}
                 aria-pressed={selectedLanguage === 'tl'}
-                className={`text-sm font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'tl'
                     ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
                     : availableLanguages.includes('tl')
@@ -364,14 +364,14 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
           {hasLevelToggle && (
             <div className="flex items-center gap-3 mb-4 flex-wrap">
-              <span className="text-sm font-bold text-white/70 tracking-wide">Levels:</span>
+              <span className="text-base font-bold text-white/70 tracking-wide">Levels:</span>
               {availableLevels.map((level, levelIndex) => (
                 <button
                   key={level}
                   type="button"
                   onClick={() => handleLevelChange(level)}
                   aria-pressed={selectedLevel === level}
-                  className={`text-sm font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                  className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                     selectedLevel === level
                       ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
                       : 'bg-black text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
@@ -473,7 +473,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   ref={desktopScrollRef}
                   className={isCourseCategory ? '' : 'overflow-y-auto max-h-[820px] no-scrollbar'}
                 >
-                  <div className={`grid gap-4 lg:gap-6 ${isCourseCategory ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+                  <div className={`grid gap-4 lg:gap-6 ${isCourseCategory ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
                     {visibleProducts.map((product, idx) => (
                       <div
                         key={product.id}
@@ -507,7 +507,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
           ) : (
             <div className="min-h-[180px] flex items-center justify-center rounded-lg border border-white/5 bg-black/20 text-center px-6">
               <div>
-                <p className="text-white font-bold uppercase tracking-[0.2em] text-sm">Coming Soon</p>
+                <p className="text-white font-bold uppercase tracking-[0.2em] text-base">Coming Soon</p>
                 <p className="text-brand-gray/70 mt-2 max-w-md">
                   Items for this category are still being prepared.
                 </p>

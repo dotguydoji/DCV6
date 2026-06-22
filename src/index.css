@@ -15,12 +15,12 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 160px;
+    scroll-padding-top: 184px;
   }
 
   @media (min-width: 1024px) {
     html {
-      scroll-padding-top: 200px;
+      scroll-padding-top: 210px;
     }
   }
 
@@ -43,20 +43,20 @@
 }
 
 .f-heading {
-  font-size: 1.5rem;
-  line-height: 2rem;
+  font-size: 1.75rem;
+  line-height: 2.25rem;
   font-weight: 800;
 }
 
 .f-body {
-  font-size: 0.95rem;
-  line-height: 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.65rem;
   font-weight: 400;
 }
 
 .f-small {
-  font-size: 0.7rem;
-  line-height: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.125rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 700;
@@ -64,36 +64,36 @@
 
 .f-price {
   font-family: "Poppins", sans-serif;
-  font-size: 1.75rem;
-  line-height: 1.75rem;
+  font-size: 1.25rem;
+  line-height: 1.375rem;
   font-weight: 400;
   letter-spacing: -0.05em;
 }
 
 @media (min-width: 768px) {
   .f-heading {
-    font-size: 2rem;
-    line-height: 2.5rem;
+    font-size: 2.5rem;
+    line-height: 3rem;
     font-weight: 800;
   }
 }
 
 @media (min-width: 1024px) {
   .f-heading {
-    font-size: 2.25rem;
-    line-height: 2.75rem;
+    font-size: 2.75rem;
+    line-height: 3.25rem;
     font-weight: 800;
   }
 
   .f-body {
-    font-size: 1.125rem;
-    line-height: 1.75rem;
+    font-size: 1.25rem;
+    line-height: 2rem;
     font-weight: 400;
   }
 
   .f-small {
-    font-size: 0.85rem;
-    line-height: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.4rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     font-weight: 700;
@@ -101,8 +101,8 @@
 
   .f-price {
     font-family: "Poppins", sans-serif;
-    font-size: 2.25rem;
-    line-height: 2.25rem;
+    font-size: 1.5rem;
+    line-height: 1.625rem;
     font-weight: 400;
     letter-spacing: -0.05em;
   }
@@ -110,20 +110,20 @@
 
 @media (min-width: 1440px) {
   .f-heading {
-    font-size: 2.5rem;
-    line-height: 3rem;
+    font-size: 3rem;
+    line-height: 3.5rem;
     font-weight: 800;
   }
 
   .f-small {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 700;
   }
 
   .f-price {
     font-family: "Poppins", sans-serif;
-    font-size: 2.75rem;
-    line-height: 2.75rem;
+    font-size: 1.75rem;
+    line-height: 1.875rem;
     font-weight: 400;
   }
 }

@@ -118,7 +118,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   return (
     <>
       <nav className="sticky top-0 z-[60] bg-[#1A1A1A] shadow-2xl h-20 laptop:h-22 xl:h-24 transition-all">
-        <div className="max-w-[1580px] mx-auto px-6 lg:px-10 laptop:px-8 h-full flex items-center justify-between gap-6 laptop:gap-8">
+        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-6 laptop:gap-8">
           
           <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">
             <img 
@@ -129,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               decoding="async"
               referrerPolicy="no-referrer"
             />
-            <span className="text-sm md:text-lg laptop:text-lg xl:text-xl font-extrabold text-white uppercase tracking-[0.3em]">
+            <span className="text-base md:text-xl laptop:text-xl xl:text-2xl font-extrabold text-white uppercase tracking-[0.3em]">
               Doji's <span className="text-brand-yellow">Library</span>
             </span>
           </div>

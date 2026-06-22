@@ -163,9 +163,9 @@ export const CartModal: React.FC<CartModalProps> = ({
         <div className="flex items-center justify-between px-7 py-5 border-b border-white/10 bg-[#1A1A1A]">
           <div className="flex items-center gap-3">
             <ShoppingCart size={28} className="text-brand-yellow" strokeWidth={2.5} />
-            <h2 className="text-2xl font-bold text-white">Your Cart</h2>
+            <h2 className="text-3xl font-bold text-white">Your Cart</h2>
             {selectedProducts.length > 0 && (
-              <span className="bg-brand-yellow/15 text-brand-yellow px-2.5 py-1 rounded-sm text-sm font-black">
+              <span className="bg-brand-yellow/15 text-brand-yellow px-2.5 py-1 rounded-sm text-base font-black">
                 {selectedProducts.length} ITEMS
               </span>
             )}
@@ -179,13 +179,13 @@ export const CartModal: React.FC<CartModalProps> = ({
           {selectedProducts.length === 0 ? (
             <div className="text-center py-16">
               <ShoppingCart size={56} className="mx-auto text-brand-gray/30 mb-5" />
-              <p className="text-brand-gray/60 text-lg font-medium">Your cart is empty</p>
-              <p className="text-brand-gray/40 text-base mt-2">Select items to add them to your cart</p>
+              <p className="text-brand-gray/60 text-xl font-medium">Your cart is empty</p>
+              <p className="text-brand-gray/40 text-lg mt-2">Select items to add them to your cart</p>
             </div>
           ) : (
             <>
               <div className="space-y-4 mb-7">
-                <h3 className="text-base font-bold text-white uppercase tracking-wider">Selected Items</h3>
+                <h3 className="text-lg font-bold text-white uppercase tracking-wider">Selected Items</h3>
                 <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
                   {selectedProducts.map((product) => (
                     <div
@@ -201,12 +201,12 @@ export const CartModal: React.FC<CartModalProps> = ({
                         referrerPolicy="no-referrer"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-base font-medium truncate">{product.title}</p>
-                        <p className="text-brand-gray/50 text-xs font-black uppercase tracking-[0.16em] truncate">
+                        <p className="text-white text-lg font-medium truncate">{product.title}</p>
+                        <p className="text-brand-gray/50 text-sm font-black uppercase tracking-[0.16em] truncate">
                           {product.category}
                           {getLanguageLabel(product) ? ` | ${getLanguageLabel(product)}` : ''}
                         </p>
-                        <p className="text-brand-yellow text-base font-bold">{formatPrice(product.price)}</p>
+                        <p className="text-brand-yellow text-lg font-bold">{formatPrice(product.price)}</p>
                       </div>
                       <button
                         onClick={(event) => {
@@ -222,16 +222,16 @@ export const CartModal: React.FC<CartModalProps> = ({
                 </div>
 
                 <div className="flex justify-between items-center pt-5 border-t border-white/10">
-                  <span className="text-brand-gray text-lg font-bold tracking-wider">TOTAL</span>
-                  <span className="text-3xl font-bold text-brand-yellow">{formatPrice(total)}</span>
+                  <span className="text-brand-gray text-xl font-bold tracking-wider">TOTAL</span>
+                  <span className="text-2xl font-bold text-brand-yellow">{formatPrice(total)}</span>
                 </div>
               </div>
 
               <div className="bg-black border border-white/10 rounded-sm p-5 mb-7">
-                <h4 className="text-lg font-bold text-white uppercase tracking-wider mb-3">
+                <h4 className="text-xl font-bold text-white uppercase tracking-wider mb-3">
                   How to Purchase
                 </h4>
-                <p className="text-white text-lg leading-relaxed">
+                <p className="text-white text-xl leading-relaxed">
                   Click the copy button to copy your order. Then, send it to our Facebook page. You can click the
                   button below if you&apos;re using mobile or desktop.
                 </p>
@@ -244,7 +244,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                     event.stopPropagation();
                     handleCopyOrder(event);
                   }}
-                  className={`w-full flex items-center justify-center gap-2.5 py-5 rounded-sm font-bold text-base transition-all touch-manipulation active:scale-[0.98] ${
+                  className={`w-full flex items-center justify-center gap-2.5 py-5 rounded-sm font-bold text-lg transition-all touch-manipulation active:scale-[0.98] ${
                     copied
                       ? 'bg-green-600 text-white cursor-default'
                       : 'bg-white text-black hover:bg-white/90 cursor-pointer'
@@ -273,14 +273,14 @@ export const CartModal: React.FC<CartModalProps> = ({
                     className="flex items-center justify-center gap-2 bg-brand-yellow text-black border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
                   >
                     <Smartphone size={18} strokeWidth={2.5} className="hidden sm:block" />
-                    <span className="text-base">BUY WITH MOBILE</span>
+                    <span className="text-lg">BUY WITH MOBILE</span>
                   </button>
                   <button
                     onClick={() => handleBuyNow('desktop')}
                     className="flex items-center justify-center gap-2 bg-brand-yellow text-black border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
                   >
                     <Monitor size={18} strokeWidth={2.5} className="hidden sm:block" />
-                    <span className="text-base">BUY WITH DESKTOP</span>
+                    <span className="text-lg">BUY WITH DESKTOP</span>
                   </button>
                 </div>
               </div>

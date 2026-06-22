@@ -65,7 +65,7 @@ export const ProductCard = memo(
           />
 
           {product.preOrder && (
-            <div className="absolute left-3 top-3 z-10 rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-lg shadow-black/30">
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-yellow-400 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg shadow-black/30">
               Pre-order
             </div>
           )}
@@ -74,7 +74,7 @@ export const ProductCard = memo(
         </div>
 
         <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#F5F5DC]">
-          <h3 className="font-poppins font-bold text-base lg:text-xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 truncate">
+          <h3 className="font-poppins font-bold text-lg lg:text-2xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 truncate">
             {product.title}
           </h3>
           <p className="f-small normal-case text-gray-600/80 mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80">
@@ -94,11 +94,11 @@ export const ProductCard = memo(
                   <>
                     <div className="flex flex-col">
                       {typeof product.originalPrice === 'number' && (
-                        <span className="text-xs font-bold tracking-wide text-white/45 line-through">
+                        <span className="text-sm font-bold tracking-wide text-white/45 line-through">
                           P {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className="f-price text-green-400 drop-shadow-none text-2xl lg:text-3xl font-semibold leading-none">
+                      <span className="f-price text-green-400 drop-shadow-none font-semibold leading-none">
                         P {product.price.toLocaleString()}
                       </span>
                     </div>

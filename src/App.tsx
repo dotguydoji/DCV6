@@ -275,7 +275,7 @@ const App: React.FC = () => {
       const headerElement = element.querySelector('.category-header');
       const targetElement = headerElement || element;
       
-      const offset = window.innerWidth >= 1024 ? 180 : 144; 
+      const offset = window.innerWidth >= 1024 ? 200 : 176;
       const elementRect = targetElement.getBoundingClientRect();
       const elementPosition = elementRect.top + window.scrollY;
       const offsetPosition = elementPosition - offset;
@@ -357,7 +357,7 @@ const App: React.FC = () => {
         <Navbar onSearchSelect={handleSearchSelect} />
         
         <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1A1A1A] border-b border-white/5 shadow-2xl">
-          <div className="max-w-[1280px] mx-auto px-6 lg:px-10 flex items-center">
+          <div className="max-w-[1600px] mx-auto px-4 lg:px-6 flex items-center">
             <div 
               ref={catContainerRef}
               className="flex-grow flex gap-6 whitespace-nowrap overflow-x-auto no-scrollbar py-4 lg:py-5 relative"
@@ -369,7 +369,7 @@ const App: React.FC = () => {
                     key={cat}
                     ref={el => { catButtonRefs.current[cat] = el; }}
                     onClick={() => jumpToCategory(cat)}
-                    className={`inline-flex items-center justify-center px-6 py-3 rounded-sm transition-all border font-poppins text-xs md:text-sm ${
+                    className={`inline-flex items-center justify-center px-6 py-3 rounded-sm transition-all border font-poppins text-sm md:text-base ${
                       activeCategory === cat
                         ? 'bg-brand-yellow/15 border-brand-yellow text-brand-yellow'
                         : isCourseTab
@@ -402,10 +402,10 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <main className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-40">
+        <main className="max-w-[1600px] mx-auto px-4 lg:px-6 pb-40">
           <header className="relative py-8 md:py-12 lg:py-16 laptop:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <div className="relative z-20 border-l-4 lg:border-l-8 border-brand-yellow pl-8 lg:pl-12 py-2 lg:py-4">
-              <h1 className="text-3xl md:text-5xl lg:text-6xl laptop:text-7xl xl:text-8xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
                 {SITE_CONTENT.hero.mainTitle}
               </h1>
               <p className="f-small text-brand-gray mt-6 lg:mt-10 font-black tracking-[0.4em] opacity-40">
@@ -439,10 +439,10 @@ const App: React.FC = () => {
           <FAQSection />
         </main>
 
-        <footer className="border-t border-white/5 bg-[#1A1A1A] py-24 md:py-40 px-6 lg:px-10 relative z-10">
-          <div className="max-w-[1280px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
+        <footer className="border-t border-white/5 bg-[#1A1A1A] py-24 md:py-40 px-4 lg:px-6 relative z-10">
+          <div className="max-w-[1600px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
             <div className="space-y-8 flex flex-col items-center md:items-start w-full">
-              <div className="text-xl font-black text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
+              <div className="text-2xl font-black text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
                 {SITE_CONTENT.brandName}
               </div>
               <p className="f-body text-brand-gray/70 leading-relaxed max-w-md font-medium">
@@ -451,7 +451,7 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          <div className="max-w-[1280px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
+          <div className="max-w-[1600px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
             <p className="f-small text-brand-gray/60 font-black">{SITE_CONTENT.footer.copyright}</p>
           </div>
         </footer>
@@ -516,16 +516,16 @@ const App: React.FC = () => {
           />
           <div className="relative w-full max-w-md rounded-lg border border-white/10 bg-[#222222] shadow-2xl overflow-hidden">
             <div className="border-b border-white/10 bg-[#1A1A1A] px-6 py-4">
-              <h2 className="text-lg font-black uppercase tracking-[0.18em] text-white">
+              <h2 className="text-xl font-black uppercase tracking-[0.18em] text-white">
                 Admin Access
               </h2>
-              <p className="mt-2 text-sm text-brand-gray/70">
+              <p className="mt-2 text-base text-brand-gray/70">
                 Enter the admin password to hide prices and the cart icon.
               </p>
             </div>
 
             <form onSubmit={handleAdminPasswordSubmit} className="px-6 py-5">
-              <label className="block text-xs font-bold uppercase tracking-[0.18em] text-white/60 mb-2">
+              <label className="block text-sm font-bold uppercase tracking-[0.18em] text-white/60 mb-2">
                 Password
               </label>
               <input
@@ -542,7 +542,7 @@ const App: React.FC = () => {
                 autoComplete="off"
               />
 
-              <div className="min-h-6 pt-2 text-sm text-red-400">
+              <div className="min-h-6 pt-2 text-base text-red-400">
                 {adminPasswordError}
               </div>
 
@@ -550,13 +550,13 @@ const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeAdminPrompt}
-                  className="rounded-sm border border-white/10 bg-transparent px-4 py-2 text-sm font-bold uppercase tracking-[0.14em] text-white/70 transition-colors hover:border-white/30 hover:text-white"
+                  className="rounded-sm border border-white/10 bg-transparent px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-white/70 transition-colors hover:border-white/30 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-sm border border-brand-yellow bg-brand-yellow px-4 py-2 text-sm font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-transparent hover:text-brand-yellow"
+                  className="rounded-sm border border-brand-yellow bg-brand-yellow px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-transparent hover:text-brand-yellow"
                 >
                   Unlock
                 </button>
