@@ -16,37 +16,56 @@ export const FAQSection: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {FAQS.map((faq, index) => (
-          <div 
-            key={index}
-            className="border border-white/5 rounded-lg bg-[#333333] overflow-hidden transition-all duration-300 hover:border-brand-yellow/20"
-          >
-            <button
-              onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="w-full px-6 py-5 lg:px-8 lg:py-7 flex items-center justify-between text-left group"
-            >
-              <span className="f-body font-bold text-white group-hover:text-brand-yellow transition-colors">
-                {faq.question}
-              </span>
-              <ChevronDown 
-                size={24} 
-                className={`text-brand-gray transition-transform duration-500 ${openIndex === index ? 'rotate-180 text-brand-yellow' : ''}`}
-              />
-            </button>
-            
-            <div 
-              className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        {FAQS.map((faq, index) => {
+          const isOpen = openIndex === index;
+          return (
+            <div
+              key={index}
+              className={`rounded-lg overflow-hidden transition-all duration-300 border ${
+                faq.isCourse
+                  ? 'bg-[#D95F00] border-[#D95F00] hover:border-black/20'
+                  : 'bg-[#333333] border-white/5 hover:border-brand-yellow/20'
               }`}
             >
-              <div className="px-6 pb-6 lg:px-8 lg:pb-8 border-t border-white/5 pt-4">
-                <p className="f-body text-brand-gray/80 leading-relaxed max-w-4xl">
-                  {faq.answer}
-                </p>
+              <button
+                onClick={() => setOpenIndex(isOpen ? null : index)}
+                className="w-full px-6 py-5 lg:px-8 lg:py-7 flex items-center justify-between text-left group"
+              >
+                <span className={`f-body font-bold transition-colors ${
+                  faq.isCourse
+                    ? 'text-black group-hover:text-black/70'
+                    : 'text-white group-hover:text-brand-yellow'
+                }`}>
+                  {faq.question}
+                </span>
+                <ChevronDown
+                  size={24}
+                  className={`transition-transform duration-500 shrink-0 ml-4 ${
+                    faq.isCourse
+                      ? isOpen ? 'rotate-180 text-black/60' : 'text-black/50'
+                      : isOpen ? 'rotate-180 text-brand-yellow' : 'text-brand-gray'
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                  isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className={`px-6 pb-6 lg:px-8 lg:pb-8 pt-4 border-t ${
+                  faq.isCourse ? 'border-black/15' : 'border-white/5'
+                }`}>
+                  <p className={`f-body leading-relaxed max-w-4xl ${
+                    faq.isCourse ? 'text-black/80' : 'text-brand-gray/80'
+                  }`}>
+                    {faq.answer}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

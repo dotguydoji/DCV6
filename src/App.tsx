@@ -5,7 +5,7 @@ import { FAQSection } from './components/FAQSection';
 import { NeuralNetwork } from './components/NeuralNetwork';
 import { CartModal } from './components/CartModal';
 import { NotFoundPage } from './components/NotFoundPage';
-import { PRODUCTS, CATEGORIES, SITE_CONTENT } from "./constants";  
+import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY } from "./constants";
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 
@@ -356,26 +356,31 @@ const App: React.FC = () => {
       <div className="relative z-10">
         <Navbar onSearchSelect={handleSearchSelect} />
         
-        <div className="sticky top-20 lg:top-24 z-50 bg-[#1A1A1A]/95 backdrop-blur-md border-b border-white/5 shadow-2xl">
-          <div className="max-w-[1580px] mx-auto px-6 lg:px-10 flex items-center">
+        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1A1A1A] border-b border-white/5 shadow-2xl">
+          <div className="max-w-[1280px] mx-auto px-6 lg:px-10 flex items-center">
             <div 
               ref={catContainerRef}
               className="flex-grow flex gap-6 whitespace-nowrap overflow-x-auto no-scrollbar py-4 lg:py-5 relative"
             >
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  ref={el => { catButtonRefs.current[cat] = el; }}
-                  onClick={() => jumpToCategory(cat)}
-                  className={`px-6 py-3 rounded-sm transition-all border font-poppins ${
-                    activeCategory === cat 
-                      ? 'bg-brand-yellow/15 border-brand-yellow text-brand-yellow' 
-                      : 'bg-transparent border-white/10 text-brand-gray/50 hover:text-white hover:border-white/30'
-                  } text-xs md:text-sm`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {CATEGORIES.map(cat => {
+                const isCourseTab = cat === AI_COURSES_CATEGORY;
+                return (
+                  <button
+                    key={cat}
+                    ref={el => { catButtonRefs.current[cat] = el; }}
+                    onClick={() => jumpToCategory(cat)}
+                    className={`inline-flex items-center justify-center px-6 py-3 rounded-sm transition-all border font-poppins text-xs md:text-sm ${
+                      activeCategory === cat
+                        ? 'bg-brand-yellow/15 border-brand-yellow text-brand-yellow'
+                        : isCourseTab
+                          ? 'bg-brand-yellow/5 border-brand-yellow/30 text-brand-yellow/60 hover:text-brand-yellow hover:border-brand-yellow'
+                          : 'bg-transparent border-white/10 text-brand-gray/50 hover:text-white hover:border-white/30'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="hidden lg:flex items-center gap-2 pl-6 ml-6 border-l border-white/5">
@@ -397,7 +402,7 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <main className="max-w-[1580px] mx-auto px-6 lg:px-10 pb-40">
+        <main className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-40">
           <header className="relative py-8 md:py-12 lg:py-16 laptop:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
             <div className="relative z-20 border-l-4 lg:border-l-8 border-brand-yellow pl-8 lg:pl-12 py-2 lg:py-4">
               <h1 className="text-3xl md:text-5xl lg:text-6xl laptop:text-7xl xl:text-8xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
@@ -435,7 +440,7 @@ const App: React.FC = () => {
         </main>
 
         <footer className="border-t border-white/5 bg-[#1A1A1A] py-24 md:py-40 px-6 lg:px-10 relative z-10">
-          <div className="max-w-[1580px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
+          <div className="max-w-[1280px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
             <div className="space-y-8 flex flex-col items-center md:items-start w-full">
               <div className="text-xl font-black text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
                 {SITE_CONTENT.brandName}
@@ -446,7 +451,7 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          <div className="max-w-[1580px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
+          <div className="max-w-[1280px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
             <p className="f-small text-brand-gray/60 font-black">{SITE_CONTENT.footer.copyright}</p>
           </div>
         </footer>

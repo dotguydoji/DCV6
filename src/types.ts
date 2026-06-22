@@ -1,4 +1,9 @@
 
+export interface CourseMaterial {
+  type: 'video' | 'pdf';
+  title: string;
+}
+
 export type ProductLanguage = 'en' | 'tl';
 
 export type ProductLevel =
@@ -23,11 +28,14 @@ export interface Product {
   itemKey?: string;
   available?: boolean;
   preOrder?: boolean;
+  isCourse?: boolean;
+  materials?: CourseMaterial[];
 }
 
 export interface FAQItem {
   question: string;
   answer: string;
+  isCourse?: boolean;
 }
 
 export interface SiteContent {

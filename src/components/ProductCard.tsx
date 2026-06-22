@@ -63,16 +63,18 @@ export const ProductCard = memo(
             referrerPolicy="no-referrer"
             onLoad={handleImageLoad}
           />
+
           {product.preOrder && (
             <div className="absolute left-3 top-3 z-10 rounded-full bg-yellow-400 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-lg shadow-black/30">
               Pre-order
             </div>
           )}
+
           <div className="absolute inset-0 bg-gradient-to-t from-[#F5F5DC] to-transparent opacity-40"></div>
         </div>
 
         <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#F5F5DC]">
-          <h3 className="f-body font-poppins font-medium text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 truncate">
+          <h3 className="font-poppins font-bold text-base lg:text-xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 truncate">
             {product.title}
           </h3>
           <p className="f-small normal-case text-gray-600/80 mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80">

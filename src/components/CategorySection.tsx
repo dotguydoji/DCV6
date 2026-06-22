@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, Play } from 'lucide-react';
+import { CourseCard } from './CourseCard';
 import { ProductCard } from './ProductCard';
 import { Product, ProductLanguage, ProductLevel } from '../types';
 
@@ -87,6 +88,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       : (availableLanguages[0] ?? null);
     const defaultLevel = hasLevelToggle ? availableLevels[0] : null;
 
+    const isCourseCategory = products.length > 0 && products.every((p) => p.isCourse);
+
     const filterProducts = (language: ProductLanguage | null, level: ProductLevel | null) =>
       products.filter((product) => {
         if (language && product.language !== language) return false;
@@ -95,8 +98,9 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       });
 
     const visibleProducts = useMemo(
-      () => filterProducts(selectedLanguage, selectedLevel),
-      [products, selectedLanguage, selectedLevel, hasLevelToggle]
+      () => (isCourseCategory ? products : filterProducts(selectedLanguage, selectedLevel)),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [products, selectedLanguage, selectedLevel, hasLevelToggle, isCourseCategory]
     );
     const itemCount = products.length;
 
@@ -250,30 +254,64 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     return (
       <section
         ref={ref}
-        className="transition-all rounded-xl overflow-hidden bg-[#333333] border border-white/5 shadow-2xl mb-8 lg:mb-12 will-change-transform"
+        className={`transition-all rounded-xl overflow-hidden border mb-8 lg:mb-12 will-change-transform ${
+          isCourseCategory
+            ? 'bg-[#D95F00] border-[#D95F00] shadow-2xl'
+            : 'bg-[#333333] border-white/5 shadow-2xl'
+        }`}
       >
-        <div className="category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 bg-black/40 border-b border-white/5">
+        <div className={`category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b ${
+          isCourseCategory
+            ? 'bg-transparent border-black/15'
+            : 'bg-black/40 border-white/5'
+        }`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
             <button
               onClick={onToggle}
               className="flex-grow flex items-center gap-4 text-left outline-none group/title"
               aria-expanded={isOpen}
             >
-              <h2 className="f-heading font-normal text-white group-hover/title:text-brand-yellow transition-colors uppercase tracking-tighter">
+              <h2 className={`f-heading font-normal transition-colors uppercase tracking-tighter ${
+                isCourseCategory
+                  ? 'text-black group-hover/title:text-black/70'
+                  : 'text-white group-hover/title:text-brand-yellow'
+              }`}>
                 {name}
               </h2>
               <div
-                className={`text-brand-gray transition-transform duration-300 p-1 border border-transparent rounded-full ${
-                  isOpen ? 'rotate-180 text-brand-yellow bg-brand-yellow/5' : 'group-hover/title:text-white'
+                className={`transition-transform duration-300 p-1 border border-transparent rounded-full ${
+                  isCourseCategory
+                    ? isOpen
+                      ? 'rotate-180 text-black bg-black/10'
+                      : 'text-black/60 group-hover/title:text-black'
+                    : isOpen
+                      ? 'rotate-180 text-brand-yellow bg-brand-yellow/5'
+                      : 'text-brand-gray group-hover/title:text-white'
                 }`}
               >
                 <ChevronDown size={28} strokeWidth={2.5} />
               </div>
+              {/* Content-type label */}
+              {isCourseCategory ? (
+                <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-black border border-black/20 bg-black/10 px-2.5 py-1 rounded-sm">
+                  <Play size={9} fill="currentColor" strokeWidth={0} />
+                  Video Course
+                </span>
+              ) : (
+                <span className="hidden sm:flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-white/25 border border-white/8 bg-black/20 px-2.5 py-1 rounded-sm">
+                  <FileText size={9} strokeWidth={2} />
+                  PDF
+                </span>
+              )}
             </button>
 
             <div className="flex items-center justify-between sm:justify-end gap-6">
               <div className="hidden sm:flex flex-col items-end">
-                <span className="f-small bg-black/60 text-yellow-300 px-3 py-1.5 rounded-sm border border-white/5 font-extrabold whitespace-nowrap shadow-xl text-lg">
+                <span className={`f-small px-3 py-1.5 rounded-sm border font-extrabold whitespace-nowrap shadow-xl text-lg ${
+                  isCourseCategory
+                    ? 'bg-black/10 text-black border-black/15'
+                    : 'bg-black/60 text-yellow-300 border-white/5'
+                }`}>
                   {itemCount} <span className="opacity-50">ITEMS</span>
                 </span>
               </div>
@@ -363,13 +401,23 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                         data-index={idx}
                         ref={(el) => { mobileCardRefs.current[idx] = el; }}
                       >
-                        <ProductCard
-                          product={product}
-                          isHighlighted={product.id === highlightedProductId}
-                          isSelected={selectedProductIds.has(product.id)}
-                          onToggleSelect={onToggleSelect}
-                          hideCommerce={hideCommerce}
-                        />
+                        {isCourseCategory ? (
+                          <CourseCard
+                            product={product}
+                            isHighlighted={product.id === highlightedProductId}
+                            isSelected={selectedProductIds.has(product.id)}
+                            onToggleSelect={onToggleSelect}
+                            hideCommerce={hideCommerce}
+                          />
+                        ) : (
+                          <ProductCard
+                            product={product}
+                            isHighlighted={product.id === highlightedProductId}
+                            isSelected={selectedProductIds.has(product.id)}
+                            onToggleSelect={onToggleSelect}
+                            hideCommerce={hideCommerce}
+                          />
+                        )}
                       </div>
                     ))}
                     <div className="flex-shrink-0 w-1"></div>
@@ -423,9 +471,9 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               <div className="hidden md:block">
                 <div
                   ref={desktopScrollRef}
-                  className="overflow-y-auto max-h-[820px] no-scrollbar"
+                  className={isCourseCategory ? '' : 'overflow-y-auto max-h-[820px] no-scrollbar'}
                 >
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                  <div className={`grid gap-4 lg:gap-6 ${isCourseCategory ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
                     {visibleProducts.map((product, idx) => (
                       <div
                         key={product.id}
@@ -433,13 +481,23 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                         data-index={idx}
                         ref={(el) => { desktopCardRefs.current[idx] = el; }}
                       >
-                        <ProductCard
-                          product={product}
-                          isHighlighted={product.id === highlightedProductId}
-                          isSelected={selectedProductIds.has(product.id)}
-                          onToggleSelect={onToggleSelect}
-                          hideCommerce={hideCommerce}
-                        />
+                        {isCourseCategory ? (
+                          <CourseCard
+                            product={product}
+                            isHighlighted={product.id === highlightedProductId}
+                            isSelected={selectedProductIds.has(product.id)}
+                            onToggleSelect={onToggleSelect}
+                            hideCommerce={hideCommerce}
+                          />
+                        ) : (
+                          <ProductCard
+                            product={product}
+                            isHighlighted={product.id === highlightedProductId}
+                            isSelected={selectedProductIds.has(product.id)}
+                            onToggleSelect={onToggleSelect}
+                            hideCommerce={hideCommerce}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>

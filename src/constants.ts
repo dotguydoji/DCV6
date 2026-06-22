@@ -1,4 +1,4 @@
-import { FAQItem, Product, ProductLanguage, ProductLevel, SiteContent } from './types';
+import { CourseMaterial, FAQItem, Product, ProductLanguage, ProductLevel, SiteContent } from './types';
 
 const MOBILE_URL = 'https://m.me/103186496068437';
 const DESKTOP_URL = 'https://www.facebook.com/share/p/1HMaPSeaty/';
@@ -8,7 +8,8 @@ const PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY = 'Programming Language Packages';
 const WEB_DEVELOPMENT_CATEGORY = 'Web Development';
 const TOOLS_CATEGORY = 'Tools';
 const FRAMEWORKS_CATEGORY = 'Frameworks';
-const AI_TOOLS_CATEGORY = 'AI Tools';
+export const AI_COURSES_CATEGORY = 'AI Courses with Doji';
+const AI_TOOLS_CATEGORY = 'AI PDF Books';
 const PRODUCTIVITY_CATEGORY = 'Productivity';
 const PREORDER_THUMBNAIL = '/favicon.svg';
 
@@ -52,6 +53,19 @@ interface AIItemMeta {
   price: Record<ProductLanguage, number>;
 }
 
+type AICourseItemKey = 'code-mastery';
+
+interface AICourseItemMeta {
+  itemKey: AICourseItemKey;
+  title: string;
+  description: string;
+  price: number;
+  thumbnail: string;
+  available: boolean;
+  preOrder?: boolean;
+  materials: CourseMaterial[];
+}
+
 interface ToolsItemMeta {
   itemKey: ToolsItemKey;
   title: string;
@@ -87,6 +101,7 @@ export const SITE_CONTENT: SiteContent = {
 };
 
 export const CATEGORIES = [
+  AI_COURSES_CATEGORY,
   PROGRAMMING_LANGUAGES_CATEGORY,
   PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY,
   WEB_DEVELOPMENT_CATEGORY,
@@ -233,6 +248,53 @@ const AI_ITEMS: readonly AIItemMeta[] = [
   }
 ];
 
+const AI_COURSES_ITEMS: readonly AICourseItemMeta[] = [
+  {
+    itemKey: 'code-mastery',
+    title: 'Claude Pro',
+    description:
+      'A complete Claude course covering everything from basics to advanced agentic workflows, design, code, and real-world projects. Every lesson includes a matching PDF reference guide.',
+    price: 3500,
+    thumbnail: '/images/courses/code-mastery.png',
+    available: true,
+    preOrder: true,
+    materials: [
+      { type: 'video', title: 'Claude Basics' },
+      { type: 'video', title: 'Prompt Engineering Basics' },
+      { type: 'video', title: 'Claude Projects Advanced' },
+      { type: 'video', title: 'Claude Artifacts Advanced' },
+      { type: 'video', title: 'Claude Skills Advanced' },
+      { type: 'video', title: 'Claude Memory' },
+      { type: 'video', title: 'Claude Connectors' },
+      { type: 'video', title: 'Claude MCP + MCP Server' },
+      { type: 'video', title: 'Claude Projects + GitHub' },
+      { type: 'video', title: 'Publishing a Website Portfolio with Claude Artifacts' },
+      { type: 'video', title: 'Claude Design' },
+      { type: 'video', title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
+      { type: 'video', title: 'Claude Goal and Loop Engineering (Slash Commands)' },
+      { type: 'video', title: 'Claude Cowork' },
+      { type: 'video', title: 'Claude Dispatch (Phone-to-Desktop Control)' },
+      { type: 'video', title: 'Claude in Chrome' },
+      { type: 'pdf',   title: 'Claude Basics' },
+      { type: 'pdf',   title: 'Prompt Engineering Basics' },
+      { type: 'pdf',   title: 'Claude Projects Advanced' },
+      { type: 'pdf',   title: 'Claude Artifacts Advanced' },
+      { type: 'pdf',   title: 'Claude Skills Advanced' },
+      { type: 'pdf',   title: 'Claude Memory' },
+      { type: 'pdf',   title: 'Claude Connectors' },
+      { type: 'pdf',   title: 'Claude MCP + MCP Server' },
+      { type: 'pdf',   title: 'Claude Projects + GitHub' },
+      { type: 'pdf',   title: 'Publishing a Website Portfolio with Claude Artifacts' },
+      { type: 'pdf',   title: 'Claude Design' },
+      { type: 'pdf',   title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
+      { type: 'pdf',   title: 'Claude Goal and Loop Engineering (Slash Commands)' },
+      { type: 'pdf',   title: 'Claude Cowork' },
+      { type: 'pdf',   title: 'Claude Dispatch (Phone-to-Desktop Control)' },
+      { type: 'pdf',   title: 'Claude in Chrome' }
+    ]
+  }
+];
+
 const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
   {
     itemKey: 'freshman-prep',
@@ -253,7 +315,7 @@ const createProduct = (product: ProductSeed): Product => ({
   desktopUrl: DESKTOP_URL,
   available: true,
   ...product,
-  thumbnail: product.preOrder ? PREORDER_THUMBNAIL : product.thumbnail
+  thumbnail: product.preOrder && !product.isCourse ? PREORDER_THUMBNAIL : product.thumbnail
 });
 
 const getProgrammingLanguageTitle = (languageName: string, level: ProductLevel) => {
@@ -337,8 +399,13 @@ const getAiThumbnail = (itemKey: AIItemKey, language: ProductLanguage) => {
     case 'claude-code-notes':
       return `/images/ai-tools/claude-code-${LANGUAGE_FILE_SEGMENT[language]}.png`;
     case 'claude-mcp':
+      return language === 'en'
+        ? '/images/ai-tools/claude-mcp-eng.png'
+        : '/images/ai-tools/claude-mcp-tag.png';
     case 'claude-subagents':
-      return '/favicon.svg';
+      return language === 'en'
+        ? '/images/ai-tools/claude-subagents-eng.png'
+        : '/images/ai-tools/claude-subagents-tag.png';
     default:
       return '/web-app-manifest-512x512.png';
   }
@@ -429,7 +496,7 @@ const aiProducts = AI_ITEMS.flatMap((item) =>
       thumbnail: getAiThumbnail(item.itemKey, language),
       category: AI_TOOLS_CATEGORY,
       language,
-      preOrder: item.itemKey === 'claude-mcp' || item.itemKey === 'claude-subagents'
+      preOrder: false
     })
   )
 );
@@ -448,11 +515,28 @@ const productivityProducts = PRODUCTIVITY_ITEMS.map((item) =>
   })
 );
 
+const courseProducts = AI_COURSES_ITEMS.map((item) =>
+  createProduct({
+    id: `course-${item.itemKey}`,
+    itemKey: item.itemKey,
+    title: item.title,
+    description: item.description,
+    price: item.price,
+    thumbnail: item.thumbnail,
+    category: AI_COURSES_CATEGORY,
+    available: item.available,
+    preOrder: item.preOrder,
+    isCourse: true,
+    materials: item.materials
+  })
+);
+
 export const PRODUCTS: Product[] = [
   ...programmingLanguageProducts,
   ...programmingLanguagePackageProducts,
   ...webDevelopmentProducts,
   ...toolsProducts,
+  ...courseProducts,
   ...aiProducts,
   ...productivityProducts
 ];
@@ -479,5 +563,20 @@ export const FAQS: FAQItem[] = [
     question: 'How often are the notes updated?',
     answer:
       'The notes are regularly updated. Whenever we upload a new tutorial on YouTube, we also update the PDF notes so your material stays fresh and relevant.'
-  }
+  },
+  {
+    question: 'How will I access the courses after purchase?',
+    answer: 'After your payment is confirmed, you will be given an access link where you can watch all course materials online.',
+    isCourse: true
+  },
+  {
+    question: 'What do the courses include?',
+    answer: 'The courses include downloadable PDF materials and video lessons designed to guide you step-by-step through the topics.',
+    isCourse: true
+  },
+  {
+    question: 'Will I receive the files directly after buying?',
+    answer: 'No, the course materials are not sent as individual files. Instead, you will be given access through a link where you can view everything anytime.',
+    isCourse: true
+  },
 ];
