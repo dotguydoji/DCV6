@@ -9,7 +9,7 @@ const WEB_DEVELOPMENT_CATEGORY = 'Web Development';
 const TOOLS_CATEGORY = 'Tools';
 const FRAMEWORKS_CATEGORY = 'Frameworks';
 export const AI_COURSES_CATEGORY = 'AI Courses with Doji';
-const AI_TOOLS_CATEGORY = 'AI PDF Books';
+const AI_TOOLS_CATEGORY = 'Claude Notes';
 const PRODUCTIVITY_CATEGORY = 'Productivity';
 const PREORDER_THUMBNAIL = '/favicon.svg';
 
@@ -21,7 +21,24 @@ const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
 type ProgrammingLanguageKey = 'c' | 'cpp' | 'csharp' | 'java' | 'javascript' | 'python';
 type WebDevelopmentKey = 'html' | 'css' | 'jsdom' | 'package';
 type ToolsItemKey = 'git-github-notes';
-type AIItemKey = 'claude-code-notes' | 'claude-mcp' | 'claude-subagents';
+type AIItemKey =
+  | 'claude-code-notes'
+  | 'claude-mcp'
+  | 'claude-subagents'
+  | 'prompt-engineering-basics'
+  | 'claude-projects-advanced'
+  | 'claude-artifacts-advanced'
+  | 'claude-skills-advanced'
+  | 'claude-memory'
+  | 'claude-connectors'
+  | 'claude-projects-github'
+  | 'publishing-website-portfolio'
+  | 'claude-design'
+  | 'claude-code-advanced'
+  | 'claude-goal-loop-engineering'
+  | 'claude-cowork'
+  | 'claude-dispatch'
+  | 'claude-in-chrome';
 type ProductivityItemKey = 'freshman-prep';
 
 interface ProgrammingLanguageMeta {
@@ -245,6 +262,132 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       tl: 'Claude Subagents notes para hati-hatiin ang tasks sa mas maliliit na helpers at mas mapaganda ang multi-step coding support.'
     },
     price: { en: 150, tl: 200 }
+  },
+  {
+    itemKey: 'prompt-engineering-basics',
+    title: 'Prompt Engineering Basics',
+    description: {
+      en: 'Foundational prompt engineering notes covering techniques, patterns, and best practices for effective AI communication.',
+      tl: 'Pundamental na prompt engineering notes na sumasaklaw sa mga techniques, patterns, at best practices para sa epektibong AI communication.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-projects-advanced',
+    title: 'Claude Projects Advanced',
+    description: {
+      en: 'Advanced Claude Projects notes for organizing knowledge, managing context, and building structured project workflows.',
+      tl: 'Advanced Claude Projects notes para sa pag-organisa ng knowledge, pamamahala ng context, at pagbuo ng structured project workflows.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-artifacts-advanced',
+    title: 'Claude Artifacts Advanced',
+    description: {
+      en: 'Advanced Claude Artifacts notes for creating interactive content, applications, and reusable components.',
+      tl: 'Advanced Claude Artifacts notes para sa paggawa ng interactive content, applications, at reusable components.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-skills-advanced',
+    title: 'Claude Skills Advanced',
+    description: {
+      en: 'Advanced Claude Skills notes for building custom slash commands and extending Claude capabilities.',
+      tl: 'Advanced Claude Skills notes para sa pagbuo ng custom slash commands at pagpapalawak ng Claude capabilities.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-memory',
+    title: 'Claude Memory',
+    description: {
+      en: 'Claude Memory notes covering persistent memory systems, context management, and knowledge retention strategies.',
+      tl: 'Claude Memory notes na sumasaklaw sa persistent memory systems, context management, at knowledge retention strategies.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-connectors',
+    title: 'Claude Connectors',
+    description: {
+      en: 'Claude Connectors notes for integrating external data sources and services directly into Claude workflows.',
+      tl: 'Claude Connectors notes para sa pag-integrate ng external data sources at services direkta sa Claude workflows.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-projects-github',
+    title: 'Claude Projects + GitHub',
+    description: {
+      en: 'Notes on connecting Claude Projects with GitHub for seamless version control and collaborative development.',
+      tl: 'Notes sa pag-connect ng Claude Projects sa GitHub para sa seamless version control at collaborative development.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'publishing-website-portfolio',
+    title: 'Publishing a Website Portfolio with Claude Artifacts',
+    description: {
+      en: 'Step-by-step notes on building and publishing a website portfolio using Claude Artifacts.',
+      tl: 'Step-by-step na notes sa pagbuo at pag-publish ng website portfolio gamit ang Claude Artifacts.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-design',
+    title: 'Claude Design',
+    description: {
+      en: 'Claude Design notes covering UI/UX design workflows, visual creation, and design-to-code techniques.',
+      tl: 'Claude Design notes na sumasaklaw sa UI/UX design workflows, visual creation, at design-to-code techniques.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-code-advanced',
+    title: 'Claude Code Advanced',
+    description: {
+      en: 'Advanced Claude Code notes for terminal, IDE integrations, and professional development workflows.',
+      tl: 'Advanced Claude Code notes para sa terminal, IDE integrations, at professional development workflows.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-goal-loop-engineering',
+    title: 'Claude Goal and Loop Engineering',
+    description: {
+      en: 'Notes on Claude goal-setting and loop engineering for automated, recurring, and self-pacing workflows.',
+      tl: 'Notes sa Claude goal-setting at loop engineering para sa automated, recurring, at self-pacing workflows.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-cowork',
+    title: 'Claude Cowork',
+    description: {
+      en: 'Claude Cowork notes for collaborative AI sessions, shared workspaces, and team-based workflows.',
+      tl: 'Claude Cowork notes para sa collaborative AI sessions, shared workspaces, at team-based workflows.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-dispatch',
+    title: 'Claude Dispatch',
+    description: {
+      en: 'Claude Dispatch notes for controlling Claude remotely from your phone to your desktop.',
+      tl: 'Claude Dispatch notes para sa remote control ng Claude mula sa iyong phone papunta sa iyong desktop.'
+    },
+    price: { en: 99, tl: 99 }
+  },
+  {
+    itemKey: 'claude-in-chrome',
+    title: 'Claude in Chrome',
+    description: {
+      en: 'Claude in Chrome notes for browser-based AI workflows, web automation, and Chrome extension usage.',
+      tl: 'Claude in Chrome notes para sa browser-based AI workflows, web automation, at Chrome extension usage.'
+    },
+    price: { en: 99, tl: 99 }
   }
 ];
 
@@ -395,17 +538,42 @@ const getToolsThumbnail = (itemKey: ToolsItemKey, language: ProductLanguage) => 
 };
 
 const getAiThumbnail = (itemKey: AIItemKey, language: ProductLanguage) => {
+  const seg = LANGUAGE_FILE_SEGMENT[language];
   switch (itemKey) {
     case 'claude-code-notes':
-      return `/images/ai-tools/claude-code-${LANGUAGE_FILE_SEGMENT[language]}.png`;
+      return `/images/ai-tools/claude-code-${seg}.png`;
     case 'claude-mcp':
-      return language === 'en'
-        ? '/images/ai-tools/claude-mcp-eng.png'
-        : '/images/ai-tools/claude-mcp-tag.png';
+      return `/images/ai-tools/claude-mcp-${seg === 'english' ? 'eng' : 'tag'}.png`;
     case 'claude-subagents':
-      return language === 'en'
-        ? '/images/ai-tools/claude-subagents-eng.png'
-        : '/images/ai-tools/claude-subagents-tag.png';
+      return `/images/ai-tools/claude-subagents-${seg === 'english' ? 'eng' : 'tag'}.png`;
+    case 'prompt-engineering-basics':
+      return `/images/ai-tools/prompt-engineering-basics-${seg}.png`;
+    case 'claude-projects-advanced':
+      return `/images/ai-tools/claude-projects-advanced-${seg}.png`;
+    case 'claude-artifacts-advanced':
+      return `/images/ai-tools/claude-artifacts-advanced-${seg}.png`;
+    case 'claude-skills-advanced':
+      return `/images/ai-tools/claude-skills-advanced-${seg}.png`;
+    case 'claude-memory':
+      return `/images/ai-tools/claude-memory-${seg}.png`;
+    case 'claude-connectors':
+      return `/images/ai-tools/claude-connectors-${seg}.png`;
+    case 'claude-projects-github':
+      return `/images/ai-tools/claude-projects-github-${seg}.png`;
+    case 'publishing-website-portfolio':
+      return `/images/ai-tools/publishing-website-portfolio-${seg}.png`;
+    case 'claude-design':
+      return `/images/ai-tools/claude-design-${seg}.png`;
+    case 'claude-code-advanced':
+      return `/images/ai-tools/claude-code-advanced-${seg}.png`;
+    case 'claude-goal-loop-engineering':
+      return `/images/ai-tools/claude-goal-loop-engineering-${seg}.png`;
+    case 'claude-cowork':
+      return `/images/ai-tools/claude-cowork-${seg}.png`;
+    case 'claude-dispatch':
+      return `/images/ai-tools/claude-dispatch-${seg}.png`;
+    case 'claude-in-chrome':
+      return `/images/ai-tools/claude-in-chrome-${seg}.png`;
     default:
       return '/web-app-manifest-512x512.png';
   }
