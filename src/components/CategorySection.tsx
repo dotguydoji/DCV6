@@ -26,7 +26,8 @@ const LEVEL_ORDER: ProductLevel[] = [
   'intermediate',
   'advanced',
   'build-phase',
-  'activities'
+  'activities',
+  'package'
 ];
 
 const LEVEL_LABEL: Record<ProductLevel, string> = {
@@ -34,7 +35,8 @@ const LEVEL_LABEL: Record<ProductLevel, string> = {
   intermediate: 'Intermediate',
   advanced: 'Advanced',
   'build-phase': 'Build Phase',
-  activities: 'Activities'
+  activities: 'Activities',
+  package: 'Packages'
 };
 
 const getProductFocusKey = (product: Product) => product.itemKey ?? product.id;

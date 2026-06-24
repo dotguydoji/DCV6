@@ -4,12 +4,11 @@ const MOBILE_URL = 'https://m.me/103186496068437';
 const DESKTOP_URL = 'https://www.facebook.com/share/p/1HMaPSeaty/';
 
 const PROGRAMMING_LANGUAGES_CATEGORY = 'Programming Languages';
-const PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY = 'Programming Language Packages';
-const WEB_DEVELOPMENT_CATEGORY = 'Web Development';
-const TOOLS_CATEGORY = 'Tools';
+const WEB_DEVELOPMENT_CATEGORY = 'Web Dev & Tools';
 const FRAMEWORKS_CATEGORY = 'Frameworks';
-export const AI_COURSES_CATEGORY = 'AI Courses with Doji';
+export const AI_COURSES_CATEGORY = 'Courses';
 const AI_TOOLS_CATEGORY = 'Claude Notes';
+const AI_AUTOMATION_CATEGORY = 'AI Tools & Automations';
 const PRODUCTIVITY_CATEGORY = 'Productivity';
 const PREORDER_THUMBNAIL = '/favicon.svg';
 
@@ -39,6 +38,7 @@ type AIItemKey =
   | 'claude-cowork'
   | 'claude-dispatch'
   | 'claude-in-chrome';
+type AIAutomationItemKey = 'n8n-automation' | 'openclo' | 'hermes-agent';
 type ProductivityItemKey = 'freshman-prep';
 
 interface ProgrammingLanguageMeta {
@@ -65,6 +65,13 @@ interface WebDevelopmentMeta {
 
 interface AIItemMeta {
   itemKey: AIItemKey;
+  title: string;
+  description: Record<ProductLanguage, string>;
+  price: Record<ProductLanguage, number>;
+}
+
+interface AIAutomationItemMeta {
+  itemKey: AIAutomationItemKey;
   title: string;
   description: Record<ProductLanguage, string>;
   price: Record<ProductLanguage, number>;
@@ -120,11 +127,10 @@ export const SITE_CONTENT: SiteContent = {
 export const CATEGORIES = [
   AI_COURSES_CATEGORY,
   PROGRAMMING_LANGUAGES_CATEGORY,
-  PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY,
   WEB_DEVELOPMENT_CATEGORY,
-  TOOLS_CATEGORY,
   FRAMEWORKS_CATEGORY,
   AI_TOOLS_CATEGORY,
+  AI_AUTOMATION_CATEGORY,
   PRODUCTIVITY_CATEGORY
 ];
 
@@ -175,7 +181,15 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 99, tl: 99 },
+    price: { en: 99, tl: 120 },
+    available: true
+  },
+  {
+    key: 'package',
+    label: 'Packages',
+    folder: 'programming-languages-packages',
+    fileSuffix: 'package',
+    price: { en: 400, tl: 500 },
     available: true
   }
 ];
@@ -270,7 +284,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Foundational prompt engineering notes covering techniques, patterns, and best practices for effective AI communication.',
       tl: 'Pundamental na prompt engineering notes na sumasaklaw sa mga techniques, patterns, at best practices para sa epektibong AI communication.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-projects-advanced',
@@ -279,7 +293,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Advanced Claude Projects notes for organizing knowledge, managing context, and building structured project workflows.',
       tl: 'Advanced Claude Projects notes para sa pag-organisa ng knowledge, pamamahala ng context, at pagbuo ng structured project workflows.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-artifacts-advanced',
@@ -288,7 +302,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Advanced Claude Artifacts notes for creating interactive content, applications, and reusable components.',
       tl: 'Advanced Claude Artifacts notes para sa paggawa ng interactive content, applications, at reusable components.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-skills-advanced',
@@ -297,7 +311,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Advanced Claude Skills notes for building custom slash commands and extending Claude capabilities.',
       tl: 'Advanced Claude Skills notes para sa pagbuo ng custom slash commands at pagpapalawak ng Claude capabilities.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-memory',
@@ -306,7 +320,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Memory notes covering persistent memory systems, context management, and knowledge retention strategies.',
       tl: 'Claude Memory notes na sumasaklaw sa persistent memory systems, context management, at knowledge retention strategies.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-connectors',
@@ -315,7 +329,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Connectors notes for integrating external data sources and services directly into Claude workflows.',
       tl: 'Claude Connectors notes para sa pag-integrate ng external data sources at services direkta sa Claude workflows.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-projects-github',
@@ -324,7 +338,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Notes on connecting Claude Projects with GitHub for seamless version control and collaborative development.',
       tl: 'Notes sa pag-connect ng Claude Projects sa GitHub para sa seamless version control at collaborative development.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'publishing-website-portfolio',
@@ -333,7 +347,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Step-by-step notes on building and publishing a website portfolio using Claude Artifacts.',
       tl: 'Step-by-step na notes sa pagbuo at pag-publish ng website portfolio gamit ang Claude Artifacts.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-design',
@@ -342,7 +356,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Design notes covering UI/UX design workflows, visual creation, and design-to-code techniques.',
       tl: 'Claude Design notes na sumasaklaw sa UI/UX design workflows, visual creation, at design-to-code techniques.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-code-advanced',
@@ -351,7 +365,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Advanced Claude Code notes for terminal, IDE integrations, and professional development workflows.',
       tl: 'Advanced Claude Code notes para sa terminal, IDE integrations, at professional development workflows.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-goal-loop-engineering',
@@ -360,7 +374,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Notes on Claude goal-setting and loop engineering for automated, recurring, and self-pacing workflows.',
       tl: 'Notes sa Claude goal-setting at loop engineering para sa automated, recurring, at self-pacing workflows.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-cowork',
@@ -369,7 +383,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Cowork notes for collaborative AI sessions, shared workspaces, and team-based workflows.',
       tl: 'Claude Cowork notes para sa collaborative AI sessions, shared workspaces, at team-based workflows.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-dispatch',
@@ -378,7 +392,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Dispatch notes for controlling Claude remotely from your phone to your desktop.',
       tl: 'Claude Dispatch notes para sa remote control ng Claude mula sa iyong phone papunta sa iyong desktop.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
   },
   {
     itemKey: 'claude-in-chrome',
@@ -387,7 +401,37 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude in Chrome notes for browser-based AI workflows, web automation, and Chrome extension usage.',
       tl: 'Claude in Chrome notes para sa browser-based AI workflows, web automation, at Chrome extension usage.'
     },
-    price: { en: 99, tl: 99 }
+    price: { en: 99, tl: 120 }
+  }
+];
+
+const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
+  {
+    itemKey: 'n8n-automation',
+    title: 'n8n Automation',
+    description: {
+      en: 'n8n Automation notes for building visual workflows, integrating APIs, and automating tasks without code.',
+      tl: 'n8n Automation notes para sa pagbuo ng visual workflows, pag-integrate ng APIs, at pag-automate ng tasks nang walang code.'
+    },
+    price: { en: 299, tl: 350 }
+  },
+  {
+    itemKey: 'openclo',
+    title: 'Open Claw',
+    description: {
+      en: 'Open Claw notes for open-source AI clothing and fashion generation workflows.',
+      tl: 'Open Claw notes para sa open-source AI clothing at fashion generation workflows.'
+    },
+    price: { en: 299, tl: 350 }
+  },
+  {
+    itemKey: 'hermes-agent',
+    title: 'Hermes Agent',
+    description: {
+      en: 'Hermes Agent notes for building and deploying autonomous AI agents with structured task execution.',
+      tl: 'Hermes Agent notes para sa pagbuo at pag-deploy ng autonomous AI agents na may structured task execution.'
+    },
+    price: { en: 299, tl: 350 }
   }
 ];
 
@@ -465,6 +509,8 @@ const getProgrammingLanguageTitle = (languageName: string, level: ProductLevel) 
   switch (level) {
     case 'activities':
       return `${languageName} Activities`;
+    case 'package':
+      return `${languageName} Package`;
     case 'build-phase':
       return `${languageName} Build Phase`;
     case 'beginner':
@@ -483,6 +529,12 @@ const getProgrammingLanguageDescription = (
   level: ProductLevel,
   language: ProductLanguage
 ) => {
+  if (level === 'package') {
+    return language === 'tl'
+      ? `Bundled ${languageName} package sa Tagalog version para sa mas kumpletong learning set.`
+      : `Bundled ${languageName} package in the English version for a more complete learning set.`;
+  }
+
   if (level === 'build-phase') {
     return language === 'tl'
       ? `Ang ${languageName} Build Phase ay inihahanda pa at magiging available soon.`
@@ -517,11 +569,6 @@ const getProgrammingLanguageThumbnail = (
   level: ProgrammingLevelMeta,
   language: ProductLanguage
 ) => `/images/${level.folder}/${itemKey}-${level.fileSuffix}-${LANGUAGE_FILE_SEGMENT[language]}.png`;
-
-const getProgrammingLanguagePackageThumbnail = (
-  itemKey: ProgrammingLanguageKey,
-  language: ProductLanguage
-) => `/images/programming-languages-packages/${itemKey}-package-${LANGUAGE_FILE_SEGMENT[language]}.png`;
 
 const getWebDevelopmentThumbnail = (fileStem: string, language: ProductLanguage) =>
   fileStem === 'webdev-package'
@@ -570,24 +617,6 @@ const programmingLanguageProducts = PROGRAMMING_LEVELS.flatMap((level) =>
   )
 );
 
-const programmingLanguagePackageProducts = PROGRAMMING_LANGUAGES.flatMap((languageMeta) =>
-  (['en', 'tl'] as const).map((language) =>
-    createProduct({
-      id: `pl-package-${languageMeta.itemKey}-${language}`,
-      itemKey: languageMeta.itemKey,
-      title: `${languageMeta.name} Package`,
-      description:
-        language === 'tl'
-          ? `Bundled ${languageMeta.name} package sa Tagalog version para sa mas kumpletong learning set.`
-          : `Bundled ${languageMeta.name} package in the English version for a more complete learning set.`,
-      price: language === 'tl' ? 500 : 400,
-      thumbnail: getProgrammingLanguagePackageThumbnail(languageMeta.itemKey, language),
-      category: PROGRAMMING_LANGUAGE_PACKAGES_CATEGORY,
-      language
-    })
-  )
-);
-
 const webDevelopmentProducts = WEB_DEVELOPMENT_ITEMS.flatMap((item) =>
   (['en', 'tl'] as const).map((language) =>
     createProduct({
@@ -619,7 +648,7 @@ const toolsProducts = TOOLS_ITEMS.flatMap((item) =>
       description: item.description[language],
       price: item.price[language],
       thumbnail: getToolsThumbnail(item.itemKey, language),
-      category: TOOLS_CATEGORY,
+      category: WEB_DEVELOPMENT_CATEGORY,
       language
     })
   )
@@ -635,6 +664,22 @@ const aiProducts = AI_ITEMS.flatMap((item) =>
       price: item.price[language],
       thumbnail: getAiThumbnail(item.itemKey, language),
       category: AI_TOOLS_CATEGORY,
+      language,
+      preOrder: false
+    })
+  )
+);
+
+const aiAutomationProducts = AI_AUTOMATION_ITEMS.flatMap((item) =>
+  (['en', 'tl'] as const).map((language) =>
+    createProduct({
+      id: `ai-auto-${item.itemKey}-${language}`,
+      itemKey: item.itemKey,
+      title: item.title,
+      description: item.description[language],
+      price: item.price[language],
+      thumbnail: '/favicon.svg',
+      category: AI_AUTOMATION_CATEGORY,
       language,
       preOrder: false
     })
@@ -673,11 +718,11 @@ const courseProducts = AI_COURSES_ITEMS.map((item) =>
 
 export const PRODUCTS: Product[] = [
   ...programmingLanguageProducts,
-  ...programmingLanguagePackageProducts,
   ...webDevelopmentProducts,
   ...toolsProducts,
   ...courseProducts,
   ...aiProducts,
+  ...aiAutomationProducts,
   ...productivityProducts
 ];
 

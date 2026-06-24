@@ -11,7 +11,8 @@ export type ProductLevel =
   | 'intermediate'
   | 'advanced'
   | 'build-phase'
-  | 'activities';
+  | 'activities'
+  | 'package';
 
 export interface Product {
   id: string;
