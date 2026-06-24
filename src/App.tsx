@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Navbar } from './components/Navbar';
 import { CategorySection } from './components/CategorySection';
 import { FAQSection } from './components/FAQSection';
-import { NeuralNetwork } from './components/NeuralNetwork';
 import { CartModal } from './components/CartModal';
 import { NotFoundPage } from './components/NotFoundPage';
 import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY } from "./constants";
@@ -347,7 +346,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] font-sans selection:bg-brand-yellow selection:text-black relative">
+    <div className="min-h-screen font-sans selection:bg-brand-yellow selection:text-black relative">
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] ambient-glow opacity-40"></div>
         <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
@@ -356,7 +355,7 @@ const App: React.FC = () => {
       <div className="relative z-10">
         <Navbar onSearchSelect={handleSearchSelect} />
         
-        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1A1A1A] border-b border-white/5 shadow-2xl">
+        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1a1d1e] border-b border-white/5 shadow-2xl">
           <div className="max-w-[1600px] mx-auto px-4 lg:px-6 flex items-center">
             <div 
               ref={catContainerRef}
@@ -402,21 +401,23 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <main className="max-w-[1600px] mx-auto px-4 lg:px-6 pb-40">
-          <header className="relative py-8 md:py-12 lg:py-16 laptop:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+        <header className="relative w-full py-8 md:py-12 lg:py-16 laptop:py-20 bg-[#1a1d1e] overflow-hidden">
+          <div className="hero-dots"></div>
+          <div className="absolute -top-20 -right-20 w-[280px] h-[280px] rounded-full border border-[rgba(230,204,179,0.28)] pointer-events-none"></div>
+          <div className="absolute -bottom-16 -left-16 w-[200px] h-[200px] rounded-full border border-[rgba(230,204,179,0.28)] pointer-events-none"></div>
+          <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
             <div className="relative z-20 border-l-4 lg:border-l-8 border-brand-yellow pl-8 lg:pl-12 py-2 lg:py-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-black text-white leading-[1.1] tracking-tighter drop-shadow-2xl">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-black text-[#e6ccb3] leading-[1.1] tracking-tighter drop-shadow-2xl">
                 {SITE_CONTENT.hero.mainTitle}
               </h1>
-              <p className="f-small text-brand-gray mt-6 lg:mt-10 font-black tracking-[0.4em] opacity-40">
+              <p className="f-small text-[#8a7d6f] mt-6 lg:mt-10 font-black tracking-[0.4em] opacity-40">
                 {SITE_CONTENT.hero.subTitle}
               </p>
             </div>
-            
-            <div className="absolute inset-0 z-10 opacity-70 lg:relative lg:inset-auto lg:z-auto lg:opacity-100 pointer-events-none h-full min-h-[250px] lg:h-[350px] xl:h-[450px]">
-              <NeuralNetwork />
-            </div>
-          </header>
+          </div>
+        </header>
+
+        <main className="max-w-[1600px] mx-auto px-4 lg:px-6 pb-40">
 
           <div className="relative">
             {CATEGORIES.map(categoryName => (
@@ -439,7 +440,7 @@ const App: React.FC = () => {
           <FAQSection />
         </main>
 
-        <footer className="border-t border-white/5 bg-[#1A1A1A] py-24 md:py-40 px-4 lg:px-6 relative z-10">
+        <footer className="border-t border-white/5 bg-[#1a1d1e] py-24 md:py-40 px-4 lg:px-6 relative z-10">
           <div className="max-w-[1600px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
             <div className="space-y-8 flex flex-col items-center md:items-start w-full">
               <div className="text-2xl font-black text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
@@ -461,12 +462,12 @@ const App: React.FC = () => {
             ref={cartButtonRef}
             onClick={() => setIsCartOpen(true)}
             key={cartBounceKey}
-            className="fixed bottom-6 right-6 z-[99] bg-white text-black p-4 rounded-full shadow-2xl hover:bg-yellow-400 transition-all duration-300 active:scale-95 group cart-bounce"
+            className="fixed bottom-6 right-6 z-[99] bg-brand-yellow text-[#1a1d1e] p-4 rounded-full shadow-2xl hover:bg-brand-yellow/80 transition-all duration-300 active:scale-95 group cart-bounce"
             aria-label="Open cart"
           >
             <ShoppingCart size={28} strokeWidth={2.5} />
             {selectedProducts.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-[#0D0D0D]">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-[#1e2122]">
                 {selectedProducts.length}
               </span>
             )}
@@ -514,8 +515,8 @@ const App: React.FC = () => {
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             onClick={closeAdminPrompt}
           />
-          <div className="relative w-full max-w-md rounded-lg border border-white/10 bg-[#222222] shadow-2xl overflow-hidden">
-            <div className="border-b border-white/10 bg-[#1A1A1A] px-6 py-4">
+          <div className="relative w-full max-w-md rounded-lg border border-white/10 bg-[#2a2e2f] shadow-2xl overflow-hidden">
+            <div className="border-b border-white/10 bg-[#1a1d1e] px-6 py-4">
               <h2 className="text-xl font-black uppercase tracking-[0.18em] text-white">
                 Admin Access
               </h2>

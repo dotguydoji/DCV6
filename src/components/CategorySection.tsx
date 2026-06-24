@@ -261,14 +261,14 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         ref={ref}
         className={`transition-all rounded-xl overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform ${
           isCourseCategory
-            ? 'bg-[#D95F00] border-[#D95F00] shadow-2xl'
-            : 'bg-[#333333] border-white/5 shadow-2xl'
+            ? 'bg-[#e6ccb3] border-[#e6ccb3] shadow-2xl'
+            : 'bg-[#34393a] border-white/5 shadow-2xl'
         }`}
       >
         <div className={`category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b ${
           isCourseCategory
             ? 'bg-transparent border-black/15'
-            : 'bg-black/40 border-white/5'
+            : 'bg-[#1a1d1e]/40 border-white/5'
         }`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
             <button
@@ -278,7 +278,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
             >
               <h2 className={`f-heading font-normal transition-colors uppercase tracking-tighter ${
                 isCourseCategory
-                  ? 'text-black group-hover/title:text-black/70'
+                  ? 'text-[#1a1d1e] group-hover/title:text-[#1a1d1e]/70'
                   : 'text-white group-hover/title:text-brand-yellow'
               }`}>
                 {name}
@@ -287,8 +287,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                 className={`transition-transform duration-300 p-1 border border-transparent rounded-full ${
                   isCourseCategory
                     ? isOpen
-                      ? 'rotate-180 text-black bg-black/10'
-                      : 'text-black/60 group-hover/title:text-black'
+                      ? 'rotate-180 text-[#1a1d1e] bg-[#1a1d1e]/10'
+                      : 'text-[#1a1d1e]/60 group-hover/title:text-[#1a1d1e]'
                     : isOpen
                       ? 'rotate-180 text-brand-yellow bg-brand-yellow/5'
                       : 'text-brand-gray group-hover/title:text-white'
@@ -298,12 +298,12 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               </div>
               {/* Content-type label */}
               {isCourseCategory ? (
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-black border border-black/20 bg-black/10 px-2.5 py-1 rounded-sm">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#1a1d1e] border border-black/20 bg-[#1a1d1e]/10 px-2.5 py-1 rounded-sm">
                   <Play size={9} fill="currentColor" strokeWidth={0} />
                   Video Course
                 </span>
               ) : (
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-white/25 border border-white/8 bg-black/20 px-2.5 py-1 rounded-sm">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-white/25 border border-white/8 bg-[#1a1d1e]/20 px-2.5 py-1 rounded-sm">
                   <FileText size={9} strokeWidth={2} />
                   PDF
                 </span>
@@ -314,8 +314,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               <div className="hidden sm:flex flex-col items-end">
                 <span className={`f-small px-3 py-1.5 rounded-sm border font-extrabold whitespace-nowrap shadow-xl text-xl ${
                   isCourseCategory
-                    ? 'bg-black/10 text-black border-black/15'
-                    : 'bg-black/60 text-yellow-300 border-white/5'
+                    ? 'bg-[#1a1d1e]/10 text-[#1a1d1e] border-black/15'
+                    : 'bg-[#1a1d1e]/60 text-brand-yellow border-white/5'
                 }`}>
                   {itemCount} <span className="opacity-50">ITEMS</span>
                 </span>
@@ -339,10 +339,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                 aria-pressed={selectedLanguage === 'en'}
                 className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'en'
-                    ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
+                    ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
                     : availableLanguages.includes('en')
-                      ? 'bg-black text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
-                      : 'bg-black/40 text-white/30 border-white/5 cursor-not-allowed'
+                      ? 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
+                      : 'bg-[#1a1d1e]/40 text-white/30 border-white/5 cursor-not-allowed'
                 }`}
                 style={{ textShadow: selectedLanguage === 'en' ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
               >
@@ -355,10 +355,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                 aria-pressed={selectedLanguage === 'tl'}
                 className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'tl'
-                    ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
+                    ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
                     : availableLanguages.includes('tl')
-                      ? 'bg-black text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
-                      : 'bg-black/40 text-white/30 border-white/5 cursor-not-allowed'
+                      ? 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
+                      : 'bg-[#1a1d1e]/40 text-white/30 border-white/5 cursor-not-allowed'
                 }`}
                 style={{ textShadow: selectedLanguage === 'tl' ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
               >
@@ -378,8 +378,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   aria-pressed={selectedLevel === level}
                   className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                     selectedLevel === level
-                      ? 'bg-brand-yellow text-black border-brand-yellow shadow-[0_0_18px_rgba(255,107,0,0.3)]'
-                      : 'bg-black text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
+                      ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
+                      : 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
                   }`}
                   style={{ textShadow: selectedLevel === level ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
                 >
@@ -436,7 +436,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                       onClick={() => jumpToCard(index)}
                       className={`transition-all duration-300 rounded-full h-1 ${
                         activeIndex === index
-                          ? 'bg-brand-yellow w-10 shadow-[0_0_10px_rgba(255,107,0,0.5)]'
+                          ? 'bg-brand-yellow w-10'
                           : 'bg-white/10 w-2 hover:bg-white/30'
                       }`}
                       aria-label={`Go to item ${index + 1}`}
@@ -448,10 +448,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   <button
                     onClick={(e) => { e.stopPropagation(); scroll('left'); }}
                     disabled={!canScrollLeft}
-                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-black border transition-all active:scale-90 ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-[#1a1d1e] border transition-all active:scale-90 ${
                       !canScrollLeft
-                        ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
-                        : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                        ? 'opacity-10 border-white/5 text-brand-gray/20 cursor-not-allowed'
+                        : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
                     }`}
                     aria-label="Previous"
                   >
@@ -460,10 +460,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   <button
                     onClick={(e) => { e.stopPropagation(); scroll('right'); }}
                     disabled={!canScrollRight}
-                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-black border transition-all active:scale-90 ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-[#1a1d1e] border transition-all active:scale-90 ${
                       !canScrollRight
-                        ? 'opacity-10 border-gray-900 text-gray-800 cursor-not-allowed'
-                        : 'border-gray-800 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                        ? 'opacity-10 border-white/5 text-brand-gray/20 cursor-not-allowed'
+                        : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
                     }`}
                     aria-label="Next"
                   >
@@ -510,7 +510,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               </div>
             </>
           ) : (
-            <div className="min-h-[180px] flex items-center justify-center rounded-lg border border-white/5 bg-black/20 text-center px-6">
+            <div className="min-h-[180px] flex items-center justify-center rounded-lg border border-white/5 bg-[#1a1d1e]/20 text-center px-6">
               <div>
                 <p className="text-white font-bold uppercase tracking-[0.2em] text-base">Coming Soon</p>
                 <p className="text-brand-gray/70 mt-2 max-w-md">

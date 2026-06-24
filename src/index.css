@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-black: #000000;
-  --color-brand-yellow: #FF6B00;
-  --color-brand-gray: #9CA3AF;
-  --color-brand-light: #E5E7EB;
-  --color-brand-white: #FFFFFF;
+  --color-brand-black: #1a1d1e;
+  --color-brand-yellow: #e6ccb3;
+  --color-brand-gray: #8a7d6f;
+  --color-brand-light: #e6ccb3;
+  --color-brand-white: #e6ccb3;
   --font-sans: "Poppins", sans-serif;
   --font-poppins: "Poppins", sans-serif;
   --breakpoint-xs: 30rem;
@@ -25,7 +25,10 @@
   }
 
   body {
-    @apply bg-[#0D0D0D] text-[#E5E7EB] overflow-x-hidden font-sans;
+    @apply text-[#e6ccb3] overflow-x-hidden font-sans;
+    background-color: #1e2122;
+    background-image: radial-gradient(circle, rgba(230, 204, 179, 0.28) 1px, transparent 1px);
+    background-size: 28px 28px;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
@@ -133,16 +136,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0D0D0D;
+  background: #1e2122;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: #34393a;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF6B00;
+  background: #e6ccb3;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -156,18 +159,18 @@
 
 @keyframes highlightBlink {
   0% {
-    border-color: #FF6B00;
-    box-shadow: 0 0px 0px #FF6B00;
+    border-color: #e6ccb3;
+    box-shadow: 0 0px 0px #e6ccb3;
   }
 
   50% {
-    border-color: #FF6B00;
-    box-shadow: 0 0 30px rgba(255, 107, 0, 0.4);
+    border-color: #e6ccb3;
+    box-shadow: 0 0 30px rgba(230, 204, 179, 0.4);
   }
 
   100% {
-    border-color: #1F2937;
-    box-shadow: 0 0 0px #FF6B00;
+    border-color: #34393a;
+    box-shadow: 0 0 0px #e6ccb3;
   }
 }
 
@@ -229,20 +232,29 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1A1A1A;
+  background: #1a1d1e;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #FF6B00;
+  background: #e6ccb3;
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #ff8533;
+  background: #d4b896;
 }
 
 .ambient-glow {
-  background: radial-gradient(circle at center, rgba(255, 107, 0, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(230, 204, 179, 0.1) 0%, transparent 70%);
   pointer-events: none;
+}
+
+.hero-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(230, 204, 179, 0.28) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  opacity: 0.4;
 }

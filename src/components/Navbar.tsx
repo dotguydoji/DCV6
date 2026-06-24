@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
   return (
     <>
-      <nav className="sticky top-0 z-[60] bg-[#1A1A1A] shadow-2xl h-20 laptop:h-22 xl:h-24 transition-all">
+      <nav className="sticky top-0 z-[60] bg-[#1a1d1e] shadow-2xl h-20 laptop:h-22 xl:h-24 transition-all">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-6 laptop:gap-8">
           
           <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">
@@ -138,13 +138,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           <div className="hidden sm:flex items-center justify-end flex-grow gap-4 h-full">
             <div ref={searchRef} className="relative w-full max-w-md laptop:max-w-lg">
               <div 
-                className={`flex items-center bg-black border rounded-sm transition-all duration-300 ${
+                className={`flex items-center bg-[#1a1d1e] border rounded-sm transition-all duration-300 ${
                   isSearchFocused 
                     ? 'border-brand-yellow/80 ring-2 ring-brand-yellow/10' 
-                    : 'border-gray-800 hover:border-gray-700'
+                    : 'border-white/10 hover:border-white/20'
                 }`}
               >
-                <div className="flex items-center justify-center w-10 laptop:w-12 shrink-0 text-brand-gray/60 border-r border-gray-900">
+                <div className="flex items-center justify-center w-10 laptop:w-12 shrink-0 text-brand-gray/60 border-r border-white/5">
                   <Search size={18} className="laptop:hidden" />
                   <Search size={20} className="hidden laptop:block" />
                 </div>
@@ -152,7 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                   ref={inputRef}
                   type="text"
                   placeholder="Search technical notes..."
-                  className="w-full bg-transparent border-none py-2.5 laptop:py-3 px-4 text-white f-body focus:ring-0 placeholder:text-gray-800 appearance-none"
+                  className="w-full bg-transparent border-none py-2.5 laptop:py-3 px-4 text-white f-body focus:ring-0 placeholder:text-brand-gray/40 appearance-none"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onFocus={() => setIsSearchFocused(true)}
@@ -162,7 +162,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               </div>
 
               {isSearchFocused && filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-4 bg-[#1A1A1A] border border-gray-800 rounded shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-3 duration-300">
+                <div className="absolute top-full left-0 right-0 mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-3 duration-300">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
@@ -171,7 +171,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                       }`}
                       onClick={() => handleSelect(product)}
                     >
-                      <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-sm bg-black overflow-hidden shrink-0 border border-gray-800 group-hover:border-brand-yellow/40 transition-colors">
+                      <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-sm bg-[#1a1d1e] overflow-hidden shrink-0 border border-white/10 group-hover:border-brand-yellow/40 transition-colors">
                         <img
                           src={product.thumbnail}
                           alt=""
@@ -197,8 +197,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               onClick={toggleSearch}
               className={`flex items-center justify-center w-12 h-12 rounded border transition-all duration-300 active:scale-90 ${
                 isSearchVisible 
-                  ? 'bg-brand-yellow border-brand-yellow text-black shadow-[0_0_20px_rgba(255,107,0,0.4)]' 
-                  : 'bg-black border-gray-800 text-brand-gray hover:border-brand-yellow/50'
+                  ? 'bg-brand-yellow border-brand-yellow text-[#1a1d1e]' 
+                  : 'bg-[#1a1d1e] border-white/10 text-brand-gray hover:border-brand-yellow/50'
               }`}
             >
               {isSearchVisible ? <X size={24} strokeWidth={3} /> : <Search size={24} />}
@@ -206,7 +206,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`flex items-center justify-center w-12 h-12 rounded border transition-all duration-300 active:scale-90 ${
-                isMenuOpen ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow' : 'border-gray-800 bg-black text-brand-gray'
+                isMenuOpen ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow' : 'border-white/10 bg-[#1a1d1e] text-brand-gray'
               }`}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -215,9 +215,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         </div>
 
         {isSearchVisible && (
-          <div className="fixed top-20 left-0 right-0 bg-[#1A1A1A] border-b border-white/5 p-6 sm:hidden z-[60] animate-in fade-in slide-in-from-top-5 duration-300 shadow-2xl">
+          <div className="fixed top-20 left-0 right-0 bg-[#1a1d1e] border-b border-white/5 p-6 sm:hidden z-[60] animate-in fade-in slide-in-from-top-5 duration-300 shadow-2xl">
             <div className="relative" ref={searchRef}>
-              <div className="flex items-stretch bg-black border border-brand-yellow/40 rounded-sm focus-within:border-brand-yellow transition-all overflow-hidden">
+              <div className="flex items-stretch bg-[#1a1d1e] border border-brand-yellow/40 rounded-sm focus-within:border-brand-yellow transition-all overflow-hidden">
                 <div className="flex items-center justify-center w-14 shrink-0 bg-brand-yellow/5 text-brand-yellow border-r border-brand-yellow/20">
                   <Search size={24} strokeWidth={2.5} />
                 </div>
@@ -235,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               </div>
               
               {filteredProducts.length > 0 && (
-                <div className="mt-4 bg-[#1A1A1A] border border-gray-800 rounded shadow-[0_35px_70px_rgba(0,0,0,0.95)] overflow-hidden max-h-[60vh] overflow-y-auto">
+                <div className="mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_35px_70px_rgba(0,0,0,0.95)] overflow-hidden max-h-[60vh] overflow-y-auto">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
@@ -244,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                       }`}
                       onClick={() => handleSelect(product)}
                     >
-                      <div className="w-16 h-16 rounded-sm bg-black overflow-hidden shrink-0 border border-gray-800">
+                      <div className="w-16 h-16 rounded-sm bg-[#1a1d1e] overflow-hidden shrink-0 border border-white/10">
                         <img
                           src={product.thumbnail}
                           alt=""
@@ -266,13 +266,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
         )}
 
-        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1A1A1A] border-b border-white/5 ${isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/5 ${isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
         </div>
       </nav>
       
       {(isMenuOpen || (isSearchVisible && searchQuery.length > 0)) && (
         <div 
-          className="fixed inset-0 z-[55] bg-black/85 backdrop-blur-md lg:hidden animate-in fade-in duration-400" 
+          className="fixed inset-0 z-[55] bg-[#1a1d1e]/85 backdrop-blur-md lg:hidden animate-in fade-in duration-400" 
           onClick={() => {
             setIsMenuOpen(false);
             setIsSearchVisible(false);

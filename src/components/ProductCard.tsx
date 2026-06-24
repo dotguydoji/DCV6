@@ -45,12 +45,12 @@ export const ProductCard = memo(
     return (
       <div
         ref={cardRef}
-        className={`group flex-shrink-0 w-[320px] sm:w-[360px] laptop:w-[290px] xl:w-[320px] bg-[#F5F5DC] border rounded-lg overflow-hidden flex flex-col transition-all duration-300 active:scale-[0.98] shadow-2xl shadow-black/20 will-change-transform ${
+        className={`group flex-shrink-0 w-[320px] sm:w-[360px] laptop:w-[290px] xl:w-[320px] bg-[#e6ccb3] border rounded-lg overflow-hidden flex flex-col transition-all duration-300 active:scale-[0.98] shadow-2xl shadow-black/20 will-change-transform ${
           isHighlighted
-            ? 'animate-highlight border-yellow-600 z-10 scale-[1.02]'
+            ? 'animate-highlight border-brand-yellow z-10 scale-[1.02]'
             : isSelected
-              ? 'border-yellow-600 ring-2 ring-yellow-600/30'
-              : 'border-black/5 hover:border-yellow-600/40'
+              ? 'border-brand-yellow ring-2 ring-brand-yellow/30'
+              : 'border-[rgba(26,29,30,0.1)] hover:border-brand-yellow/40'
         }`}
       >
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-950/50">
@@ -65,23 +65,23 @@ export const ProductCard = memo(
           />
 
           {product.preOrder && (
-            <div className="absolute left-3 top-3 z-10 rounded-full bg-yellow-400 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg shadow-black/30">
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg shadow-black/30">
               Pre-order
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#F5F5DC] to-transparent opacity-40"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#e6ccb3] to-transparent opacity-40"></div>
         </div>
 
-        <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#F5F5DC]">
-          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 line-clamp-2 min-h-[2lh]">
+        <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#e6ccb3]">
+          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-[#34393a] mb-1 leading-tight group-hover:text-[#1a1d1e] transition-colors duration-300 line-clamp-2 min-h-[2lh]">
             {product.title}
           </h3>
-          <p className="text-xs normal-case text-gray-600/80 mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80 font-normal">
+          <p className="text-xs normal-case text-[#5a5048] mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80 font-normal">
             {product.description}
           </p>
 
-          <div className="mt-auto pt-3 border-t border-black/10 bg-black rounded-b-lg -mx-5 -mb-5 px-5 pb-5 flex items-center justify-between h-[80px]">
+          <div className="mt-auto pt-3 border-t border-[rgba(26,29,30,0.1)] bg-[#1a1d1e] rounded-b-lg -mx-5 -mb-5 px-5 pb-5 flex items-center justify-between h-[80px]">
             {isAvailable ? (
               <>
                 {hideCommerce ? (
@@ -98,7 +98,7 @@ export const ProductCard = memo(
                           P {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className="f-price text-green-400 drop-shadow-none font-semibold leading-none">
+                      <span className="f-price text-[#6b9a7d] drop-shadow-none font-semibold leading-none">
                         P {product.price.toLocaleString()}
                       </span>
                     </div>
@@ -109,8 +109,8 @@ export const ProductCard = memo(
                       }}
                       className={`flex items-center justify-center w-14 h-14 border border-white/20 rounded-none transition-all duration-300 ${
                         isSelected
-                          ? 'text-yellow-400 border-yellow-400 bg-yellow-400/10'
-                          : 'text-white hover:text-yellow-400 hover:border-yellow-400 hover:bg-white/5'
+                          ? 'text-brand-yellow border-brand-yellow bg-brand-yellow/10'
+                          : 'text-white hover:text-brand-yellow hover:border-brand-yellow hover:bg-white/5'
                       }`}
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}

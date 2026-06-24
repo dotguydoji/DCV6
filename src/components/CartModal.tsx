@@ -157,10 +157,10 @@ export const CartModal: React.FC<CartModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-[#1a1d1e]/80 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-[#222222] border border-white/10 rounded-lg w-full max-w-xl mx-4 max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-7 py-5 border-b border-white/10 bg-[#1A1A1A]">
+      <div className="relative bg-[#2a2e2f] border border-white/10 rounded-lg w-full max-w-xl mx-4 max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-7 py-5 border-b border-white/10 bg-[#1a1d1e]">
           <div className="flex items-center gap-3">
             <ShoppingCart size={28} className="text-brand-yellow" strokeWidth={2.5} />
             <h2 className="text-3xl font-bold text-white">Your Cart</h2>
@@ -190,7 +190,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                   {selectedProducts.map((product) => (
                     <div
                       key={product.id}
-                      className="flex items-start gap-4 bg-[#1A1A1A] border border-white/5 rounded-sm p-4"
+                      className="flex items-start gap-4 bg-[#1a1d1e] border border-white/5 rounded-sm p-4"
                     >
                       <img
                         src={product.thumbnail}
@@ -227,7 +227,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-black border border-white/10 rounded-sm p-5 mb-7">
+              <div className="bg-[#1a1d1e] border border-white/10 rounded-sm p-5 mb-7">
                 <h4 className="text-xl font-bold text-white uppercase tracking-wider mb-3">
                   How to Purchase
                 </h4>
@@ -247,7 +247,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                   className={`w-full flex items-center justify-center gap-2.5 py-5 rounded-sm font-bold text-lg transition-all touch-manipulation active:scale-[0.98] ${
                     copied
                       ? 'bg-green-600 text-white cursor-default'
-                      : 'bg-white text-black hover:bg-white/90 cursor-pointer'
+                      : 'bg-white text-[#1a1d1e] hover:bg-white/90 cursor-pointer'
                   }`}
                   style={{ minHeight: '56px' }}
                   type="button"
@@ -270,14 +270,14 @@ export const CartModal: React.FC<CartModalProps> = ({
                 <div className="grid grid-cols-2 gap-3.5">
                   <button
                     onClick={() => handleBuyNow('mobile')}
-                    className="flex items-center justify-center gap-2 bg-brand-yellow text-black border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
+                    className="flex items-center justify-center gap-2 bg-brand-yellow text-[#1a1d1e] border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
                   >
                     <Smartphone size={18} strokeWidth={2.5} className="hidden sm:block" />
                     <span className="text-lg">BUY WITH MOBILE</span>
                   </button>
                   <button
                     onClick={() => handleBuyNow('desktop')}
-                    className="flex items-center justify-center gap-2 bg-brand-yellow text-black border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
+                    className="flex items-center justify-center gap-2 bg-brand-yellow text-[#1a1d1e] border border-brand-yellow py-4 rounded-sm transition-all duration-300 hover:bg-transparent hover:text-brand-yellow active:scale-95 font-bold"
                   >
                     <Monitor size={18} strokeWidth={2.5} className="hidden sm:block" />
                     <span className="text-lg">BUY WITH DESKTOP</span>

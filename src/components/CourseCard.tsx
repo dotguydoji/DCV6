@@ -35,7 +35,7 @@ export const CourseCard = memo(
     return (
       <div
         ref={cardRef}
-        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-[#141414] border rounded-lg overflow-hidden transition-all duration-300 shadow-2xl shadow-black/50 will-change-transform ${
+        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-[#1a1d1e] border rounded-lg overflow-hidden transition-all duration-300 shadow-2xl shadow-black/50 will-change-transform ${
           isHighlighted
             ? 'animate-highlight border-brand-yellow z-10 scale-[1.02]'
             : isSelected
@@ -53,17 +53,17 @@ export const CourseCard = memo(
             decoding="async"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1d1e] via-black/30 to-transparent" />
 
           {/* Course badge — top left */}
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg">
             <Play size={9} fill="currentColor" strokeWidth={0} />
             Course
           </div>
 
           {/* Pre-register badge — top right */}
           {product.preOrder && (
-            <div className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-black shadow-lg">
+            <div className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg">
               Pre-register
             </div>
           )}
@@ -74,7 +74,7 @@ export const CourseCard = memo(
               <Play
                 size={16}
                 fill="white"
-                className="ml-0.5 text-white group-hover:fill-black group-hover:text-black transition-colors duration-300"
+                className="ml-0.5 text-white group-hover:fill-black group-hover:text-[#1a1d1e] transition-colors duration-300"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ export const CourseCard = memo(
               </div>
             ) : (
               <>
-                <span className="f-price text-green-400 font-semibold leading-none drop-shadow-none">
+                <span className="f-price text-[#6b9a7d] font-semibold leading-none drop-shadow-none">
                   P {product.price.toLocaleString()}
                 </span>
                 <button

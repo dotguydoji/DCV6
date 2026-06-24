@@ -23,8 +23,8 @@ export const FAQSection: React.FC = () => {
               key={index}
               className={`rounded-lg overflow-hidden transition-all duration-300 border ${
                 faq.isCourse
-                  ? 'bg-[#D95F00] border-[#D95F00] hover:border-black/20'
-                  : 'bg-[#333333] border-white/5 hover:border-brand-yellow/20'
+                  ? 'bg-[#e6ccb3] border-[#e6ccb3] hover:border-black/20'
+                  : 'bg-[#34393a] border-white/5 hover:border-brand-yellow/20'
               }`}
             >
               <button
@@ -33,7 +33,7 @@ export const FAQSection: React.FC = () => {
               >
                 <span className={`f-body font-bold transition-colors ${
                   faq.isCourse
-                    ? 'text-black group-hover:text-black/70'
+                    ? 'text-[#1a1d1e] group-hover:text-[#1a1d1e]/70'
                     : 'text-white group-hover:text-brand-yellow'
                 }`}>
                   {faq.question}
@@ -42,7 +42,7 @@ export const FAQSection: React.FC = () => {
                   size={24}
                   className={`transition-transform duration-500 shrink-0 ml-4 ${
                     faq.isCourse
-                      ? isOpen ? 'rotate-180 text-black/60' : 'text-black/50'
+                      ? isOpen ? 'rotate-180 text-[#1a1d1e]/60' : 'text-[#1a1d1e]/50'
                       : isOpen ? 'rotate-180 text-brand-yellow' : 'text-brand-gray'
                   }`}
                 />
@@ -57,7 +57,7 @@ export const FAQSection: React.FC = () => {
                   faq.isCourse ? 'border-black/15' : 'border-white/5'
                 }`}>
                   <p className={`f-body leading-relaxed max-w-4xl ${
-                    faq.isCourse ? 'text-black/80' : 'text-brand-gray/80'
+                    faq.isCourse ? 'text-[#1a1d1e]/80' : 'text-brand-gray/80'
                   }`}>
                     {faq.answer}
                   </p>

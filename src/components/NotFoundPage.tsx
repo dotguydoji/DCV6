@@ -3,7 +3,7 @@ import { ArrowLeft, Home, Search, TriangleAlert } from 'lucide-react';
 
 export const NotFoundPage: React.FC = () => {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0D0D0D] text-white">
+    <main className="relative min-h-screen overflow-hidden bg-[#1e2122] text-white">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-20 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-brand-yellow/15 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-[28rem] w-[28rem] rounded-full bg-white/5 blur-3xl" />
@@ -61,8 +61,8 @@ export const NotFoundPage: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-center">
-            <div className="relative w-full max-w-md rounded-[2rem] border border-white/10 bg-[#121212]/80 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl">
-              <div className="absolute -top-5 left-8 rounded-full border border-brand-yellow/40 bg-[#0D0D0D] px-4 py-2 text-[11px] font-black uppercase tracking-[0.28em] text-brand-yellow">
+            <div className="relative w-full max-w-md rounded-[2rem] border border-white/10 bg-[#1a1d1e]/80 p-8 shadow-[0_40px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+              <div className="absolute -top-5 left-8 rounded-full border border-brand-yellow/40 bg-[#1e2122] px-4 py-2 text-[11px] font-black uppercase tracking-[0.28em] text-brand-yellow">
                 404
               </div>
 
