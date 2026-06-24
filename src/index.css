@@ -48,7 +48,7 @@
 .f-heading {
   font-size: 1.75rem;
   line-height: 2.25rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .f-body {
@@ -77,7 +77,7 @@
   .f-heading {
     font-size: 2.5rem;
     line-height: 3rem;
-    font-weight: 800;
+    font-weight: 400;
   }
 }
 
@@ -85,7 +85,7 @@
   .f-heading {
     font-size: 2.75rem;
     line-height: 3.25rem;
-    font-weight: 800;
+    font-weight: 400;
   }
 
   .f-body {
@@ -115,7 +115,7 @@
   .f-heading {
     font-size: 3rem;
     line-height: 3.5rem;
-    font-weight: 800;
+    font-weight: 400;
   }
 
   .f-small {
