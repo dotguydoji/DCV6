@@ -1,11 +1,12 @@
 {
-  "name": "dojicreates",
-  "short_name": "DC-Notes",
+  "name": "Doji's Library",
+  "short_name": "Doji's Library",
+  "description": "Doji's Library by Doji Creates, a tech influencer in the Philippines creating tutorials about AI, programming, coding, robotics, and technology.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "theme_color": "#0D0D0D",
-  "background_color": "#0D0D0D",
+  "theme_color": "#1e2122",
+  "background_color": "#1e2122",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

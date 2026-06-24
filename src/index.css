@@ -27,7 +27,7 @@
   body {
     @apply text-[#e6ccb3] overflow-x-hidden font-sans;
     background-color: #1e2122;
-    background-image: radial-gradient(circle, rgba(230, 204, 179, 0.28) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(230, 204, 179, 0.1) 1px, transparent 1px);
     background-size: 28px 28px;
     -webkit-tap-highlight-color: transparent;
     user-select: none;

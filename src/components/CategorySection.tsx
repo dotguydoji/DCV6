@@ -261,8 +261,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         ref={ref}
         className={`transition-all rounded-xl overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform ${
           isCourseCategory
-            ? 'bg-[#e6ccb3] border-[#e6ccb3] shadow-2xl'
-            : 'bg-[#34393a] border-white/5 shadow-2xl'
+            ? 'bg-[#e6ccb3] border-[#e6ccb3] shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
+            : 'bg-[#34393a] border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
         }`}
       >
         <div className={`category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b ${

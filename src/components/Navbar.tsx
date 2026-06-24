@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
   return (
     <>
-      <nav className="sticky top-0 z-[60] bg-[#1a1d1e] shadow-2xl h-20 laptop:h-22 xl:h-24 transition-all">
+      <nav className="sticky top-0 z-[60] bg-[#1a1d1e] shadow-[0_8px_40px_rgba(0,0,0,0.6)] h-20 laptop:h-22 xl:h-24 transition-all">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-6 laptop:gap-8">
           
           <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">

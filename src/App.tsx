@@ -355,7 +355,7 @@ const App: React.FC = () => {
       <div className="relative z-10">
         <Navbar onSearchSelect={handleSearchSelect} />
         
-        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1a1d1e] border-b border-white/5 shadow-2xl">
+        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1a1d1e] border-b border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
           <div className="max-w-[1600px] mx-auto px-4 lg:px-6 flex items-center">
             <div 
               ref={catContainerRef}
@@ -462,7 +462,7 @@ const App: React.FC = () => {
             ref={cartButtonRef}
             onClick={() => setIsCartOpen(true)}
             key={cartBounceKey}
-            className="fixed bottom-6 right-6 z-[99] bg-brand-yellow text-[#1a1d1e] p-4 rounded-full shadow-2xl hover:bg-brand-yellow/80 transition-all duration-300 active:scale-95 group cart-bounce"
+            className="fixed bottom-6 right-6 z-[99] bg-white text-[#1a1d1e] p-4 rounded-full shadow-2xl hover:bg-white/80 transition-all duration-300 active:scale-95 group cart-bounce"
             aria-label="Open cart"
           >
             <ShoppingCart size={28} strokeWidth={2.5} />
