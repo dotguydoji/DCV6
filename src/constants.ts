@@ -485,7 +485,7 @@ const AI_COURSES_ITEMS: readonly AICourseItemMeta[] = [
 const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
   {
     itemKey: 'freshman-prep',
-    title: 'Freshman Prep',
+    title: 'Freshman Advanced Study',
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
     thumbnail: '/productivity/freshmen-prep.png',
