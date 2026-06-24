@@ -109,8 +109,11 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     useEffect(() => {
       if (!isOpen) return;
       pendingFocusRef.current = { index: 0 };
+      setActiveIndex(0);
       setSelectedLanguage(defaultLanguage);
       setSelectedLevel(defaultLevel);
+      if (mobileScrollRef.current) mobileScrollRef.current.scrollLeft = 0;
+      if (desktopScrollRef.current) desktopScrollRef.current.scrollTop = 0;
     }, [defaultLanguage, defaultLevel, isOpen]);
 
     useEffect(() => {
