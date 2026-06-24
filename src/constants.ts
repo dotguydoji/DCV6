@@ -546,36 +546,8 @@ const getAiThumbnail = (itemKey: AIItemKey, language: ProductLanguage) => {
       return `/images/ai-tools/claude-mcp-${seg === 'english' ? 'eng' : 'tag'}.png`;
     case 'claude-subagents':
       return `/images/ai-tools/claude-subagents-${seg === 'english' ? 'eng' : 'tag'}.png`;
-    case 'prompt-engineering-basics':
-      return `/images/ai-tools/prompt-engineering-basics-${seg}.png`;
-    case 'claude-projects-advanced':
-      return `/images/ai-tools/claude-projects-advanced-${seg}.png`;
-    case 'claude-artifacts-advanced':
-      return `/images/ai-tools/claude-artifacts-advanced-${seg}.png`;
-    case 'claude-skills-advanced':
-      return `/images/ai-tools/claude-skills-advanced-${seg}.png`;
-    case 'claude-memory':
-      return `/images/ai-tools/claude-memory-${seg}.png`;
-    case 'claude-connectors':
-      return `/images/ai-tools/claude-connectors-${seg}.png`;
-    case 'claude-projects-github':
-      return `/images/ai-tools/claude-projects-github-${seg}.png`;
-    case 'publishing-website-portfolio':
-      return `/images/ai-tools/publishing-website-portfolio-${seg}.png`;
-    case 'claude-design':
-      return `/images/ai-tools/claude-design-${seg}.png`;
-    case 'claude-code-advanced':
-      return `/images/ai-tools/claude-code-advanced-${seg}.png`;
-    case 'claude-goal-loop-engineering':
-      return `/images/ai-tools/claude-goal-loop-engineering-${seg}.png`;
-    case 'claude-cowork':
-      return `/images/ai-tools/claude-cowork-${seg}.png`;
-    case 'claude-dispatch':
-      return `/images/ai-tools/claude-dispatch-${seg}.png`;
-    case 'claude-in-chrome':
-      return `/images/ai-tools/claude-in-chrome-${seg}.png`;
     default:
-      return '/web-app-manifest-512x512.png';
+      return '/favicon.svg';
   }
 };
 

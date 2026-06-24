@@ -74,10 +74,10 @@ export const ProductCard = memo(
         </div>
 
         <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#F5F5DC]">
-          <h3 className="font-poppins font-bold text-lg lg:text-2xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 truncate">
+          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-black mb-1 leading-tight group-hover:text-yellow-600 transition-colors duration-300 line-clamp-2 min-h-[2lh]">
             {product.title}
           </h3>
-          <p className="f-small normal-case text-gray-600/80 mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80">
+          <p className="text-xs normal-case text-gray-600/80 mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80 font-normal">
             {product.description}
           </p>
 
