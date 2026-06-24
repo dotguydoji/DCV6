@@ -407,10 +407,10 @@ const App: React.FC = () => {
           <div className="absolute -bottom-16 -left-16 w-[200px] h-[200px] rounded-full border border-[rgba(230,204,179,0.28)] pointer-events-none"></div>
           <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
             <div className="relative z-20 border-l-4 lg:border-l-8 border-brand-yellow pl-8 lg:pl-12 py-2 lg:py-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-black text-[#e6ccb3] leading-[1.1] tracking-tighter drop-shadow-2xl">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-normal text-[#e6ccb3] leading-[1.1] tracking-tighter drop-shadow-2xl">
                 {SITE_CONTENT.hero.mainTitle}
               </h1>
-              <p className="f-small text-[#8a7d6f] mt-6 lg:mt-10 font-black tracking-[0.4em] opacity-40">
+              <p className="f-small text-[#8a7d6f] mt-6 lg:mt-10 font-normal tracking-[0.4em] opacity-40">
                 {SITE_CONTENT.hero.subTitle}
               </p>
             </div>
@@ -443,17 +443,17 @@ const App: React.FC = () => {
         <footer className="border-t border-white/5 bg-[#1a1d1e] py-24 md:py-40 px-4 lg:px-6 relative z-10">
           <div className="max-w-[1600px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
             <div className="space-y-8 flex flex-col items-center md:items-start w-full">
-              <div className="text-2xl font-black text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
+              <div className="text-2xl font-normal text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
                 {SITE_CONTENT.brandName}
               </div>
-              <p className="f-body text-brand-gray/70 leading-relaxed max-w-md font-medium">
+              <p className="f-body text-brand-gray/70 leading-relaxed max-w-md font-normal">
                 {SITE_CONTENT.footer.description}
               </p>
             </div>
           </div>
           
           <div className="max-w-[1600px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
-            <p className="f-small text-brand-gray/60 font-black">{SITE_CONTENT.footer.copyright}</p>
+            <p className="f-small text-brand-gray/60 font-normal">{SITE_CONTENT.footer.copyright}</p>
           </div>
         </footer>
 
