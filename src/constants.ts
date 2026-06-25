@@ -125,7 +125,7 @@ export const SITE_CONTENT: SiteContent = {
 };
 
 export const CATEGORIES = [
-  AI_COURSES_CATEGORY,
+  // AI_COURSES_CATEGORY,
   PROGRAMMING_LANGUAGES_CATEGORY,
   WEB_DEVELOPMENT_CATEGORY,
   FRAMEWORKS_CATEGORY,
@@ -436,50 +436,50 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
 ];
 
 const AI_COURSES_ITEMS: readonly AICourseItemMeta[] = [
-  {
-    itemKey: 'code-mastery',
-    title: 'Claude Pro',
-    description:
-      'A complete Claude course covering everything from basics to advanced agentic workflows, design, code, and real-world projects. Every lesson includes a matching PDF reference guide.',
-    price: 3500,
-    thumbnail: '/images/courses/code-mastery.png',
-    available: true,
-    preOrder: true,
-    materials: [
-      { type: 'video', title: 'Claude Basics' },
-      { type: 'video', title: 'Prompt Engineering Basics' },
-      { type: 'video', title: 'Claude Projects Advanced' },
-      { type: 'video', title: 'Claude Artifacts Advanced' },
-      { type: 'video', title: 'Claude Skills Advanced' },
-      { type: 'video', title: 'Claude Memory' },
-      { type: 'video', title: 'Claude Connectors' },
-      { type: 'video', title: 'Claude MCP + MCP Server' },
-      { type: 'video', title: 'Claude Projects + GitHub' },
-      { type: 'video', title: 'Publishing a Website Portfolio with Claude Artifacts' },
-      { type: 'video', title: 'Claude Design' },
-      { type: 'video', title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
-      { type: 'video', title: 'Claude Goal and Loop Engineering (Slash Commands)' },
-      { type: 'video', title: 'Claude Cowork' },
-      { type: 'video', title: 'Claude Dispatch (Phone-to-Desktop Control)' },
-      { type: 'video', title: 'Claude in Chrome' },
-      { type: 'pdf',   title: 'Claude Basics' },
-      { type: 'pdf',   title: 'Prompt Engineering Basics' },
-      { type: 'pdf',   title: 'Claude Projects Advanced' },
-      { type: 'pdf',   title: 'Claude Artifacts Advanced' },
-      { type: 'pdf',   title: 'Claude Skills Advanced' },
-      { type: 'pdf',   title: 'Claude Memory' },
-      { type: 'pdf',   title: 'Claude Connectors' },
-      { type: 'pdf',   title: 'Claude MCP + MCP Server' },
-      { type: 'pdf',   title: 'Claude Projects + GitHub' },
-      { type: 'pdf',   title: 'Publishing a Website Portfolio with Claude Artifacts' },
-      { type: 'pdf',   title: 'Claude Design' },
-      { type: 'pdf',   title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
-      { type: 'pdf',   title: 'Claude Goal and Loop Engineering (Slash Commands)' },
-      { type: 'pdf',   title: 'Claude Cowork' },
-      { type: 'pdf',   title: 'Claude Dispatch (Phone-to-Desktop Control)' },
-      { type: 'pdf',   title: 'Claude in Chrome' }
-    ]
-  }
+  // {
+  //   itemKey: 'code-mastery',
+  //   title: 'Claude Pro',
+  //   description:
+  //     'A complete Claude course covering everything from basics to advanced agentic workflows, design, code, and real-world projects. Every lesson includes a matching PDF reference guide.',
+  //   price: 3500,
+  //   thumbnail: '/images/courses/code-mastery.png',
+  //   available: true,
+  //   preOrder: true,
+  //   materials: [
+  //     { type: 'video', title: 'Claude Basics' },
+  //     { type: 'video', title: 'Prompt Engineering Basics' },
+  //     { type: 'video', title: 'Claude Projects Advanced' },
+  //     { type: 'video', title: 'Claude Artifacts Advanced' },
+  //     { type: 'video', title: 'Claude Skills Advanced' },
+  //     { type: 'video', title: 'Claude Memory' },
+  //     { type: 'video', title: 'Claude Connectors' },
+  //     { type: 'video', title: 'Claude MCP + MCP Server' },
+  //     { type: 'video', title: 'Claude Projects + GitHub' },
+  //     { type: 'video', title: 'Publishing a Website Portfolio with Claude Artifacts' },
+  //     { type: 'video', title: 'Claude Design' },
+  //     { type: 'video', title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
+  //     { type: 'video', title: 'Claude Goal and Loop Engineering (Slash Commands)' },
+  //     { type: 'video', title: 'Claude Cowork' },
+  //     { type: 'video', title: 'Claude Dispatch (Phone-to-Desktop Control)' },
+  //     { type: 'video', title: 'Claude in Chrome' },
+  //     { type: 'pdf',   title: 'Claude Basics' },
+  //     { type: 'pdf',   title: 'Prompt Engineering Basics' },
+  //     { type: 'pdf',   title: 'Claude Projects Advanced' },
+  //     { type: 'pdf',   title: 'Claude Artifacts Advanced' },
+  //     { type: 'pdf',   title: 'Claude Skills Advanced' },
+  //     { type: 'pdf',   title: 'Claude Memory' },
+  //     { type: 'pdf',   title: 'Claude Connectors' },
+  //     { type: 'pdf',   title: 'Claude MCP + MCP Server' },
+  //     { type: 'pdf',   title: 'Claude Projects + GitHub' },
+  //     { type: 'pdf',   title: 'Publishing a Website Portfolio with Claude Artifacts' },
+  //     { type: 'pdf',   title: 'Claude Design' },
+  //     { type: 'pdf',   title: 'Claude Code Advanced (Terminal, VS Code, JetBrains)' },
+  //     { type: 'pdf',   title: 'Claude Goal and Loop Engineering (Slash Commands)' },
+  //     { type: 'pdf',   title: 'Claude Cowork' },
+  //     { type: 'pdf',   title: 'Claude Dispatch (Phone-to-Desktop Control)' },
+  //     { type: 'pdf',   title: 'Claude in Chrome' }
+  //   ]
+  // }
 ];
 
 const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
@@ -749,19 +749,19 @@ export const FAQS: FAQItem[] = [
     answer:
       'The notes are regularly updated. Whenever we upload a new tutorial on YouTube, we also update the PDF notes so your material stays fresh and relevant.'
   },
-  {
-    question: 'How will I access the courses after purchase?',
-    answer: 'After your payment is confirmed, you will be given an access link where you can watch all course materials online.',
-    isCourse: true
-  },
-  {
-    question: 'What do the courses include?',
-    answer: 'The courses include downloadable PDF materials and video lessons designed to guide you step-by-step through the topics.',
-    isCourse: true
-  },
-  {
-    question: 'Will I receive the files directly after buying?',
-    answer: 'No, the course materials are not sent as individual files. Instead, you will be given access through a link where you can view everything anytime.',
-    isCourse: true
-  },
+  // {
+  //   question: 'How will I access the courses after purchase?',
+  //   answer: 'After your payment is confirmed, you will be given an access link where you can watch all course materials online.',
+  //   isCourse: true
+  // },
+  // {
+  //   question: 'What do the courses include?',
+  //   answer: 'The courses include downloadable PDF materials and video lessons designed to guide you step-by-step through the topics.',
+  //   isCourse: true
+  // },
+  // {
+  //   question: 'Will I receive the files directly after buying?',
+  //   answer: 'No, the course materials are not sent as individual files. Instead, you will be given access through a link where you can view everything anytime.',
+  //   isCourse: true
+  // },
 ];
