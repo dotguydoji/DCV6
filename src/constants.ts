@@ -277,132 +277,132 @@ const AI_ITEMS: readonly AIItemMeta[] = [
     },
     price: { en: 150, tl: 200 }
   },
-  {
-    itemKey: 'prompt-engineering-basics',
-    title: 'Prompt Engineering Basics',
-    description: {
-      en: 'Foundational prompt engineering notes covering techniques, patterns, and best practices for effective AI communication.',
-      tl: 'Pundamental na prompt engineering notes na sumasaklaw sa mga techniques, patterns, at best practices para sa epektibong AI communication.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-projects-advanced',
-    title: 'Claude Projects Advanced',
-    description: {
-      en: 'Advanced Claude Projects notes for organizing knowledge, managing context, and building structured project workflows.',
-      tl: 'Advanced Claude Projects notes para sa pag-organisa ng knowledge, pamamahala ng context, at pagbuo ng structured project workflows.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-artifacts-advanced',
-    title: 'Claude Artifacts Advanced',
-    description: {
-      en: 'Advanced Claude Artifacts notes for creating interactive content, applications, and reusable components.',
-      tl: 'Advanced Claude Artifacts notes para sa paggawa ng interactive content, applications, at reusable components.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-skills-advanced',
-    title: 'Claude Skills Advanced',
-    description: {
-      en: 'Advanced Claude Skills notes for building custom slash commands and extending Claude capabilities.',
-      tl: 'Advanced Claude Skills notes para sa pagbuo ng custom slash commands at pagpapalawak ng Claude capabilities.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-memory',
-    title: 'Claude Memory',
-    description: {
-      en: 'Claude Memory notes covering persistent memory systems, context management, and knowledge retention strategies.',
-      tl: 'Claude Memory notes na sumasaklaw sa persistent memory systems, context management, at knowledge retention strategies.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-connectors',
-    title: 'Claude Connectors',
-    description: {
-      en: 'Claude Connectors notes for integrating external data sources and services directly into Claude workflows.',
-      tl: 'Claude Connectors notes para sa pag-integrate ng external data sources at services direkta sa Claude workflows.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-projects-github',
-    title: 'Claude Projects + GitHub',
-    description: {
-      en: 'Notes on connecting Claude Projects with GitHub for seamless version control and collaborative development.',
-      tl: 'Notes sa pag-connect ng Claude Projects sa GitHub para sa seamless version control at collaborative development.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'publishing-website-portfolio',
-    title: 'Publishing a Website Portfolio with Claude Artifacts',
-    description: {
-      en: 'Step-by-step notes on building and publishing a website portfolio using Claude Artifacts.',
-      tl: 'Step-by-step na notes sa pagbuo at pag-publish ng website portfolio gamit ang Claude Artifacts.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-design',
-    title: 'Claude Design',
-    description: {
-      en: 'Claude Design notes covering UI/UX design workflows, visual creation, and design-to-code techniques.',
-      tl: 'Claude Design notes na sumasaklaw sa UI/UX design workflows, visual creation, at design-to-code techniques.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-code-advanced',
-    title: 'Claude Code Advanced',
-    description: {
-      en: 'Advanced Claude Code notes for terminal, IDE integrations, and professional development workflows.',
-      tl: 'Advanced Claude Code notes para sa terminal, IDE integrations, at professional development workflows.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-goal-loop-engineering',
-    title: 'Claude Goal and Loop Engineering',
-    description: {
-      en: 'Notes on Claude goal-setting and loop engineering for automated, recurring, and self-pacing workflows.',
-      tl: 'Notes sa Claude goal-setting at loop engineering para sa automated, recurring, at self-pacing workflows.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-cowork',
-    title: 'Claude Cowork',
-    description: {
-      en: 'Claude Cowork notes for collaborative AI sessions, shared workspaces, and team-based workflows.',
-      tl: 'Claude Cowork notes para sa collaborative AI sessions, shared workspaces, at team-based workflows.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-dispatch',
-    title: 'Claude Dispatch',
-    description: {
-      en: 'Claude Dispatch notes for controlling Claude remotely from your phone to your desktop.',
-      tl: 'Claude Dispatch notes para sa remote control ng Claude mula sa iyong phone papunta sa iyong desktop.'
-    },
-    price: { en: 99, tl: 120 }
-  },
-  {
-    itemKey: 'claude-in-chrome',
-    title: 'Claude in Chrome',
-    description: {
-      en: 'Claude in Chrome notes for browser-based AI workflows, web automation, and Chrome extension usage.',
-      tl: 'Claude in Chrome notes para sa browser-based AI workflows, web automation, at Chrome extension usage.'
-    },
-    price: { en: 99, tl: 120 }
-  }
+  // {
+  //   itemKey: 'prompt-engineering-basics',
+  //   title: 'Prompt Engineering Basics',
+  //   description: {
+  //     en: 'Foundational prompt engineering notes covering techniques, patterns, and best practices for effective AI communication.',
+  //     tl: 'Pundamental na prompt engineering notes na sumasaklaw sa mga techniques, patterns, at best practices para sa epektibong AI communication.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-projects-advanced',
+  //   title: 'Claude Projects Advanced',
+  //   description: {
+  //     en: 'Advanced Claude Projects notes for organizing knowledge, managing context, and building structured project workflows.',
+  //     tl: 'Advanced Claude Projects notes para sa pag-organisa ng knowledge, pamamahala ng context, at pagbuo ng structured project workflows.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-artifacts-advanced',
+  //   title: 'Claude Artifacts Advanced',
+  //   description: {
+  //     en: 'Advanced Claude Artifacts notes for creating interactive content, applications, and reusable components.',
+  //     tl: 'Advanced Claude Artifacts notes para sa paggawa ng interactive content, applications, at reusable components.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-skills-advanced',
+  //   title: 'Claude Skills Advanced',
+  //   description: {
+  //     en: 'Advanced Claude Skills notes for building custom slash commands and extending Claude capabilities.',
+  //     tl: 'Advanced Claude Skills notes para sa pagbuo ng custom slash commands at pagpapalawak ng Claude capabilities.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-memory',
+  //   title: 'Claude Memory',
+  //   description: {
+  //     en: 'Claude Memory notes covering persistent memory systems, context management, and knowledge retention strategies.',
+  //     tl: 'Claude Memory notes na sumasaklaw sa persistent memory systems, context management, at knowledge retention strategies.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-connectors',
+  //   title: 'Claude Connectors',
+  //   description: {
+  //     en: 'Claude Connectors notes for integrating external data sources and services directly into Claude workflows.',
+  //     tl: 'Claude Connectors notes para sa pag-integrate ng external data sources at services direkta sa Claude workflows.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-projects-github',
+  //   title: 'Claude Projects + GitHub',
+  //   description: {
+  //     en: 'Notes on connecting Claude Projects with GitHub for seamless version control and collaborative development.',
+  //     tl: 'Notes sa pag-connect ng Claude Projects sa GitHub para sa seamless version control at collaborative development.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'publishing-website-portfolio',
+  //   title: 'Publishing a Website Portfolio with Claude Artifacts',
+  //   description: {
+  //     en: 'Step-by-step notes on building and publishing a website portfolio using Claude Artifacts.',
+  //     tl: 'Step-by-step na notes sa pagbuo at pag-publish ng website portfolio gamit ang Claude Artifacts.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-design',
+  //   title: 'Claude Design',
+  //   description: {
+  //     en: 'Claude Design notes covering UI/UX design workflows, visual creation, and design-to-code techniques.',
+  //     tl: 'Claude Design notes na sumasaklaw sa UI/UX design workflows, visual creation, at design-to-code techniques.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-code-advanced',
+  //   title: 'Claude Code Advanced',
+  //   description: {
+  //     en: 'Advanced Claude Code notes for terminal, IDE integrations, and professional development workflows.',
+  //     tl: 'Advanced Claude Code notes para sa terminal, IDE integrations, at professional development workflows.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-goal-loop-engineering',
+  //   title: 'Claude Goal and Loop Engineering',
+  //   description: {
+  //     en: 'Notes on Claude goal-setting and loop engineering for automated, recurring, and self-pacing workflows.',
+  //     tl: 'Notes sa Claude goal-setting at loop engineering para sa automated, recurring, at self-pacing workflows.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-cowork',
+  //   title: 'Claude Cowork',
+  //   description: {
+  //     en: 'Claude Cowork notes for collaborative AI sessions, shared workspaces, and team-based workflows.',
+  //     tl: 'Claude Cowork notes para sa collaborative AI sessions, shared workspaces, at team-based workflows.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-dispatch',
+  //   title: 'Claude Dispatch',
+  //   description: {
+  //     en: 'Claude Dispatch notes for controlling Claude remotely from your phone to your desktop.',
+  //     tl: 'Claude Dispatch notes para sa remote control ng Claude mula sa iyong phone papunta sa iyong desktop.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // },
+  // {
+  //   itemKey: 'claude-in-chrome',
+  //   title: 'Claude in Chrome',
+  //   description: {
+  //     en: 'Claude in Chrome notes for browser-based AI workflows, web automation, and Chrome extension usage.',
+  //     tl: 'Claude in Chrome notes para sa browser-based AI workflows, web automation, at Chrome extension usage.'
+  //   },
+  //   price: { en: 99, tl: 120 }
+  // }
 ];
 
 const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
