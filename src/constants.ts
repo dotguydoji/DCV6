@@ -75,6 +75,8 @@ interface AIAutomationItemMeta {
   title: string;
   description: Record<ProductLanguage, string>;
   price: Record<ProductLanguage, number>;
+  preOrder?: boolean;
+  
 }
 
 type AICourseItemKey = 'code-mastery';
@@ -422,7 +424,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Open Claw notes for open-source AI clothing and fashion generation workflows.',
       tl: 'Open Claw notes para sa open-source AI clothing at fashion generation workflows.'
     },
-    price: { en: 299, tl: 350 }
+    price: { en: 299, tl: 350 },
   },
   {
     itemKey: 'hermes-agent',
@@ -431,7 +433,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Hermes Agent notes for building and deploying autonomous AI agents with structured task execution.',
       tl: 'Hermes Agent notes para sa pagbuo at pag-deploy ng autonomous AI agents na may structured task execution.'
     },
-    price: { en: 299, tl: 350 }
+    price: { en: 299, tl: 350 },
   }
 ];
 
