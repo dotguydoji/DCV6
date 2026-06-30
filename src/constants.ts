@@ -493,7 +493,7 @@ const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
     thumbnail: '/productivity/freshmen-prep.png',
     price: 150,
     available: true,
-    preOrder: true
+    // preOrder: true
   }
 ];
 
