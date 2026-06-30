@@ -9,7 +9,7 @@ const FRAMEWORKS_CATEGORY = 'Frameworks';
 export const AI_COURSES_CATEGORY = 'Courses';
 const AI_TOOLS_CATEGORY = 'Claude Notes';
 const AI_AUTOMATION_CATEGORY = 'AI Tools & Automations';
-const PRODUCTIVITY_CATEGORY = 'Productivity';
+const PRODUCTIVITY_CATEGORY = 'ADVANCED STUDY';
 const PREORDER_THUMBNAIL = '/favicon.svg';
 
 const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
@@ -487,7 +487,7 @@ const AI_COURSES_ITEMS: readonly AICourseItemMeta[] = [
 const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
   {
     itemKey: 'freshman-prep',
-    title: 'Freshman Advanced Study',
+    title: 'BSIT Advanced Study',
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
     thumbnail: '/productivity/freshmen-prep.png',
