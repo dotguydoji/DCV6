@@ -39,7 +39,7 @@ type AIItemKey =
   | 'claude-dispatch'
   | 'claude-in-chrome';
 type AIAutomationItemKey = 'n8n-automation' | 'openclo' | 'hermes-agent';
-type ProductivityItemKey = 'freshman-prep';
+type ProductivityItemKey = 'freshman-prep' | 'bscs-advance-study';
 
 interface ProgrammingLanguageMeta {
   itemKey: ProgrammingLanguageKey;
@@ -494,6 +494,15 @@ const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
     price: 150,
     available: true,
     // preOrder: true
+  },
+  {
+    itemKey: 'bscs-advance-study',
+    title: 'BSCS Advanced Study Guide',
+    description:
+      'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
+    thumbnail: '/productivity/bscs-advance-study.png',
+    price: 150,
+    available: true,
   }
 ];
 
