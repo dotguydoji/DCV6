@@ -755,7 +755,23 @@ export const FAQS: FAQItem[] = [
   },
   {
     question: 'How will I receive the PDF notes after payment?',
-    answer: 'After completing your payment, you will be sent an access link via email where you can view your PDF notes instantly and securely.'
+    answer:
+      "After completing your payment, we'll grant access to the same Gmail you used to pay. Just sign in with that Gmail on the site and your PDF notes are ready to view instantly - no waiting for an email, no separate app."
+  },
+  {
+    question: 'Do I need a Google Drive account or app to view my PDFs?',
+    answer:
+      "No. You don't need Google Drive or any other app. Sign in with your Gmail and your PDFs open directly on the site, in our own reader, with search built in."
+  },
+  {
+    question: "How do I find PDFs I've already purchased?",
+    answer:
+      'Click "Login" at the top of the site and sign in with the same Gmail you used to purchase. You\'ll see every PDF you own in one place under "My Library," anytime you want to reopen them.'
+  },
+  {
+    question: 'Is signing in with Google safe? Do you see my password?',
+    answer:
+      "It's safe - we never see or store your Google password. Signing in only confirms your identity through Google itself; we simply check that Gmail against what you've purchased."
   },
   {
     question: 'Are these notes suitable for absolute beginners?',

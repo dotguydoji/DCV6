@@ -1,5 +1,5 @@
 git add .
-git commit -m "optim_01"
+git commit -m "remove Already bought this? View your PDF. / update frequently asked question"
 git push -u
 
 npm run build

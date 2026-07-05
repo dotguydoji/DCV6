@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
-import { Check, Download, FileText, Plus } from 'lucide-react';
+import { Check, Download, Plus } from 'lucide-react';
 import { Product } from '../types';
 
 interface ProductCardProps {
@@ -82,16 +82,6 @@ export const ProductCard = memo(
           <p className="text-xs normal-case text-[#5a5048] mb-2 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80 font-normal">
             {product.description}
           </p>
-
-          {isAvailable && !hideCommerce && (
-            <a
-              href={`/view/${encodeURIComponent(product.id)}`}
-              className="inline-flex items-center gap-1.5 mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[#5a5048] hover:text-[#1a1d1e] transition-colors w-fit"
-            >
-              <FileText size={12} strokeWidth={2.5} />
-              Already bought this? View your PDF
-            </a>
-          )}
 
           <div className="mt-auto pt-3 border-t border-[rgba(26,29,30,0.1)] bg-[#1a1d1e] rounded-b-lg -mx-5 -mb-5 px-5 pb-5 flex items-center justify-between h-[80px]">
             {isAvailable ? (
