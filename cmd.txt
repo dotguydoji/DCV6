@@ -1,5 +1,5 @@
 git add .
-git commit -m "tempo 1/thumbnails update_revert PREORDER_THUMBNAIL"
+git commit -m "adding python"
 git push -u
 
 npm run build

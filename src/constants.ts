@@ -756,7 +756,19 @@ export const PRODUCTS: Product[] = [
   desktopUrl: DESKTOP_URL,
   category: 'listed',
   available: false
+},
+{
+  id: 'pl-python-beginner-tl',
+  title: 'Python Beginner (TL)',
+  description: 'Python beginner course in Tagalog.',
+  price: 0,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Listed',
+  available: false
 }
+
   
 ];
 
