@@ -1,5 +1,5 @@
 git add .
-git commit -m "tempo 1"
+git commit -m "tempo 1/thumbnails update"
 git push -u
 
 npm run build

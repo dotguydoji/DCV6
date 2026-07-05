@@ -751,10 +751,10 @@ export const PRODUCTS: Product[] = [
   title: 'AI Claude Notes (EN)',
   description: 'Comprehensive Claude AI notes in English.',
   price: 299,
-  thumbnail: PREORDER_THUMBNAIL,
+  thumbnail: '/images/ai-tools/claude-code-eng.webp`',
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
-  category: 'Unlisted',
+  category: 'listed',
   available: false
 }
   
