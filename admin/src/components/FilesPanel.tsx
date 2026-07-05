@@ -4,18 +4,7 @@ import { AdminFile, deleteFile, getUploadUrl, uploadFileToR2 } from '../lib/api'
 import { ConfirmDialog } from './ConfirmDialog';
 import { Pagination } from './Pagination';
 import { PasswordGateDialog } from './PasswordGateDialog';
-
-
-// Surface-level obfuscation only, not real access control (see
-// PasswordGateDialog) - deleting a file is destructive, so this exists to
-// stop an admin from wiping a PDF with a single accidental click. Encoded
-// the same way as the main site's admin-recording password so a plain
-// text search of the bundle doesn't just turn up the digits.
-const DELETE_FILE_CID_KEY = 77;
-const DELETE_FILE_CID_CODES = [124, 125, 127, 121, 124, 125, 127, 121];
-
-const getDeleteFileCid = () =>
-  DELETE_FILE_CID_CODES.map((code) => String.fromCharCode(code ^ DELETE_FILE_CID_KEY)).join('');
+import { getAdminCid } from '../lib/cid';
 
 interface FilesPanelProps {
   idToken: string;
@@ -319,7 +308,7 @@ export const FilesPanel: React.FC<FilesPanelProps> = ({
             ? `Deleting "${passwordTarget}.pdf" is a sensitive action. Enter the CID to proceed.`
             : ''
         }
-        password={getDeleteFileCid()}
+        password={getAdminCid()}
         onCancel={() => setPasswordTarget(null)}
         onVerified={() => {
           const productId = passwordTarget;

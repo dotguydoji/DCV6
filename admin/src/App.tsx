@@ -3,6 +3,8 @@ import { AlertTriangle, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lu
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
+import { AdminCidGate } from './components/AdminCidGate';
+import { InstallAppButton } from './components/InstallAppButton';
 import { AdminFile, ApiError, Buyer, listBuyers, listFiles } from './lib/api';
 import { clearCachedIdToken, getCachedIdToken, setCachedIdToken, signOutOfGoogle } from './lib/googleIdentity';
 
@@ -19,6 +21,7 @@ type Tab = 'buyers' | 'files';
 const App: React.FC = () => {
   const [auth, setAuth] = useState<AuthState>({ status: 'restoring' });
   const [tab, setTab] = useState<Tab>('files');
+  const [cidPassed, setCidPassed] = useState(false);
   const hasTriedCache = useRef(false);
 
   const [buyers, setBuyers] = useState<Buyer[]>([]);
@@ -101,8 +104,13 @@ const App: React.FC = () => {
 
     const handleSignOut = () => {
       signOutOfGoogle();
+      setCidPassed(false);
       setAuth({ status: 'signed-out' });
     };
+
+    if (!cidPassed) {
+      return <AdminCidGate onVerified={() => setCidPassed(true)} />;
+    }
 
     return (
       <div className="min-h-screen lg:flex">
@@ -134,7 +142,8 @@ const App: React.FC = () => {
             ))}
           </nav>
 
-          <div className="p-3 border-t border-brand-border">
+          <div className="p-3 border-t border-brand-border space-y-1">
+            <InstallAppButton />
             <button
               type="button"
               onClick={handleSignOut}
