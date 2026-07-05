@@ -3,6 +3,7 @@ import { Menu, X, Search, LibraryBig } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
 import { getCachedIdToken } from '../lib/googleIdentity';
+import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { InstallAppButton } from './InstallAppButton';
 
 interface NavbarProps {
@@ -10,6 +11,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
+  const installPrompt = useInstallPrompt();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,7 +206,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               )}
             </div>
 
-            <InstallAppButton />
+            <InstallAppButton {...installPrompt} />
             <a
               href="/my-library"
               className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
@@ -215,7 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
 
           <div className="flex sm:hidden items-center gap-4">
-            <InstallAppButton variant="icon" />
+            <InstallAppButton variant="icon" {...installPrompt} />
             <a
               href="/my-library"
               aria-label={hasCachedSession ? 'My Library' : 'Login'}

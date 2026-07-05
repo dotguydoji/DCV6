@@ -7,6 +7,7 @@ import { AdminCidGate } from './components/AdminCidGate';
 import { InstallAppButton } from './components/InstallAppButton';
 import { AdminFile, ApiError, Buyer, listBuyers, listFiles } from './lib/api';
 import { clearCachedIdToken, getCachedIdToken, setCachedIdToken, signOutOfGoogle } from './lib/googleIdentity';
+import { useInstallPrompt } from './lib/useInstallPrompt';
 
 type AuthState =
   | { status: 'restoring' }
@@ -19,6 +20,7 @@ type AuthState =
 type Tab = 'buyers' | 'files';
 
 const App: React.FC = () => {
+  const installPrompt = useInstallPrompt();
   const [auth, setAuth] = useState<AuthState>({ status: 'restoring' });
   const [tab, setTab] = useState<Tab>('files');
   const [cidPassed, setCidPassed] = useState(false);
@@ -143,7 +145,7 @@ const App: React.FC = () => {
           </nav>
 
           <div className="p-3 border-t border-brand-border space-y-1">
-            <InstallAppButton />
+            <InstallAppButton {...installPrompt} />
             <button
               type="button"
               onClick={handleSignOut}
@@ -166,7 +168,7 @@ const App: React.FC = () => {
               {tab === 'files' ? 'Files' : 'Buyers'}
             </h2>
             <div className="lg:hidden flex items-center gap-3">
-              <InstallAppButton />
+              <InstallAppButton {...installPrompt} />
               <button
                 type="button"
                 onClick={handleSignOut}

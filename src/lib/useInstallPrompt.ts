@@ -23,10 +23,22 @@ const isStandaloneMode = (): boolean => {
   return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
 };
 
+const DISMISSED_KEY = 'pwa-install-dismissed';
+
+const wasDismissedThisSession = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(DISMISSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 export const useInstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
   const [isIOS] = useState(isIOSDevice);
+  const [dismissed, setDismissed] = useState(wasDismissedThisSession);
 
   useEffect(() => {
     const standaloneQuery = window.matchMedia('(display-mode: standalone)');
@@ -66,12 +78,17 @@ export const useInstallPrompt = () => {
     const choice = await deferredPrompt.userChoice;
     if (choice.outcome === 'accepted') {
       setIsInstalled(true);
+    } else {
+      setDismissed(true);
+      try {
+        sessionStorage.setItem(DISMISSED_KEY, '1');
+      } catch {}
     }
     setDeferredPrompt(null);
   }, [deferredPrompt]);
 
   const hasNativePrompt = deferredPrompt !== null;
-  const canInstall = !isInstalled && (hasNativePrompt || isIOS);
+  const canInstall = !isInstalled && !dismissed && (hasNativePrompt || isIOS);
 
   return { canInstall, isIOS, isInstalled, hasNativePrompt, promptInstall };
 };

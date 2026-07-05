@@ -1,9 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Share, SquarePlus, X } from 'lucide-react';
-import { useInstallPrompt } from '../lib/useInstallPrompt';
 
-export const InstallAppButton: React.FC = () => {
-  const { canInstall, isIOS, hasNativePrompt, promptInstall } = useInstallPrompt();
+interface InstallAppButtonProps {
+  canInstall: boolean;
+  isIOS: boolean;
+  hasNativePrompt: boolean;
+  promptInstall: () => Promise<void>;
+}
+
+export const InstallAppButton: React.FC<InstallAppButtonProps> = ({
+  canInstall,
+  isIOS,
+  hasNativePrompt,
+  promptInstall
+}) => {
   const [showIOSModal, setShowIOSModal] = useState(false);
 
   useEffect(() => {
