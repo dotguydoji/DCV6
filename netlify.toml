@@ -1,0 +1,82 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["firebase-admin"]
+
+# vite.config.ts pins the Vite dev server to port 3000 - without this,
+# Netlify Dev assumes Vite's default port (5173) and times out waiting
+# for a server that was never going to appear there.
+[dev]
+  targetPort = 3000
+
+# /view/<product-id> is handled client-side by the app (not a real file on
+# disk), so the static host needs to hand it index.html instead of 404ing.
+[[redirects]]
+  from = "/view/*"
+  to = "/index.html"
+  status = 200
+
+# /my-library (the buyer's own PDF list) is also a client-rendered route.
+[[redirects]]
+  from = "/my-library"
+  to = "/index.html"
+  status = 200
+
+# Catch-all: any other unmatched path (a typo'd/broken link) loads the app
+# instead of a separate static error page, so the app's own NotFoundPage.tsx
+# (matching the current site theme) is the only 404 experience anywhere -
+# replaces the old, differently-themed public/404.html. Status 404 (not
+# 200) is deliberate: search engines still see a genuine "not found" even
+# though the same index.html content is served, avoiding a "soft 404".
+# Only ever applies when no real file matches the request first (Netlify's
+# own routing already guarantees that), so this can't intercept images,
+# /view/*, /my-library, Netlify Functions, or any other real asset.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404
+
+# Optional: Headers for security and caching
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+
+# index.html points to the current build's hashed asset filenames (the
+# /assets/* files below, which ARE safe to cache forever since their name
+# changes every build). If a browser caches an old index.html, it keeps
+# pointing at old, possibly-broken JS even after a new deploy - forcing
+# revalidation here means every visit always picks up the latest build.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/favicon.*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/web-app-manifest-*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

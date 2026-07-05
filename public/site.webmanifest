@@ -1,0 +1,24 @@
+{
+  "name": "Doji's Library",
+  "short_name": "Doji's Library",
+  "description": "Doji's Library by Doji Creates, a tech influencer in the Philippines creating tutorials about AI, programming, coding, robotics, and technology.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#1e2122",
+  "background_color": "#1e2122",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

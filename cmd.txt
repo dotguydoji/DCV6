@@ -1,0 +1,6 @@
+git add .
+git commit -m "optim_01"
+git push -u
+
+npm run build
+netlify dev --dir dist

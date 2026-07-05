@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+/*
+ * Self-hosted Poppins, latin subset only, declared with font-display: optional.
+ * "optional" (instead of fontsource's default "swap") prevents a font-swap reflow
+ * from ever shifting layout after first paint — the tradeoff is that on very slow
+ * connections the fallback sans-serif is used for that page view instead of Poppins.
+ */
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 800;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-800-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Poppins';
+  font-style: normal;
+  font-weight: 900;
+  font-display: optional;
+  src: url('./assets/fonts/poppins-latin-900-normal.woff2') format('woff2');
+}
+
+@theme {
+  --color-brand-black: #1a1d1e;
+  --color-brand-yellow: #e6ccb3;
+  --color-brand-gray: #8a7d6f;
+  --color-brand-muted: #ada499;
+  --color-brand-light: #e6ccb3;
+  --color-brand-white: #e6ccb3;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-poppins: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --breakpoint-xs: 30rem;
+  --breakpoint-laptop: 85.375rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 184px;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      scroll-padding-top: 210px;
+    }
+  }
+
+  body {
+    @apply text-[#e6ccb3] overflow-x-hidden font-sans;
+    background-color: #1e2122;
+    background-image: radial-gradient(circle, rgba(230, 204, 179, 0.1) 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+}
+
+/*
+ * PDF.js's text layer stays in the DOM (needed for accurate search via
+ * PDFFindController), but selection/copy is disabled here. This blocks
+ * casual click-and-drag copying without weakening search accuracy at all,
+ * since search reads the underlying text data, not the selection state.
+ */
+.pdfViewerContainer .textLayer,
+.pdfViewerContainer .textLayer * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/*
+ * Mobile page-border removal is handled via PDF.js's own `removePageBorders`
+ * option on the PDFViewer constructor (see PdfViewer.tsx) - not here. That
+ * option and this CSS override used to both exist at once, fighting over
+ * the same problem in two different ways; this comment is left so a future
+ * mobile-margin issue doesn't get "fixed" a third time in yet another place.
+ */
+
+.f-heading {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  font-weight: 400;
+}
+
+.f-body {
+  font-size: 1.05rem;
+  line-height: 1.65rem;
+  font-weight: 400;
+}
+
+.f-small {
+  font-size: 0.8rem;
+  line-height: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+}
+
+.f-price {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.375rem;
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+
+@media (min-width: 768px) {
+  .f-heading {
+    font-size: 2.5rem;
+    line-height: 3rem;
+    font-weight: 400;
+  }
+}
+
+@media (min-width: 1024px) {
+  .f-heading {
+    font-size: 2.75rem;
+    line-height: 3.25rem;
+    font-weight: 400;
+  }
+
+  .f-body {
+    font-size: 1.25rem;
+    line-height: 2rem;
+    font-weight: 400;
+  }
+
+  .f-small {
+    font-size: 0.95rem;
+    line-height: 1.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 400;
+  }
+
+  .f-price {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.625rem;
+    font-weight: 400;
+    letter-spacing: -0.05em;
+  }
+}
+
+@media (min-width: 1440px) {
+  .f-heading {
+    font-size: 3rem;
+    line-height: 3.5rem;
+    font-weight: 400;
+  }
+
+  .f-small {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .f-price {
+    font-family: "Poppins", sans-serif;
+    font-size: 1.75rem;
+    line-height: 1.875rem;
+    font-weight: 400;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e2122;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #34393a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e6ccb3;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes highlightBlink {
+  0% {
+    border-color: #e6ccb3;
+    box-shadow: 0 0px 0px #e6ccb3;
+  }
+
+  50% {
+    border-color: #e6ccb3;
+    box-shadow: 0 0 30px rgba(230, 204, 179, 0.4);
+  }
+
+  100% {
+    border-color: #34393a;
+    box-shadow: 0 0 0px #e6ccb3;
+  }
+}
+
+.animate-highlight {
+  animation: highlightBlink 1.5s ease-in-out 2;
+}
+
+@keyframes flyToCart {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--fly-end-x), var(--fly-end-y)) scale(0.2) rotate(720deg);
+  }
+}
+
+.fly-to-cart {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  animation: flyToCart 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes cartBounce {
+  0% {
+    transform: scale(1);
+  }
+
+  30% {
+    transform: scale(1.25);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  70% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-bounce {
+  animation: cartBounce 0.5s ease-in-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1d1e;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e6ccb3;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d4b896;
+}
+
+.ambient-glow {
+  background: radial-gradient(circle at center, rgba(230, 204, 179, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(230, 204, 179, 0.28) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/*
+ * PDF loading overlay's liquid-fill effect - two overlapping wave layers
+ * scrolling at different speeds/directions for a natural (not mechanical)
+ * water motion. Purely cosmetic, self-contained here so PdfLoadingOverlay
+ * doesn't need any inline <style>/JS-driven animation loop.
+ */
+@keyframes liquid-wave-front {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes liquid-wave-back {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.liquid-wave-front {
+  animation: liquid-wave-front 3.2s linear infinite;
+}
+.liquid-wave-back {
+  animation: liquid-wave-back 4.6s linear infinite;
+}
