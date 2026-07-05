@@ -745,7 +745,19 @@ export const PRODUCTS: Product[] = [
     desktopUrl: DESKTOP_URL,
     category: 'Unlisted',
     available: false
-  }
+  },
+  {
+  id: 'ai-claude-notes-en',
+  title: 'AI Claude Notes (EN)',
+  description: 'Comprehensive Claude AI notes in English.',
+  price: 299,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Unlisted',
+  available: false
+}
+  
 ];
 
 export const FAQS: FAQItem[] = [

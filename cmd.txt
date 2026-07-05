@@ -1,6 +1,13 @@
 git add .
-git commit -m "ios vs adroidi install prompt"
+git commit -m "tempo 1"
 git push -u
 
 npm run build
 netlify dev --dir dist
+
+
+4e2d7e141088b3f1356b8ea58551000bc7430e69
+
+git checkout main
+git reset --hard 4e2d7e141088b3f1356b8ea58551000bc7430e69
+git push --force origin main
