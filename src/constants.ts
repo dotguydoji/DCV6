@@ -767,6 +767,17 @@ export const PRODUCTS: Product[] = [
   desktopUrl: DESKTOP_URL,
   category: 'Listed',
   available: false
+},
+{
+  id: 'pl-javascript-beginner-tl',
+  title: 'JavaScript Beginner (TL)',
+  description: 'JavaScript beginner course in Tagalog.',
+  price: 0,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Listed',
+  available: false
 }
 
   

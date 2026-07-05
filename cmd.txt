@@ -1,5 +1,5 @@
 git add .
-git commit -m "adding python"
+git commit -m "adding pl-javascript-beginner-tl"
 git push -u
 
 npm run build
