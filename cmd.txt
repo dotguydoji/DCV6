@@ -1,5 +1,5 @@
 git add .
-git commit -m "remove Already bought this? View your PDF. / update frequently asked question"
+git commit -m "from preview branch to main branch - netlify"
 git push -u
 
 npm run build
