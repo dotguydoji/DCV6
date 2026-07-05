@@ -27,16 +27,18 @@ export const InstallAppButton: React.FC = () => {
     }
   };
 
+  const label = isIOS ? 'Add to Home Screen' : 'Install App';
+
   return (
     <>
       <button
         type="button"
         onClick={handleClick}
-        aria-label="Install this app on your device"
+        aria-label={label}
         className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-brand-muted hover:bg-brand-surface-hover hover:text-white transition-colors"
       >
         <Download size={18} />
-        Install App
+        {label}
       </button>
 
       {showIOSModal && (

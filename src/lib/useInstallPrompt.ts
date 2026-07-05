@@ -29,6 +29,16 @@ export const useInstallPrompt = () => {
   const [isIOS] = useState(isIOSDevice);
 
   useEffect(() => {
+    const standaloneQuery = window.matchMedia('(display-mode: standalone)');
+    const handleDisplayModeChange = () => {
+      if (isStandaloneMode()) setIsInstalled(true);
+    };
+
+    standaloneQuery.addEventListener('change', handleDisplayModeChange);
+    return () => standaloneQuery.removeEventListener('change', handleDisplayModeChange);
+  }, []);
+
+  useEffect(() => {
     if (isInstalled) return;
 
     const handleBeforeInstallPrompt = (event: Event) => {

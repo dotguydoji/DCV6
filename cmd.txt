@@ -1,5 +1,5 @@
 git add .
-git commit -m "pwas install integration"
+git commit -m "ios vs adroidi install prompt"
 git push -u
 
 npm run build

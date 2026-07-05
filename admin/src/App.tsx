@@ -165,15 +165,18 @@ const App: React.FC = () => {
             <h2 className="hidden lg:block text-lg font-bold">
               {tab === 'files' ? 'Files' : 'Buyers'}
             </h2>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="lg:hidden flex items-center gap-1.5 text-sm text-brand-muted hover:text-red-400 transition-colors"
-              aria-label="Sign out"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
+            <div className="lg:hidden flex items-center gap-3">
+              <InstallAppButton />
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex items-center gap-1.5 text-sm text-brand-muted hover:text-red-400 transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </div>
           </header>
 
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 pb-24 lg:pb-8 max-w-4xl w-full mx-auto animate-fade-in">

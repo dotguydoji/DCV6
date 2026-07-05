@@ -31,12 +31,14 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({ variant = 'f
     }
   };
 
+  const label = isIOS ? 'Add to Home Screen' : 'Install App';
+
   return (
     <>
       <button
         type="button"
         onClick={handleClick}
-        aria-label="Install this app on your device"
+        aria-label={label}
         className={
           variant === 'icon'
             ? 'flex items-center justify-center w-12 h-12 rounded border border-white/10 text-brand-gray hover:border-brand-yellow/50 hover:text-brand-yellow transition-all duration-300 active:scale-90'
@@ -44,7 +46,7 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({ variant = 'f
         }
       >
         <Download size={variant === 'icon' ? 22 : 18} />
-        {variant === 'full' && 'Install App'}
+        {variant === 'full' && label}
       </button>
 
       {showIOSModal && (
