@@ -108,6 +108,15 @@
 }
 
 /*
+ * Prevents a swipe-down at the top of the PDF from triggering the mobile
+ * browser's native pull-to-refresh, which would otherwise reload the page
+ * and lose reading position while scrolling through a document.
+ */
+.pdfViewerContainer {
+  overscroll-behavior-y: contain;
+}
+
+/*
  * Mobile page-border removal is handled via PDF.js's own `removePageBorders`
  * option on the PDFViewer constructor (see PdfViewer.tsx) - not here. That
  * option and this CSS override used to both exist at once, fighting over

@@ -218,13 +218,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
           <div className="flex sm:hidden items-center gap-4">
             <InstallAppButton variant="icon" {...installPrompt} />
-            <a
-              href="/my-library"
-              aria-label={hasCachedSession ? 'My Library' : 'Login'}
-              className="flex items-center justify-center w-12 h-12 rounded border border-white/10 text-brand-gray hover:border-brand-yellow/50 hover:text-brand-yellow transition-all duration-300 active:scale-90"
-            >
-              <LibraryBig size={22} />
-            </a>
             <button
               onClick={toggleSearch}
               aria-label={isSearchVisible ? 'Close search' : 'Open search'}
@@ -309,6 +302,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         )}
 
         <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/5 ${isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+          <div className="px-4 py-4">
+            <a
+              href="/my-library"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+            >
+              <LibraryBig size={20} />
+              {hasCachedSession ? 'My Library' : 'Login'}
+            </a>
+          </div>
         </div>
       </nav>
       
