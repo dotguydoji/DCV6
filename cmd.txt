@@ -1,5 +1,5 @@
 git add .
-git commit -m "from preview branch to main branch - netlify"
+git commit -m "pwas install integration"
 git push -u
 
 npm run build
