@@ -151,7 +151,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Beginner',
     folder: 'programming-languages-beginners',
     fileSuffix: 'beginners',
-    price: { en: 99, tl: 120 },
+    price: { en: 120, tl: 150 },
     available: true
   },
   {
@@ -183,7 +183,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 99, tl: 120 },
+    price: { en: 120, tl: 150 },
     available: true
   },
   {
@@ -205,7 +205,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Structured HTML lessons focused on semantic layout, clean markup, and solid page-building fundamentals.',
       tl: 'Tagalog HTML lessons na nakatuon sa semantic layout, malinaw na markup, at matibay na page-building fundamentals.'
     },
-    price: { en: 99, tl: 120 }
+    price: { en: 120, tl: 150 }
   },
   {
     itemKey: 'css',
