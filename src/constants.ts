@@ -744,7 +744,7 @@ export const PRODUCTS: Product[] = [
     mobileUrl: MOBILE_URL,
     desktopUrl: DESKTOP_URL,
     category: 'Unlisted',
-    available: false
+    available: true
   },
   {
   id: 'ai-claude-notes-en',
@@ -755,12 +755,34 @@ export const PRODUCTS: Product[] = [
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
   category: 'listed',
-  available: false
+  available: true
+},
+{
+  id: 'ai-claude-notes-tl',
+  title: 'AI Claude Notes (TL)',
+  description: 'Comprehensive Claude AI notes in Tagalog.',
+  price: 0,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Listed',
+  available: true
 },
 {
   id: 'pl-python-beginner-tl',
   title: 'Python Beginner (TL)',
   description: 'Python beginner course in Tagalog.',
+  price: 0,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Listed',
+  available: true
+},
+{
+  id: 'pl-python-intermediate-tl',
+  title: 'Python Intermediate (TL)',
+  description: 'Python intermediate course in Tagalog.',
   price: 0,
   thumbnail: PREORDER_THUMBNAIL,
   mobileUrl: MOBILE_URL,
@@ -777,7 +799,7 @@ export const PRODUCTS: Product[] = [
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
   category: 'Listed',
-  available: false
+  available: true
 }
 
   
