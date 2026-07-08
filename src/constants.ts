@@ -747,6 +747,17 @@ export const PRODUCTS: Product[] = [
     available: true
   },
   {
+  id: 'bscs-complete',
+  title: 'BSCS Complete',
+  description: 'Complete BSCS notes package.',
+  price: 0,
+  thumbnail: PREORDER_THUMBNAIL,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: 'Unlisted',
+  available: true
+},
+  {
   id: 'ai-claude-notes-en',
   title: 'AI Claude Notes (EN)',
   description: 'Comprehensive Claude AI notes in English.',
