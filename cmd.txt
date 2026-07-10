@@ -1,5 +1,5 @@
 git add .
-git commit -m "Clean-up-1 Stable State"
+git commit -m "My Library to Desktop View"
 git push -u
 
 npm run build

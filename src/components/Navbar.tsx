@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect, useMemo, useDeferredValue, useCallb
 import { Menu, X, Search, LibraryBig, MessageCircle } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
-import { getCachedIdToken } from '../lib/googleIdentity';
+import { getCachedIdToken, getIdTokenEmail } from '../lib/googleIdentity';
+import { fetchOwnedProductIds } from '../lib/libraryAccess';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { InstallAppButton } from './InstallAppButton';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
+import { NoPdfAccessDialog } from './NoPdfAccessDialog';
 
 interface NavbarProps {
   onSearchSelect: (product: Product) => void;
@@ -15,6 +17,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const installPrompt = useInstallPrompt();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
+  const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
+  const [isCheckingMessengerAccess, setIsCheckingMessengerAccess] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -100,6 +104,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
       inputRef.current.focus();
     }
   }, [isSearchVisible]);
+
+  // Only buyers who own at least one PDF can join the Messenger group chat -
+  // this isn't a real access-control boundary (get-my-library re-verifies
+  // everything server-side already), so any check failure just falls back
+  // to showing the "no access" dialog rather than a separate error state.
+  const handleMessengerClick = useCallback(async () => {
+    setIsMenuOpen(false);
+
+    const idToken = getCachedIdToken();
+    if (!idToken) {
+      setIsNoPdfAccessDialogOpen(true);
+      return;
+    }
+
+    setIsCheckingMessengerAccess(true);
+    const result = await fetchOwnedProductIds(idToken, getIdTokenEmail(idToken));
+    setIsCheckingMessengerAccess(false);
+
+    if (result.status === 'ok' && result.productIds.length > 0) {
+      setIsMessengerDialogOpen(true);
+    } else {
+      setIsNoPdfAccessDialogOpen(true);
+    }
+  }, []);
 
   const handleSelect = useCallback((product: Product) => {
     onSearchSelect(product);
@@ -226,6 +254,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
             </div>
 
             <InstallAppButton {...installPrompt} />
+            <button
+              type="button"
+              onClick={handleMessengerClick}
+              disabled={isCheckingMessengerAccess}
+              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <MessageCircle size={18} />
+              Join Group Chat
+            </button>
             <a
               href="/my-library"
               className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
@@ -332,11 +369,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
             </a>
             <button
               type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                setIsMessengerDialogOpen(true);
-              }}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+              onClick={handleMessengerClick}
+              disabled={isCheckingMessengerAccess}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <MessageCircle size={20} />
               Join Messenger Group Chat
@@ -346,6 +381,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
       </nav>
 
       <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
+      <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
       
       {(isMenuOpen || (isSearchVisible && searchQuery.length > 0)) && (
         <div 

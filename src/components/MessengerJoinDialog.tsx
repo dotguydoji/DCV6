@@ -51,23 +51,24 @@ export const MessengerJoinDialog: React.FC<MessengerJoinDialogProps> = ({ open, 
         aria-labelledby="messenger-join-title"
         aria-describedby="messenger-join-message"
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm rounded-sm border border-white/10 bg-[#242829] p-6 shadow-2xl"
+        className="w-full max-w-sm sm:max-w-md lg:max-w-lg rounded-sm border border-white/10 bg-[#242829] p-6 sm:p-8 lg:p-10 shadow-2xl"
       >
-        <div className="w-11 h-11 rounded-full bg-brand-yellow/10 border border-brand-yellow/20 flex items-center justify-center mb-4">
-          <MessageCircle size={20} strokeWidth={1.5} className="text-brand-yellow" />
+        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-brand-yellow/10 border border-brand-yellow/20 flex items-center justify-center mb-4 sm:mb-5">
+          <MessageCircle size={20} className="sm:hidden text-brand-yellow" strokeWidth={1.5} />
+          <MessageCircle size={26} className="hidden sm:block text-brand-yellow" strokeWidth={1.5} />
         </div>
-        <h2 id="messenger-join-title" className="text-lg font-bold text-white mb-2">
+        <h2 id="messenger-join-title" className="text-lg sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">
           Join Our Messenger Group Chat
         </h2>
-        <p id="messenger-join-message" className="text-sm text-brand-muted mb-6">
+        <p id="messenger-join-message" className="f-body text-brand-muted mb-6 sm:mb-8">
           Stay updated in our Messenger group - it's where we announce the latest platform changes,
           new features, and freshly released books, notes, and PDFs first.
         </p>
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 sm:gap-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-sm text-sm font-medium text-brand-muted hover:text-white transition-colors"
+            className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-sm f-body font-medium text-brand-muted hover:text-white transition-colors"
           >
             Cancel
           </button>
@@ -77,7 +78,7 @@ export const MessengerJoinDialog: React.FC<MessengerJoinDialogProps> = ({ open, 
             target="_blank"
             rel="noopener noreferrer"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-sm text-sm font-bold bg-brand-yellow text-[#1a1d1e] hover:brightness-95 transition-[filter]"
+            className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-sm f-body font-bold bg-brand-yellow text-[#1a1d1e] hover:brightness-95 transition-[filter]"
           >
             Join
           </a>
