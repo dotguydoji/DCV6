@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { getProductById } from '../constants';
 import { Product } from '../types';
@@ -57,10 +57,13 @@ interface FavoriteHeartProps {
   productId: string;
   isFavorited: boolean;
   onToggle: (productId: string) => void;
-  size?: number;
 }
 
-const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, onToggle, size = 16 }) => (
+// Mobile: bare icon, larger, bright red when active. Desktop (sm+): the
+// original smaller pill with a backdrop, yellow when active - only the
+// mobile presentation changed, so both are kept via responsive classes
+// on one element rather than two separate components.
+const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, onToggle }) => (
   <button
     type="button"
     onClick={(event) => {
@@ -70,11 +73,13 @@ const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, o
     }}
     aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
     aria-pressed={isFavorited}
-    className={`flex items-center justify-center w-8 h-8 rounded-full backdrop-blur-sm transition-colors ${
-      isFavorited ? 'bg-brand-yellow text-[#1a1d1e]' : 'bg-black/60 text-white hover:text-brand-yellow'
+    className={`flex items-center justify-center w-9 h-9 sm:w-8 sm:h-8 sm:rounded-full sm:backdrop-blur-sm transition-colors ${
+      isFavorited
+        ? 'text-red-500 sm:text-[#1a1d1e] sm:bg-brand-yellow'
+        : 'text-white sm:bg-black/60 sm:hover:text-brand-yellow'
     }`}
   >
-    <Heart size={size} fill={isFavorited ? 'currentColor' : 'none'} />
+    <Heart className="w-6 h-6 sm:w-4 sm:h-4" fill={isFavorited ? 'currentColor' : 'none'} />
   </button>
 );
 
@@ -101,23 +106,20 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
       <img
         src={product.thumbnail}
         alt=""
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        className="w-full h-full object-cover transition-[filter] duration-300 group-hover:blur-md"
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-        <span className="text-sm font-bold uppercase tracking-[0.15em] text-brand-yellow flex items-center gap-2">
-          <FileText size={14} />
-          {lastOpenedAt ? 'Continue' : 'Open PDF'}
-        </span>
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <BookOpen size={32} className="text-white drop-shadow-lg" />
       </div>
       {product.category && (
-        <span className="absolute left-3 top-3 bg-black/70 backdrop-blur-sm text-[10px] font-bold uppercase tracking-[0.12em] text-brand-yellow px-2.5 py-1 rounded-sm">
+        <span className="hidden sm:block absolute left-3 top-3 bg-black/70 backdrop-blur-sm text-[10px] font-bold uppercase tracking-[0.12em] text-brand-yellow px-2.5 py-1 rounded-sm">
           {product.category}
         </span>
       )}
-      <div className="absolute right-3 top-3">
+      <div className="absolute right-3 top-3 group-hover:opacity-0 transition-opacity duration-300">
         <FavoriteHeart productId={product.id} isFavorited={isFavorited} onToggle={onToggleFavorite} />
       </div>
     </div>
@@ -485,37 +487,41 @@ export const MyLibraryPage: React.FC = () => {
                 <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">All PDFs</h2>
 
                 <div className="flex flex-col gap-3 mb-5">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <Search
-                        size={16}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none"
-                      />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search your library..."
-                        aria-label="Search your library"
-                        className="w-full bg-[#242829] border border-white/10 rounded-sm pl-10 pr-9 py-2.5 text-sm text-white placeholder:text-brand-muted outline-none focus:border-brand-yellow/60 transition-colors"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setSearchQuery('')}
-                          aria-label="Clear search"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white"
-                        >
-                          <X size={15} />
-                        </button>
-                      )}
-                    </div>
+                  <div className="relative">
+                    <Search
+                      size={16}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none"
+                    />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Search your library..."
+                      aria-label="Search your library"
+                      className="w-full bg-[#242829] border border-white/10 rounded-sm pl-10 pr-9 py-2.5 text-sm text-white placeholder:text-brand-muted outline-none focus:border-brand-yellow/60 transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        aria-label="Clear search"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white"
+                      >
+                        <X size={15} />
+                      </button>
+                    )}
+                  </div>
 
+                  {/* On mobile these three sit in one compact row (equal
+                      width via flex-1) instead of each stacking full-width -
+                      on sm+ they revert to their original natural width
+                      next to each other. */}
+                  <div className="flex gap-2 sm:gap-3">
                     <select
                       value={sortBy}
                       onChange={(event) => setSortBy(event.target.value as SortOption)}
                       aria-label="Sort by"
-                      className="bg-[#242829] border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                      className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
                     >
                       <option value="recent">Recently Opened</option>
                       <option value="title-asc">Title A–Z</option>
@@ -527,7 +533,7 @@ export const MyLibraryPage: React.FC = () => {
                         value={languageFilter}
                         onChange={(event) => setLanguageFilter(event.target.value)}
                         aria-label="Filter by language"
-                        className="bg-[#242829] border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
                         <option value={ALL_LANGUAGES}>All Languages</option>
                         {languages.map((language) => (
@@ -543,7 +549,7 @@ export const MyLibraryPage: React.FC = () => {
                         value={levelFilter}
                         onChange={(event) => setLevelFilter(event.target.value)}
                         aria-label="Filter by level"
-                        className="bg-[#242829] border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
                         <option value={ALL_LEVELS}>All Levels</option>
                         {levels.map((level) => (

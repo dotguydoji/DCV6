@@ -3,6 +3,7 @@ import { AlertCircle, Loader2, Search, Trash2, UserPlus, Users, X } from 'lucide
 import { AdminFile, Buyer, updateBuyer } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
 import { GrantSuccessDialog } from './GrantSuccessDialog';
+import { InfoDialog } from './InfoDialog';
 import { Pagination } from './Pagination';
 import { PasswordGateDialog } from './PasswordGateDialog';
 import { ProductAutocomplete } from './ProductAutocomplete';
@@ -47,6 +48,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
   const [removeTarget, setRemoveTarget] = useState<{ email: string; productId: string } | null>(null);
   const [page, setPage] = useState(1);
   const [showGrantSuccess, setShowGrantSuccess] = useState(false);
+  const [removalSuccessMessage, setRemovalSuccessMessage] = useState<string | null>(null);
 
   const handleGrant = useCallback(
     async (event: React.FormEvent) => {
@@ -92,6 +94,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
       try {
         await updateBuyer(idToken, email, 'remove', productId);
         onRefresh();
+        setRemovalSuccessMessage(`"${productId}" has been removed from ${email}.`);
       } finally {
         setBusyKey(null);
       }
@@ -105,6 +108,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
       try {
         await updateBuyer(idToken, email, 'delete');
         onRefresh();
+        setRemovalSuccessMessage(`All PDF access for ${email} has been removed.`);
       } finally {
         setBusyKey(null);
       }
@@ -305,6 +309,13 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         open={showGrantSuccess}
         message={GRANT_CONFIRMATION_MESSAGE}
         onClose={() => setShowGrantSuccess(false)}
+      />
+
+      <InfoDialog
+        open={removalSuccessMessage !== null}
+        title="Access Removed"
+        message={removalSuccessMessage ?? ''}
+        onClose={() => setRemovalSuccessMessage(null)}
       />
 
       <PasswordGateDialog
