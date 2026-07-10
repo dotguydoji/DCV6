@@ -69,10 +69,16 @@ export const handler: Handler = async (event) => {
     return jsonResponse(400, { error: 'Missing or invalid email/action' });
   }
 
-  if ((action === 'add' || action === 'remove') && !isValidProductId(productId)) {
-    return jsonResponse(400, {
-      error: 'productId must be lowercase letters, numbers, and hyphens only'
-    });
+  // Grant/remove accept either a single productId or an array of them, so an
+  // admin can assign several PDFs to one buyer in a single request.
+  const productIds = Array.isArray(productId) ? productId : [productId];
+
+  if ((action === 'add' || action === 'remove')) {
+    if (productIds.length === 0 || !productIds.every(isValidProductId)) {
+      return jsonResponse(400, {
+        error: 'productId must be lowercase letters, numbers, and hyphens only'
+      });
+    }
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -87,17 +93,19 @@ export const handler: Handler = async (event) => {
   // Already confirmed valid by isValidProductId above for both remaining
   // actions - narrowing explicitly here since TS can't infer it through the
   // earlier combined condition.
-  const validatedProductId = productId as string;
+  const validatedProductIds = productIds as string[];
 
   if (action === 'add') {
-    if (!(await productFileExists(validatedProductId))) {
-      return jsonResponse(400, { error: 'No uploaded file matches this product id' });
+    const existsResults = await Promise.all(validatedProductIds.map(productFileExists));
+    const missing = validatedProductIds.filter((_, index) => !existsResults[index]);
+    if (missing.length > 0) {
+      return jsonResponse(400, { error: `No uploaded file matches: ${missing.join(', ')}` });
     }
-    await docRef.set({ productIds: FieldValue.arrayUnion(validatedProductId) }, { merge: true });
+    await docRef.set({ productIds: FieldValue.arrayUnion(...validatedProductIds) }, { merge: true });
     return jsonResponse(200, { ok: true });
   }
 
   // action === 'remove'
-  await docRef.set({ productIds: FieldValue.arrayRemove(validatedProductId) }, { merge: true });
+  await docRef.set({ productIds: FieldValue.arrayRemove(...validatedProductIds) }, { merge: true });
   return jsonResponse(200, { ok: true });
 };

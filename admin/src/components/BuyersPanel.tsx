@@ -25,7 +25,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
   onRefresh
 }) => {
   const [emailInput, setEmailInput] = useState('');
-  const [productIdInput, setProductIdInput] = useState('');
+  const [productIdsInput, setProductIdsInput] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -37,17 +37,18 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
     async (event: React.FormEvent) => {
       event.preventDefault();
       const email = emailInput.trim().toLowerCase();
-      if (!email || !productIdInput) {
-        setFormError('Enter an email and pick a product.');
+      if (!email || productIdsInput.length === 0) {
+        setFormError('Enter an email and pick at least one product.');
         return;
       }
 
-      // The product field allows free typing (for search), so the typed
-      // text might not have been an actual selection from the list - only
-      // ever grant something that matches a real uploaded file, otherwise
-      // a typo could silently grant access to a nonexistent product id.
-      if (!files.some((file) => file.productId === productIdInput)) {
-        setFormError('Select a product from the list - that product id was not found.');
+      // The product field allows free typing (for search), so a selection
+      // could in principle be stale - only ever grant products that match a
+      // real uploaded file, otherwise a typo could silently grant access to
+      // a nonexistent product id.
+      const validFileIds = new Set(files.map((file) => file.productId));
+      if (!productIdsInput.every((id) => validFileIds.has(id))) {
+        setFormError('Select products from the list - one of those product ids was not found.');
         return;
       }
 
@@ -55,9 +56,9 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
       setFormError('');
 
       try {
-        await updateBuyer(idToken, email, 'add', productIdInput);
+        await updateBuyer(idToken, email, 'add', productIdsInput);
         setEmailInput('');
-        setProductIdInput('');
+        setProductIdsInput([]);
         onRefresh();
       } catch (err) {
         setFormError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -65,7 +66,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         setIsSubmitting(false);
       }
     },
-    [emailInput, productIdInput, idToken, onRefresh, files]
+    [emailInput, productIdsInput, idToken, onRefresh, files]
   );
 
   const handleRemoveProduct = useCallback(
@@ -135,8 +136,8 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <label className="block text-sm text-brand-muted mb-1.5">Product</label>
-            <ProductAutocomplete products={files} value={productIdInput} onChange={setProductIdInput} />
+            <label className="block text-sm text-brand-muted mb-1.5">Products</label>
+            <ProductAutocomplete products={files} value={productIdsInput} onChange={setProductIdsInput} />
           </div>
           <button
             type="submit"

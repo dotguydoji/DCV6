@@ -42,7 +42,7 @@ export const updateBuyer = (
   idToken: string,
   email: string,
   action: 'add' | 'remove' | 'delete',
-  productId?: string
+  productId?: string | string[]
 ) => call<{ ok: true }>('admin-update-buyer', idToken, { email, action, productId });
 
 export const listFiles = (idToken: string) =>
