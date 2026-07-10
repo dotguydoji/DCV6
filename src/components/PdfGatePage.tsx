@@ -98,6 +98,31 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
+  useEffect(() => {
+    // iOS Safari (much more aggressively than other browsers) can restore
+    // this exact page from its back-forward cache when a buyer taps back
+    // then re-opens the link, instead of doing a real reload - which means
+    // an already-expired signed URL (or an already-shown error) would
+    // otherwise just sit frozen on screen forever, since nothing re-runs to
+    // fetch a fresh one. `pageshow` with `persisted: true` is how a bfcache
+    // restore is detected; redoing the same check a real fresh load would
+    // do is what actually gets a new signed URL instead of leaving the
+    // stale one displayed.
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+
+      const cachedToken = getCachedIdToken();
+      if (cachedToken) {
+        handleSignIn(cachedToken);
+      } else {
+        setState({ status: 'signed-out' });
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [handleSignIn]);
+
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#1a1d1e] text-white px-6">

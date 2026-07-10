@@ -670,7 +670,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
           <ChevronRight size={18} />
         </button>
 
-        <div className="hidden sm:flex items-center gap-2 ml-2 pl-2 border-l border-white/10">
+        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-white/10">
           <button
             type="button"
             onClick={() => pdfViewerRef.current?.decreaseScale()}
@@ -692,7 +692,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
 
       <div className="px-5 py-3 bg-brand-yellow/10 border-t border-brand-yellow/20 text-center shrink-0">
         <p className="text-xs text-brand-yellow font-bold uppercase tracking-[0.2em]">
-          Doji's Library — For your personal use only. Please do not share or redistribute.
+          For your personal use only, please do not share or redistribute.
         </p>
       </div>
 

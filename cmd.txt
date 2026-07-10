@@ -1,5 +1,5 @@
 git add .
-git commit -m "added a text box copy"
+git commit -m "mobile: xoom in and out"
 git push -u
 
 npm run build

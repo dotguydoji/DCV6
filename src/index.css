@@ -84,6 +84,10 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    /* iOS Safari shows its own long-press callout (Copy/Share/Look Up) even
+       with user-select: none above - this is a separate, Safari-only switch
+       needed to actually suppress it. */
+    -webkit-touch-callout: none;
   }
 
   img {
@@ -105,6 +109,7 @@
 .pdfViewerContainer .textLayer * {
   user-select: none !important;
   -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
 }
 
 /*
