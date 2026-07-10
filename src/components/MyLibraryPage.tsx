@@ -166,45 +166,6 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
   </a>
 );
 
-interface ShelfProps {
-  title: string;
-  products: Product[];
-  favoriteIds: Set<string>;
-  onToggleFavorite: (productId: string) => void;
-  openedAtById: Map<string, number>;
-  readingPercentById: Map<string, number>;
-}
-
-const Shelf: React.FC<ShelfProps> = ({
-  title,
-  products,
-  favoriteIds,
-  onToggleFavorite,
-  openedAtById,
-  readingPercentById
-}) => {
-  if (products.length === 0) return null;
-
-  return (
-    <section className="mb-8">
-      <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">{title}</h2>
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
-        {products.map((product) => (
-          <div key={product.id} className="w-[220px] shrink-0">
-            <LibraryCard
-              product={product}
-              isFavorited={favoriteIds.has(product.id)}
-              onToggleFavorite={onToggleFavorite}
-              lastOpenedAt={openedAtById.get(product.id)}
-              readingPercent={readingPercentById.get(product.id)}
-            />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
 export const MyLibraryPage: React.FC = () => {
   const [state, setState] = useState<ViewState>({ status: 'restoring' });
   const [profile, setProfile] = useState<IdTokenProfile | null>(null);
@@ -358,7 +319,11 @@ export const MyLibraryPage: React.FC = () => {
     [recentlyOpened, ownedProductsById]
   );
 
-  const continueReadingProduct = recentlyOpenedProducts[0];
+  // The single "Continue Reading" hero replaced the separate "Recently
+  // Opened" shelf below it - showing the 3 most recent items here (newest
+  // first, same ordering recentlyOpenedProducts already provides) covers
+  // what that shelf used to do without a second, redundant section.
+  const topRecentProducts = recentlyOpenedProducts.slice(0, 3);
 
   const categories = useMemo(() => {
     const unique = Array.from(new Set(ownedProducts.map((product) => product.category)));
@@ -523,51 +488,47 @@ export const MyLibraryPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {continueReadingProduct && (
+              {topRecentProducts.length > 0 && (
                 <section className="mb-10">
                   <h2 className="hidden sm:block text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
-                    Continue Reading
+                    Recently Opened
                   </h2>
-                  <a
-                    href={`/view/${encodeURIComponent(continueReadingProduct.id)}`}
-                    className="group flex items-center gap-6 bg-[#242829] border border-white/10 rounded-sm p-4 hover:border-brand-yellow/60 transition-colors"
-                  >
-                    <div className="w-24 h-16 sm:w-32 sm:h-20 rounded-sm overflow-hidden shrink-0 bg-black/20">
-                      <img
-                        src={continueReadingProduct.thumbnail}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base sm:text-lg font-bold truncate">{continueReadingProduct.title}</p>
-                      <p className="text-sm text-brand-muted">
-                        {formatRelativeDate(openedAtById.get(continueReadingProduct.id) ?? Date.now())}
-                        {typeof readingPercentById.get(continueReadingProduct.id) === 'number' &&
-                          ` · ${readingPercentById.get(continueReadingProduct.id)}% read`}
-                      </p>
-                    </div>
-                    {/* Icon only, on every screen size - this is the sole
-                        "recently opened" indicator on mobile (the section
-                        heading is desktop-only now), and avoids repeating
-                        the "Continue Reading" text inside the card on
-                        desktop, where the heading above already says it. */}
-                    <Clock size={20} strokeWidth={1.5} className="text-brand-yellow shrink-0" />
-                  </a>
+                  <div className="flex flex-col gap-3">
+                    {topRecentProducts.map((product) => (
+                      <a
+                        key={product.id}
+                        href={`/view/${encodeURIComponent(product.id)}`}
+                        className="group flex items-center gap-6 bg-[#242829] border border-white/10 rounded-sm p-4 hover:border-brand-yellow/60 transition-colors"
+                      >
+                        <div className="w-24 h-16 sm:w-32 sm:h-20 rounded-sm overflow-hidden shrink-0 bg-black/20">
+                          <img
+                            src={product.thumbnail}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base sm:text-lg font-bold truncate">{product.title}</p>
+                          <p className="text-sm text-brand-muted">
+                            {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
+                            {typeof readingPercentById.get(product.id) === 'number' &&
+                              ` · ${readingPercentById.get(product.id)}% read`}
+                          </p>
+                        </div>
+                        {/* Icon only, on every screen size - this is the sole
+                            "recently opened" indicator on mobile (the section
+                            heading is desktop-only now), and avoids repeating
+                            the "Recently Opened" text inside the card on
+                            desktop, where the heading above already says it. */}
+                        <Clock size={20} strokeWidth={1.5} className="text-brand-yellow shrink-0" />
+                      </a>
+                    ))}
+                  </div>
                 </section>
               )}
-
-              <Shelf
-                title="Recently Opened"
-                products={recentlyOpenedProducts.slice(1, 9)}
-                favoriteIds={favoriteIds}
-                onToggleFavorite={handleToggleFavorite}
-                openedAtById={openedAtById}
-                readingPercentById={readingPercentById}
-              />
 
               <section>
                 <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">All PDFs</h2>

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, Clock, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
+import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
 import { AdminCidGate } from './components/AdminCidGate';
 import { InstallAppButton } from './components/InstallAppButton';
 import { AdminFile, ApiError, Buyer, listBuyers, listFiles } from './lib/api';
@@ -17,7 +18,7 @@ type AuthState =
   | { status: 'error'; message: string; idToken: string }
   | { status: 'ready'; idToken: string };
 
-type Tab = 'buyers' | 'files';
+type Tab = 'buyers' | 'files' | 'inactive';
 
 const App: React.FC = () => {
   const installPrompt = useInstallPrompt();
@@ -101,7 +102,8 @@ const App: React.FC = () => {
   if (auth.status === 'ready') {
     const navItems: { key: Tab; label: string; icon: typeof FileText }[] = [
       { key: 'buyers', label: 'Buyers', icon: Users },
-      { key: 'files', label: 'Files', icon: FileText }
+      { key: 'files', label: 'Files', icon: FileText },
+      { key: 'inactive', label: 'Inactive Accounts', icon: Clock }
     ];
 
     const handleSignOut = () => {
@@ -165,7 +167,7 @@ const App: React.FC = () => {
               <p className="font-bold">DC Notes Admin</p>
             </div>
             <h2 className="hidden lg:block text-lg font-bold">
-              {tab === 'files' ? 'Files' : 'Buyers'}
+              {tab === 'files' ? 'Files' : tab === 'buyers' ? 'Buyers' : 'Inactive Accounts'}
             </h2>
             <div className="lg:hidden flex items-center gap-3">
               <InstallAppButton {...installPrompt} />
@@ -191,11 +193,19 @@ const App: React.FC = () => {
                 canManageFiles={canManageFiles}
                 onRefresh={() => refreshFiles(auth.idToken)}
               />
-            ) : (
+            ) : tab === 'buyers' ? (
               <BuyersPanel
                 idToken={auth.idToken}
                 buyers={buyers}
                 files={files}
+                isLoading={buyersLoading}
+                error={buyersError}
+                onRefresh={() => refreshBuyers(auth.idToken)}
+              />
+            ) : (
+              <InactiveAccountsPanel
+                idToken={auth.idToken}
+                buyers={buyers}
                 isLoading={buyersLoading}
                 error={buyersError}
                 onRefresh={() => refreshBuyers(auth.idToken)}

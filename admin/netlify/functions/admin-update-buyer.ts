@@ -1,10 +1,18 @@
 import type { Handler } from '@netlify/functions';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './lib/adminAuth';
 import { r2Client, R2_BUCKET_NAME } from './lib/r2Client';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 import { isValidProductId } from './lib/validation';
+
+// Buyer records are kept for a bounded window rather than indefinitely, to
+// stop the buyers collection from growing forever - each grant refreshes
+// this forward, so an active/returning buyer's record never gets close to
+// it. A record past this point is removed by scheduled-prune-expired-buyers.ts.
+// Removal only means the record is gone; re-adding the same Gmail through
+// this same endpoint restores it exactly as before.
+const RECORD_LIFETIME_MS = 3 * 365 * 24 * 60 * 60 * 1000;
 
 // Only "add" ever needs this check - a well-formed but nonexistent productId
 // used to be silently accepted into a buyer's whitelist (harmless in effect,
@@ -101,7 +109,13 @@ export const handler: Handler = async (event) => {
     if (missing.length > 0) {
       return jsonResponse(400, { error: `No uploaded file matches: ${missing.join(', ')}` });
     }
-    await docRef.set({ productIds: FieldValue.arrayUnion(...validatedProductIds) }, { merge: true });
+    await docRef.set(
+      {
+        productIds: FieldValue.arrayUnion(...validatedProductIds),
+        expiresAt: Timestamp.fromMillis(Date.now() + RECORD_LIFETIME_MS)
+      },
+      { merge: true }
+    );
     return jsonResponse(200, { ok: true });
   }
 

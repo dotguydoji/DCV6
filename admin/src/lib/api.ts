@@ -9,6 +9,7 @@ const LIST_CACHE_TTL_MS = 120 * 1000;
 export interface Buyer {
   email: string;
   productIds: string[];
+  expiresAt: string | null;
 }
 
 export interface AdminFile {
@@ -82,6 +83,12 @@ export const getUploadUrl = (idToken: string, productId: string) =>
 export const deleteFile = async (idToken: string, productId: string) => {
   const result = await call<{ ok: true }>('admin-delete-file', idToken, { productId });
   clearCachedResponse(FILES_CACHE_KEY);
+  return result;
+};
+
+export const backfillExpiry = async (idToken: string) => {
+  const result = await call<{ updated: number }>('admin-backfill-expiry', idToken);
+  clearCachedResponse(BUYERS_CACHE_KEY);
   return result;
 };
 

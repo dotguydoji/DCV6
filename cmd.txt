@@ -1,5 +1,5 @@
 git add .
-git commit -m "caching updated option b"
+git commit -m "daily prune (3 years validity)"
 git push -u
 
 npm run build

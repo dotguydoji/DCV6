@@ -1,4 +1,5 @@
 import type { Handler } from '@netlify/functions';
+import type { Timestamp } from 'firebase-admin/firestore';
 import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './lib/adminAuth';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 
@@ -31,10 +32,15 @@ export const handler: Handler = async (event) => {
   const db = getAdminFirestore();
   const snapshot = await db.collection('buyers').get();
 
-  const buyers = snapshot.docs.map((doc) => ({
-    email: doc.id,
-    productIds: (doc.data().productIds ?? []) as string[]
-  }));
+  const buyers = snapshot.docs.map((doc) => {
+    const data = doc.data();
+    const expiresAt = data.expiresAt as Timestamp | undefined;
+    return {
+      email: doc.id,
+      productIds: (data.productIds ?? []) as string[],
+      expiresAt: expiresAt ? expiresAt.toDate().toISOString() : null
+    };
+  });
 
   return jsonResponse(200, { buyers });
 };
