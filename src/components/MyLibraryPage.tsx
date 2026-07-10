@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookOpen, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowLeft, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { getProductById } from '../constants';
 import { Product } from '../types';
@@ -59,10 +59,8 @@ interface FavoriteHeartProps {
   onToggle: (productId: string) => void;
 }
 
-// Mobile: bare icon, larger, bright red when active. Desktop (sm+): the
-// original smaller pill with a backdrop, yellow when active - only the
-// mobile presentation changed, so both are kept via responsive classes
-// on one element rather than two separate components.
+// Bare icon (no circular background), larger, bright red when active - same
+// on every screen size, not just mobile.
 const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, onToggle }) => (
   <button
     type="button"
@@ -73,13 +71,11 @@ const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, o
     }}
     aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
     aria-pressed={isFavorited}
-    className={`flex items-center justify-center w-9 h-9 sm:w-8 sm:h-8 sm:rounded-full sm:backdrop-blur-sm transition-colors ${
-      isFavorited
-        ? 'text-red-500 sm:text-[#1a1d1e] sm:bg-brand-yellow'
-        : 'text-white sm:bg-black/60 sm:hover:text-brand-yellow'
+    className={`flex items-center justify-center w-9 h-9 transition-colors ${
+      isFavorited ? 'text-red-500' : 'text-white hover:text-red-400'
     }`}
   >
-    <Heart className="w-6 h-6 sm:w-4 sm:h-4" fill={isFavorited ? 'currentColor' : 'none'} />
+    <Heart className="w-6 h-6" fill={isFavorited ? 'currentColor' : 'none'} />
   </button>
 );
 
@@ -100,53 +96,52 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
 }) => (
   <a
     href={`/view/${encodeURIComponent(product.id)}`}
-    className="group relative flex flex-col bg-[#242829] border border-white/10 rounded-sm overflow-hidden transition-all duration-300 hover:border-brand-yellow/60 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+    className="group relative flex flex-col bg-[#242829] border border-white/10 rounded-sm overflow-hidden transition-all duration-300 hover:bg-brand-yellow hover:border-brand-yellow hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
   >
     <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/20">
       <img
         src={product.thumbnail}
         alt=""
-        className="w-full h-full object-cover transition-[filter] duration-300 group-hover:blur-md"
+        className="w-full h-full object-cover"
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
       />
-      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-        <BookOpen size={32} className="text-white drop-shadow-lg" />
-      </div>
-      {product.category && (
-        <span className="hidden sm:block absolute left-3 top-3 bg-black/70 backdrop-blur-sm text-[10px] font-bold uppercase tracking-[0.12em] text-brand-yellow px-2.5 py-1 rounded-sm">
-          {product.category}
-        </span>
-      )}
-      <div className="absolute right-3 top-3 group-hover:opacity-0 transition-opacity duration-300">
+      <div className="absolute right-3 top-3">
         <FavoriteHeart productId={product.id} isFavorited={isFavorited} onToggle={onToggleFavorite} />
       </div>
     </div>
     <div className="p-4">
-      <h3 className="font-bold text-white truncate mb-1">{product.title}</h3>
-      <p className="text-xs text-brand-muted line-clamp-2 mb-2">{product.description}</p>
+      <h3 className="font-bold text-white truncate mb-1 transition-colors duration-300 group-hover:text-[#1a1d1e]">
+        {product.title}
+      </h3>
+      <p className="text-xs text-brand-muted line-clamp-2 mb-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+        {product.description}
+      </p>
       <div className="flex items-center gap-1.5 flex-wrap">
         {product.level && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
             {formatLevel(product.level)}
           </span>
         )}
         {product.language && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
             {product.language === 'en' ? 'English' : 'Tagalog'}
           </span>
         )}
       </div>
       {lastOpenedAt && (
-        <p className="text-[11px] text-brand-muted mt-2">
+        <p className="text-[11px] text-brand-muted mt-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
           {formatRelativeDate(lastOpenedAt)}
           {typeof readingPercent === 'number' && ` · ${readingPercent}% read`}
         </p>
       )}
       {typeof readingPercent === 'number' && (
-        <div className="mt-1.5 h-1 w-full rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full bg-brand-yellow" style={{ width: `${readingPercent}%` }} />
+        <div className="mt-1.5 h-1 w-full rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
+          <div
+            className="h-full bg-brand-yellow transition-colors duration-300 group-hover:bg-[#1a1d1e]"
+            style={{ width: `${readingPercent}%` }}
+          />
         </div>
       )}
     </div>
