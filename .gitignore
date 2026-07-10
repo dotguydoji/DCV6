@@ -25,9 +25,13 @@ vite-dev.err.log
 
 # Internal setup/architecture notes - not secrets themselves, but no
 # reason to publish infrastructure details (bucket names, env var names,
-# IAM role names) in the repo. Keep these local only. Any .md file created
-# directly inside admin/ is treated as an internal note by default - never
-# committed/pushed, regardless of what it's named.
+# IAM role names) in the repo. Keep these local only. Every .md file for
+# this project lives in /documentation now - never committed/pushed,
+# regardless of what it's named.
+/documentation/
+
+# Kept as a safety net in case a stray .md ever gets created directly
+# inside admin/ again out of habit - it should never be committed either.
 admin/*.md
 
 # Tooling cache

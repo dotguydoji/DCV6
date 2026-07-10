@@ -8,7 +8,7 @@
  * TEMPORARILY DISABLED for active development (2026-07-04) so code changes
  * are always reflected immediately instead of serving a stale cached
  * response - flip CACHE_ENABLED back to true before the final release.
- * See admin/context-window.md "What to do next" for the reminder.
+ * See documentation/context-window.md "What to do next" for the reminder.
  */
 const CACHE_ENABLED = false;
 

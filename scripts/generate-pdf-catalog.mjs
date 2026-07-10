@@ -24,5 +24,5 @@ md += `\n## Summary\n\n`;
 md += `- Total catalog entries: ${PRODUCTS.length}\n`;
 md += `- Categories: ${[...groups.keys()].sort().join(', ')}\n`;
 
-writeFileSync(new URL('../PDF_CATALOG.md', import.meta.url), md);
+writeFileSync(new URL('../documentation/PDF_CATALOG.md', import.meta.url), md);
 console.log(`PDF_CATALOG.md regenerated (${PRODUCTS.length} products).`);
