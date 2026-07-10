@@ -107,9 +107,6 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
         decoding="async"
         referrerPolicy="no-referrer"
       />
-      <div className="absolute right-3 top-3">
-        <FavoriteHeart productId={product.id} isFavorited={isFavorited} onToggle={onToggleFavorite} />
-      </div>
     </div>
     <div className="p-4">
       <h3 className="font-bold text-white truncate mb-1 transition-colors duration-300 group-hover:text-[#1a1d1e]">
@@ -133,17 +130,31 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
       {lastOpenedAt && (
         <p className="text-[11px] text-brand-muted mt-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
           {formatRelativeDate(lastOpenedAt)}
-          {typeof readingPercent === 'number' && ` · ${readingPercent}% read`}
         </p>
       )}
-      {typeof readingPercent === 'number' && (
-        <div className="mt-1.5 h-1 w-full rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
-          <div
-            className="h-full bg-brand-yellow transition-colors duration-300 group-hover:bg-[#1a1d1e]"
-            style={{ width: `${readingPercent}%` }}
-          />
+
+      {/* Reading progress takes exactly the left half of the row, the
+          favorite heart sits on the right half - same row, no overlap. */}
+      <div className="flex items-center justify-between gap-3 mt-2">
+        <div className="w-1/2 flex items-center gap-2">
+          {typeof readingPercent === 'number' && (
+            <>
+              <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
+                <div
+                  className="h-full bg-brand-yellow transition-colors duration-300 group-hover:bg-[#1a1d1e]"
+                  style={{ width: `${readingPercent}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-bold text-brand-muted shrink-0 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+                {readingPercent}%
+              </span>
+            </>
+          )}
         </div>
-      )}
+        <div className="w-1/2 flex justify-end">
+          <FavoriteHeart productId={product.id} isFavorited={isFavorited} onToggle={onToggleFavorite} />
+        </div>
+      </div>
     </div>
   </a>
 );
@@ -378,7 +389,7 @@ export const MyLibraryPage: React.FC = () => {
 
   if (state.status === 'ready') {
     return (
-      <div className="min-h-screen bg-[#1a1d1e] text-white px-6 py-10">
+      <div className="min-h-screen bg-[#16181a] text-white px-6 py-10">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-6 gap-4">
             <a
@@ -603,7 +614,7 @@ export const MyLibraryPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1a1d1e] text-white px-6">
+    <div className="min-h-screen flex items-center justify-center bg-[#16181a] text-white px-6">
       <div className="max-w-md w-full text-center">
         <LibraryBig size={40} className="mx-auto text-brand-yellow mb-5" />
         <h1 className="text-2xl font-bold mb-2">My Library</h1>
