@@ -165,7 +165,16 @@ export const clearCachedIdToken = (): void => {
   }
 };
 
-const SILENT_SIGN_IN_ATTEMPTED_KEY = 'google-silent-signin-attempted';
+const SILENT_SIGN_IN_LAST_ATTEMPT_KEY = 'google-silent-signin-last-attempt';
+
+// Google's own account session in the browser (a cookie only Google
+// controls) is what actually lets a buyer come back for up to about a week
+// without clicking "Sign in" again - our own id token is always short-lived
+// and gets silently replaced from that session. This cooldown only exists
+// to stop us from calling prompt() many times in a few seconds (which
+// trips Google's own suppression); it deliberately does NOT block retrying
+// on a fresh page load/reload, which is when this actually needs to fire.
+const SILENT_SIGN_IN_COOLDOWN_MS = 30 * 1000;
 
 /**
  * Explicit sign-out: clears our cached token AND tells Google's own library
@@ -176,7 +185,7 @@ const SILENT_SIGN_IN_ATTEMPTED_KEY = 'google-silent-signin-attempted';
 export const signOutOfGoogle = (): void => {
   clearCachedIdToken();
   try {
-    sessionStorage.removeItem(SILENT_SIGN_IN_ATTEMPTED_KEY);
+    localStorage.removeItem(SILENT_SIGN_IN_LAST_ATTEMPT_KEY);
   } catch {
     // Ignored on purpose - see getCachedIdToken's comment above.
   }
@@ -186,20 +195,23 @@ export const signOutOfGoogle = (): void => {
 /**
  * Tries to silently restore a session (no click needed) when the cached
  * token has simply expired - not after an explicit sign-out, since that
- * calls disableAutoSelect() above. Guarded to at most once per browser tab
- * session (sessionStorage, not an in-memory flag) - calling Google's
- * prompt() repeatedly in a short window was found to trigger a cooldown
- * that suppresses sign-in entirely for several minutes (see
- * GoogleSignInButton.tsx), so this must never fire more than once per tab.
+ * calls disableAutoSelect() above. Guarded by a short cooldown (not "once
+ * ever per tab") so it still retries on every real page load/reload - a
+ * buyer reopening the site a day, or a week, later gets a fresh silent
+ * attempt every time, which is what actually keeps them signed in across
+ * that whole window rather than only on the very first visit to a tab.
+ * The cooldown only blocks firing again within the same few seconds (e.g.
+ * a fast re-render), not across separate visits.
  */
 export const attemptSilentSignIn = (): boolean => {
   try {
-    if (sessionStorage.getItem(SILENT_SIGN_IN_ATTEMPTED_KEY)) {
+    const lastAttempt = Number(localStorage.getItem(SILENT_SIGN_IN_LAST_ATTEMPT_KEY) ?? 0);
+    if (Date.now() - lastAttempt < SILENT_SIGN_IN_COOLDOWN_MS) {
       return false;
     }
-    sessionStorage.setItem(SILENT_SIGN_IN_ATTEMPTED_KEY, '1');
+    localStorage.setItem(SILENT_SIGN_IN_LAST_ATTEMPT_KEY, String(Date.now()));
   } catch {
-    // If sessionStorage is unavailable, fall through and still try once -
+    // If localStorage is unavailable, fall through and still try once -
     // see getCachedIdToken's comment above.
   }
 

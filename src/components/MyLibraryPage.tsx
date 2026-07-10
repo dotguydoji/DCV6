@@ -7,12 +7,14 @@ import {
   Heart,
   LibraryBig,
   LogOut,
+  MessageCircle,
   Menu,
   RefreshCw,
   Search,
   X
 } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { getProductById } from '../constants';
 import { Product } from '../types';
 import {
@@ -87,7 +89,7 @@ const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, o
       isFavorited ? 'text-red-500' : 'text-white hover:text-red-400'
     }`}
   >
-    <Heart className="w-6 h-6" fill={isFavorited ? 'currentColor' : 'none'} />
+    <Heart className="w-6 h-6" strokeWidth={1.5} fill={isFavorited ? 'currentColor' : 'none'} />
   </button>
 );
 
@@ -127,31 +129,19 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
       <p className="text-sm text-brand-muted line-clamp-2 mb-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
         {product.description}
       </p>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {product.level && (
-          <span className="text-xs font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
-            {formatLevel(product.level)}
-          </span>
-        )}
-        {product.language && (
-          <span className="text-xs font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
-            {product.language === 'en' ? 'English' : 'Tagalog'}
-          </span>
-        )}
-      </div>
-      {lastOpenedAt && (
-        <p className="text-xs text-brand-muted mt-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
-          {formatRelativeDate(lastOpenedAt)}
-        </p>
-      )}
 
-      {/* Reading progress takes exactly the left half of the row, the
-          favorite heart sits on the right half - same row, no overlap. */}
-      <div className="flex items-center justify-between gap-3 mt-2">
-        <div className="w-1/2 flex items-center gap-2">
+      {/* Reading progress is always left-aligned in its own half. The
+          language label + heart are always right-aligned as one fixed unit
+          (in that DOM order, pinned via justify-end) so the heart's
+          position never shifts depending on whether a language label is
+          present - previously, with only the heart in this half and
+          justify-between, a single flex child sits at the start, not the
+          end, which is what made it drift around. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="w-1/2 flex items-center justify-start gap-2">
           {typeof readingPercent === 'number' && (
             <>
-              <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
+              <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
                 <div
                   className="h-full bg-brand-yellow transition-colors duration-300 group-hover:bg-[#1a1d1e]"
                   style={{ width: `${readingPercent}%` }}
@@ -163,7 +153,12 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
             </>
           )}
         </div>
-        <div className="w-1/2 flex justify-end">
+        <div className="w-1/2 flex items-center justify-end gap-2">
+          {product.language && (
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
+              {product.language === 'en' ? 'English' : 'Tagalog'}
+            </span>
+          )}
           <FavoriteHeart productId={product.id} isFavorited={isFavorited} onToggle={onToggleFavorite} />
         </div>
       </div>
@@ -214,6 +209,7 @@ export const MyLibraryPage: React.FC = () => {
   const [state, setState] = useState<ViewState>({ status: 'restoring' });
   const [profile, setProfile] = useState<IdTokenProfile | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [languageFilter, setLanguageFilter] = useState(ALL_LANGUAGES);
@@ -464,9 +460,11 @@ export const MyLibraryPage: React.FC = () => {
             restructuring anything. */}
         <div
           className={`fixed left-0 right-0 top-24 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/10 ${
-            isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'
+            isMenuOpen ? 'max-h-96 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'
           }`}
         >
+          {/* New items go above Sign out, never below it - Sign out stays
+              the permanent last entry in this menu. */}
           <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col gap-2">
             <a
               href="/"
@@ -476,6 +474,17 @@ export const MyLibraryPage: React.FC = () => {
               <ArrowLeftCircle size={20} />
               Back to Doji's Library
             </a>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsMessengerDialogOpen(true);
+              }}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+            >
+              <MessageCircle size={20} />
+              Join Messenger Group Chat
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -498,6 +507,8 @@ export const MyLibraryPage: React.FC = () => {
           />
         )}
 
+        <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
+
         <div className="max-w-5xl mx-auto px-6 py-10">
           {ownedProducts.length === 0 ? (
             <div className="text-center py-20">
@@ -514,7 +525,7 @@ export const MyLibraryPage: React.FC = () => {
             <>
               {continueReadingProduct && (
                 <section className="mb-10">
-                  <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
+                  <h2 className="hidden sm:block text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
                     Continue Reading
                   </h2>
                   <a
@@ -539,10 +550,12 @@ export const MyLibraryPage: React.FC = () => {
                           ` · ${readingPercentById.get(continueReadingProduct.id)}% read`}
                       </p>
                     </div>
-                    {/* Icon only, on every screen size - the section heading
-                        above already says "Continue Reading", so repeating
-                        that text inside the card too was a duplicate label. */}
-                    <Clock size={20} className="text-brand-yellow shrink-0" />
+                    {/* Icon only, on every screen size - this is the sole
+                        "recently opened" indicator on mobile (the section
+                        heading is desktop-only now), and avoids repeating
+                        the "Continue Reading" text inside the card on
+                        desktop, where the heading above already says it. */}
+                    <Clock size={20} strokeWidth={1.5} className="text-brand-yellow shrink-0" />
                   </a>
                 </section>
               )}
@@ -596,7 +609,7 @@ export const MyLibraryPage: React.FC = () => {
                       aria-label="Sort by"
                       className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                     >
-                      <option value="recent">Recently Opened</option>
+                      <option value="recent">Recents</option>
                       <option value="title-asc">Title A–Z</option>
                       <option value="title-desc">Title Z–A</option>
                     </select>
@@ -608,7 +621,7 @@ export const MyLibraryPage: React.FC = () => {
                         aria-label="Filter by language"
                         className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
-                        <option value={ALL_LANGUAGES}>All Languages</option>
+                        <option value={ALL_LANGUAGES}>Languages</option>
                         {languages.map((language) => (
                           <option key={language} value={language}>
                             {language === 'en' ? 'English' : 'Tagalog'}
@@ -624,7 +637,7 @@ export const MyLibraryPage: React.FC = () => {
                         aria-label="Filter by level"
                         className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
-                        <option value={ALL_LEVELS}>All Levels</option>
+                        <option value={ALL_LEVELS}>Levels</option>
                         {levels.map((level) => (
                           <option key={level} value={level}>
                             {formatLevel(level)}

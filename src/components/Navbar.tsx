@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue, useCallback } from 'react';
-import { Menu, X, Search, LibraryBig } from 'lucide-react';
+import { Menu, X, Search, LibraryBig, MessageCircle } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
 import { getCachedIdToken } from '../lib/googleIdentity';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { InstallAppButton } from './InstallAppButton';
+import { MessengerJoinDialog } from './MessengerJoinDialog';
 
 interface NavbarProps {
   onSearchSelect: (product: Product) => void;
@@ -13,6 +14,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const installPrompt = useInstallPrompt();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -318,8 +320,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
         )}
 
-        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/5 ${isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-          <div className="px-4 py-4">
+        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/5 ${isMenuOpen ? 'max-h-96 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+          <div className="px-4 py-4 flex flex-col gap-2">
             <a
               href="/my-library"
               onClick={() => setIsMenuOpen(false)}
@@ -328,9 +330,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               <LibraryBig size={20} />
               {hasCachedSession ? 'My Library' : 'Login'}
             </a>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsMessengerDialogOpen(true);
+              }}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+            >
+              <MessageCircle size={20} />
+              Join Messenger Group Chat
+            </button>
           </div>
         </div>
       </nav>
+
+      <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
       
       {(isMenuOpen || (isSearchVisible && searchQuery.length > 0)) && (
         <div 
