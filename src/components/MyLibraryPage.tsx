@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
   ArrowLeftCircle,
+  Clock,
   FileText,
   Heart,
   LibraryBig,
@@ -401,9 +402,9 @@ export const MyLibraryPage: React.FC = () => {
 
   if (state.status === 'ready') {
     return (
-      <div className="min-h-screen bg-[#16181a] text-white px-6 py-10">
-        <div className="max-w-5xl mx-auto">
-          <header className="relative flex items-center justify-between gap-4 mb-8 bg-white/5 border border-white/10 rounded-lg px-5 py-4 sm:px-6 sm:py-5">
+      <div className="min-h-screen bg-[#16181a] text-white">
+        <header className="sticky top-0 z-50 h-24 flex items-center bg-[#1a1d1e] border-b border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+          <div className="max-w-5xl w-full mx-auto flex items-center justify-between gap-4 px-6">
             <div className="flex items-center gap-4 min-w-0">
               {profile?.picture ? (
                 <img
@@ -427,50 +428,64 @@ export const MyLibraryPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen((prev) => !prev)}
-                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={isMenuOpen}
-                className={`flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-lg border transition-all duration-300 active:scale-90 ${
-                  isMenuOpen
-                    ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow'
-                    : 'border-white/10 text-brand-muted hover:border-brand-yellow/50 hover:text-brand-yellow'
-                }`}
-              >
-                {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
-              </button>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMenuOpen}
+              className={`flex items-center justify-center w-12 h-12 rounded-lg border transition-all duration-300 active:scale-90 shrink-0 ${
+                isMenuOpen
+                  ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow'
+                  : 'border-white/10 text-brand-muted hover:border-brand-yellow/50 hover:text-brand-yellow'
+              }`}
+            >
+              {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
+        </header>
 
-              {isMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} role="presentation" />
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-[#1f2224] border border-white/10 rounded-lg shadow-2xl overflow-hidden z-50 animate-fade-in">
-                    <a
-                      href="/"
-                      className="flex items-center gap-3 px-4 py-3.5 text-sm font-bold text-white hover:bg-white/5 transition-colors"
-                    >
-                      <ArrowLeftCircle size={20} className="text-brand-muted" />
-                      Back to Doji's Library
-                    </a>
-                    <div className="border-t border-white/10" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleSignOut();
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm font-bold text-red-400 hover:bg-red-400/10 transition-colors"
-                    >
-                      <LogOut size={20} />
-                      Sign out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </header>
+        {/* Full navigation panel, same pattern as the main site's hamburger
+            menu (Navbar.tsx) - a full-width sheet that slides open below the
+            header with a blurred backdrop, not a small anchored dropdown.
+            Built as a plain list so more items can be added later without
+            restructuring anything. */}
+        <div
+          className={`fixed left-0 right-0 top-24 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/10 ${
+            isMenuOpen ? 'max-h-80 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col gap-2">
+            <a
+              href="/"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+            >
+              <ArrowLeftCircle size={20} />
+              Back to Doji's Library
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMenuOpen(false);
+                handleSignOut();
+              }}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-red-400 font-bold hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
+            >
+              <LogOut size={20} />
+              Sign out
+            </button>
+          </div>
+        </div>
 
+        {isMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-[#1a1d1e]/85 backdrop-blur-md animate-in fade-in duration-400"
+            onClick={() => setIsMenuOpen(false)}
+            role="presentation"
+          />
+        )}
+
+        <div className="max-w-5xl mx-auto px-6 py-10">
           {ownedProducts.length === 0 ? (
             <div className="text-center py-20">
               <FileText size={44} className="mx-auto text-brand-muted mb-4" />
@@ -511,9 +526,13 @@ export const MyLibraryPage: React.FC = () => {
                           ` · ${readingPercentById.get(continueReadingProduct.id)}% read`}
                       </p>
                     </div>
-                    <span className="hidden sm:flex items-center gap-2 text-base font-bold uppercase tracking-wide text-brand-yellow shrink-0">
-                      <FileText size={18} />
-                      Continue
+                    {/* Mobile: a bare clock icon signals "recently opened"
+                        without needing room for a text label. Desktop has
+                        space, so it shows the full "Continue Reading" text
+                        instead, with no icon. */}
+                    <Clock size={20} className="sm:hidden text-brand-yellow shrink-0" />
+                    <span className="hidden sm:block text-base font-bold uppercase tracking-wide text-brand-yellow shrink-0">
+                      Continue Reading
                     </span>
                   </a>
                 </section>

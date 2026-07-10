@@ -1,5 +1,5 @@
 git add .
-git commit -m "mobile: cham,burger menu"
+git commit -m "mobile: continue reading to icon"
 git push -u
 
 npm run build
