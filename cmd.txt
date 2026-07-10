@@ -1,5 +1,5 @@
 git add .
-git commit -m "daily prune (3 years validity)"
+git commit -m "Clean-up-1 Stable State"
 git push -u
 
 npm run build
