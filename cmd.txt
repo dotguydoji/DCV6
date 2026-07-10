@@ -1,5 +1,5 @@
 git add .
-git commit -m "adding pl-javascript-beginner-tl"
+git commit -m "admiin deletion and trash icon cid"
 git push -u
 
 npm run build

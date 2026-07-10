@@ -3,7 +3,9 @@ import { AlertCircle, Loader2, Search, Trash2, UserPlus, Users, X } from 'lucide
 import { AdminFile, Buyer, updateBuyer } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Pagination } from './Pagination';
+import { PasswordGateDialog } from './PasswordGateDialog';
 import { ProductAutocomplete } from './ProductAutocomplete';
+import { getAdminCid } from '../lib/cid';
 
 const PAGE_SIZE = 50;
 
@@ -31,6 +33,8 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [buyerSearch, setBuyerSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deletePasswordTarget, setDeletePasswordTarget] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ email: string; productId: string } | null>(null);
   const [page, setPage] = useState(1);
 
   const handleGrant = useCallback(
@@ -208,7 +212,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
                   <p className="font-bold truncate">{buyer.email}</p>
                   <button
                     type="button"
-                    onClick={() => setDeleteTarget(buyer.email)}
+                    onClick={() => setDeletePasswordTarget(buyer.email)}
                     disabled={busyKey === buyer.email}
                     aria-label={`Remove all access for ${buyer.email}`}
                     className="flex items-center justify-center w-9 h-9 rounded-lg border border-brand-border text-red-400 hover:border-red-400 hover:bg-red-400/10 disabled:opacity-40 transition-colors shrink-0"
@@ -228,7 +232,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
                       {productId}
                       <button
                         type="button"
-                        onClick={() => handleRemoveProduct(buyer.email, productId)}
+                        onClick={() => setRemoveTarget({ email: buyer.email, productId })}
                         disabled={busyKey === `${buyer.email}:${productId}`}
                         aria-label={`Remove ${productId} from ${buyer.email}`}
                         className="text-red-600 hover:text-red-700 disabled:opacity-40 transition-colors"
@@ -257,12 +261,46 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         </>
       )}
 
+      <PasswordGateDialog
+        open={removeTarget !== null}
+        title="Enter CID to continue"
+        message={
+          removeTarget
+            ? `Removing "${removeTarget.productId}" from ${removeTarget.email} is a sensitive action. Enter the CID to proceed.`
+            : ''
+        }
+        password={getAdminCid()}
+        onCancel={() => setRemoveTarget(null)}
+        onVerified={() => {
+          const target = removeTarget;
+          setRemoveTarget(null);
+          if (target) handleRemoveProduct(target.email, target.productId);
+        }}
+      />
+
+      <PasswordGateDialog
+        open={deletePasswordTarget !== null}
+        title="Enter CID to continue"
+        message={
+          deletePasswordTarget
+            ? `Removing all PDF access for ${deletePasswordTarget} is a sensitive action. Enter the CID to proceed.`
+            : ''
+        }
+        password={getAdminCid()}
+        onCancel={() => setDeletePasswordTarget(null)}
+        onVerified={() => {
+          const email = deletePasswordTarget;
+          setDeletePasswordTarget(null);
+          if (email) setDeleteTarget(email);
+        }}
+      />
+
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Remove buyer access?"
         message={
           deleteTarget
-            ? `This removes all product access for ${deleteTarget}. They will no longer be able to view any of their purchased PDFs. This cannot be undone.`
+            ? `This removes all product access for ${deleteTarget} only - no other buyer is affected. They will no longer be able to view any of their purchased PDFs. This cannot be undone.`
             : ''
         }
         confirmLabel="Remove access"
