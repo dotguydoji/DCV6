@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import { PRODUCTS } from '../constants';
+import { getProductById } from '../constants';
 import { Product } from '../types';
 import {
   clearCachedIdToken,
@@ -289,7 +289,7 @@ export const MyLibraryPage: React.FC = () => {
 
   const ownedProducts = useMemo(() => {
     if (state.status !== 'ready') return [];
-    return PRODUCTS.filter((product) => state.productIds.includes(product.id));
+    return state.productIds.map((id) => getProductById(id));
   }, [state]);
 
   const ownedProductsById = useMemo(() => {

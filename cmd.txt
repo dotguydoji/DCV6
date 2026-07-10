@@ -1,5 +1,5 @@
 git add .
-git commit -m "admiin deletion and trash icon cid"
+git commit -m "product catalog fix"
 git push -u
 
 npm run build

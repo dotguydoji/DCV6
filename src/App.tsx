@@ -8,7 +8,7 @@ const FAQSection = lazyWithReload(() => import('./components/FAQSection').then((
 const CartModal = lazyWithReload(() => import('./components/CartModal').then((m) => ({ default: m.CartModal })));
 const PdfGatePage = lazyWithReload(() => import('./components/PdfGatePage').then((m) => ({ default: m.PdfGatePage })));
 const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').then((m) => ({ default: m.MyLibraryPage })));
-import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY } from "./constants";
+import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById } from "./constants";
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 
@@ -414,7 +414,7 @@ const App: React.FC = () => {
   }
 
   if (pdfProductId) {
-    const product = PRODUCTS.find((item) => item.id === pdfProductId);
+    const product = getProductById(pdfProductId);
     return (
       <Suspense fallback={<RouteLoadingScreen />}>
         <PdfGatePage product={product} productId={pdfProductId} />

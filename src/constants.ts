@@ -779,42 +779,40 @@ export const PRODUCTS: Product[] = [
   category: 'Listed',
   available: true
 },
-{
-  id: 'pl-python-beginner-tl',
-  title: 'Python Beginner (TL)',
-  description: 'Python beginner course in Tagalog.',
-  price: 0,
-  thumbnail: PREORDER_THUMBNAIL,
-  mobileUrl: MOBILE_URL,
-  desktopUrl: DESKTOP_URL,
-  category: 'Listed',
-  available: true
-},
-{
-  id: 'pl-python-intermediate-tl',
-  title: 'Python Intermediate (TL)',
-  description: 'Python intermediate course in Tagalog.',
-  price: 0,
-  thumbnail: PREORDER_THUMBNAIL,
-  mobileUrl: MOBILE_URL,
-  desktopUrl: DESKTOP_URL,
-  category: 'Listed',
-  available: false
-},
-{
-  id: 'pl-javascript-beginner-tl',
-  title: 'JavaScript Beginner (TL)',
-  description: 'JavaScript beginner course in Tagalog.',
-  price: 0,
-  thumbnail: PREORDER_THUMBNAIL,
-  mobileUrl: MOBILE_URL,
-  desktopUrl: DESKTOP_URL,
-  category: 'Listed',
-  available: true
-}
-
-  
 ];
+
+const humanizeProductId = (id: string): string =>
+  id
+    .split('-')
+    .filter((segment) => segment !== 'en' && segment !== 'tl')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+/**
+ * A buyer can be granted a PDF (admin panel -> Buyers) before its real
+ * catalog entry is hand-added here - without this, that PDF would either
+ * vanish from "My Library" or block the direct /view/<id> link entirely,
+ * even though the buyer is already authorized server-side. Falling back to
+ * a title guessed from the id keeps it visible and openable immediately;
+ * once a real PRODUCTS entry is added later, it takes over automatically
+ * since this only synthesizes one when nothing real exists.
+ */
+export const getProductById = (id: string): Product => {
+  const existing = PRODUCTS.find((product) => product.id === id);
+  if (existing) return existing;
+
+  return {
+    id,
+    title: humanizeProductId(id),
+    description: 'This PDF was recently added and is pending its full catalog listing.',
+    price: 0,
+    thumbnail: PREORDER_THUMBNAIL,
+    mobileUrl: MOBILE_URL,
+    desktopUrl: DESKTOP_URL,
+    category: 'Unlisted',
+    available: true
+  };
+};
 
 export const FAQS: FAQItem[] = [
   {
