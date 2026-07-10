@@ -100,6 +100,29 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
     [idToken, onRefresh]
   );
 
+  // Products already granted to whatever email is currently typed - excluded
+  // from the picker below so re-granting the same buyer doesn't re-show
+  // PDFs they already have (arrayUnion would just no-op on them anyway, but
+  // showing them invites picking the wrong ones by mistake).
+  const alreadyGrantedIds = useMemo(() => {
+    const normalizedEmail = emailInput.trim().toLowerCase();
+    if (!normalizedEmail) return new Set<string>();
+    const buyer = buyers.find((b) => b.email.toLowerCase() === normalizedEmail);
+    return new Set(buyer?.productIds ?? []);
+  }, [emailInput, buyers]);
+
+  const grantableFiles = useMemo(
+    () => files.filter((file) => !alreadyGrantedIds.has(file.productId)),
+    [files, alreadyGrantedIds]
+  );
+
+  // If the typed email already owns a product that's still sitting selected
+  // from before the email was changed, drop it - it's no longer a valid
+  // choice to grant again.
+  useEffect(() => {
+    setProductIdsInput((current) => current.filter((id) => !alreadyGrantedIds.has(id)));
+  }, [alreadyGrantedIds]);
+
   const filteredBuyers = useMemo(() => {
     const normalized = buyerSearch.trim().toLowerCase();
     if (!normalized) return buyers;
@@ -141,7 +164,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <label className="block text-sm text-brand-muted mb-1.5">Products</label>
-            <ProductAutocomplete products={files} value={productIdsInput} onChange={setProductIdsInput} />
+            <ProductAutocomplete products={grantableFiles} value={productIdsInput} onChange={setProductIdsInput} />
           </div>
           <button
             type="submit"
@@ -155,6 +178,11 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         {files.length === 0 && (
           <p className="text-sm text-brand-muted mt-3">
             No PDFs uploaded yet — upload one in the Files tab first, then it'll appear here.
+          </p>
+        )}
+        {files.length > 0 && grantableFiles.length === 0 && (
+          <p className="text-sm text-brand-muted mt-3">
+            This buyer already has access to every uploaded PDF.
           </p>
         )}
         {formError && (
