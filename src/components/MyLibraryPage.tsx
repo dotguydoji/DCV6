@@ -223,6 +223,19 @@ export const MyLibraryPage: React.FC = () => {
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
   const hasTriedCachedToken = useRef(false);
 
+  // Without this, the page underneath keeps scrolling while the menu sheet
+  // is open (visually confusing on mobile especially, since the backdrop
+  // makes it look like a modal that should block the page behind it).
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen]);
+
   // One request in, one response with just the product ids the buyer owns -
   // no PDF URLs are fetched here. Opening an individual PDF still goes
   // through the existing /view/<id> gate, which re-verifies independently.
@@ -500,13 +513,13 @@ export const MyLibraryPage: React.FC = () => {
           ) : (
             <>
               {continueReadingProduct && (
-                <section className="mb-8">
+                <section className="mb-10">
                   <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
                     Continue Reading
                   </h2>
                   <a
                     href={`/view/${encodeURIComponent(continueReadingProduct.id)}`}
-                    className="group flex items-center gap-5 bg-[#242829] border border-white/10 rounded-sm p-4 hover:border-brand-yellow/60 transition-colors"
+                    className="group flex items-center gap-6 bg-[#242829] border border-white/10 rounded-sm p-4 hover:border-brand-yellow/60 transition-colors"
                   >
                     <div className="w-24 h-16 sm:w-32 sm:h-20 rounded-sm overflow-hidden shrink-0 bg-black/20">
                       <img
@@ -526,14 +539,10 @@ export const MyLibraryPage: React.FC = () => {
                           ` · ${readingPercentById.get(continueReadingProduct.id)}% read`}
                       </p>
                     </div>
-                    {/* Mobile: a bare clock icon signals "recently opened"
-                        without needing room for a text label. Desktop has
-                        space, so it shows the full "Continue Reading" text
-                        instead, with no icon. */}
-                    <Clock size={20} className="sm:hidden text-brand-yellow shrink-0" />
-                    <span className="hidden sm:block text-base font-bold uppercase tracking-wide text-brand-yellow shrink-0">
-                      Continue Reading
-                    </span>
+                    {/* Icon only, on every screen size - the section heading
+                        above already says "Continue Reading", so repeating
+                        that text inside the card too was a duplicate label. */}
+                    <Clock size={20} className="text-brand-yellow shrink-0" />
                   </a>
                 </section>
               )}

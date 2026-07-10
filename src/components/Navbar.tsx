@@ -47,13 +47,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
     if (normalizedQuery === '') return [];
 
+    // No cap here anymore - the results containers below (desktop dropdown
+    // and mobile full panel) scroll independently within their own max
+    // height, so a long match list is fully browsable instead of being
+    // artificially cut off at 5.
     return PRODUCTS.filter((product) => {
       return (
         product.title.toLowerCase().includes(normalizedQuery) ||
         product.description.toLowerCase().includes(normalizedQuery)
       );
-    }).slice(0, 5);
+    });
   }, [deferredSearchQuery]);
+
+  // Locks the page behind the mobile menu/search sheet so only the sheet's
+  // own content (e.g. the search results list) scrolls - without this the
+  // background page keeps scrolling underneath the open overlay.
+  useEffect(() => {
+    if (!isMenuOpen && !isSearchVisible) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen, isSearchVisible]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -177,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               </div>
 
               {isSearchFocused && filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-3 duration-300">
+                <div className="absolute top-full left-0 right-0 mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden max-h-[70vh] overflow-y-auto z-[100] animate-in fade-in slide-in-from-top-3 duration-300">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
@@ -270,7 +287,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               </div>
               
               {filteredProducts.length > 0 && (
-                <div className="mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_35px_70px_rgba(0,0,0,0.95)] overflow-hidden max-h-[60vh] overflow-y-auto">
+                <div className="mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_35px_70px_rgba(0,0,0,0.95)] overflow-hidden max-h-[calc(100dvh-11rem)] overflow-y-auto">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
