@@ -2,12 +2,22 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Loader2, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { AdminFile, Buyer, updateBuyer } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
+import { GrantSuccessDialog } from './GrantSuccessDialog';
 import { Pagination } from './Pagination';
 import { PasswordGateDialog } from './PasswordGateDialog';
 import { ProductAutocomplete } from './ProductAutocomplete';
 import { getAdminCid } from '../lib/cid';
 
 const PAGE_SIZE = 50;
+
+const GRANT_CONFIRMATION_MESSAGE = `Your access is now ready!
+
+Log in to our website https://dojicreates.com using the Gmail address you provided.
+Once logged in, you'll find your purchased PDF in your account.
+
+
+To protect the collective work of our administrators and keep our materials exclusive to legitimate buyers, downloading, printing, and copying have been disabled.
+As a legitimate buyer, you have **lifetime access** to your purchased materials.`;
 
 interface BuyersPanelProps {
   idToken: string;
@@ -36,6 +46,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
   const [deletePasswordTarget, setDeletePasswordTarget] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ email: string; productId: string } | null>(null);
   const [page, setPage] = useState(1);
+  const [showGrantSuccess, setShowGrantSuccess] = useState(false);
 
   const handleGrant = useCallback(
     async (event: React.FormEvent) => {
@@ -64,6 +75,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         setEmailInput('');
         setProductIdsInput([]);
         onRefresh();
+        setShowGrantSuccess(true);
       } catch (err) {
         setFormError(err instanceof Error ? err.message : 'Something went wrong.');
       } finally {
@@ -288,6 +300,12 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         />
         </>
       )}
+
+      <GrantSuccessDialog
+        open={showGrantSuccess}
+        message={GRANT_CONFIRMATION_MESSAGE}
+        onClose={() => setShowGrantSuccess(false)}
+      />
 
       <PasswordGateDialog
         open={removeTarget !== null}

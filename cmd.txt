@@ -1,5 +1,5 @@
 git add .
-git commit -m "product catalog fix 01"
+git commit -m "added a text box copy"
 git push -u
 
 npm run build
@@ -11,3 +11,4 @@ netlify dev --dir dist
 git checkout main
 git reset --hard 4e2d7e141088b3f1356b8ea58551000bc7430e69
 git push --force origin main
+
