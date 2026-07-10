@@ -45,12 +45,32 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
+// 'retry' covers anything transient (network hiccup, our own rate limit, a
+// server error) - worth trying again shortly. 'denied' means the server
+// explicitly said no (session gone, or access itself was revoked) - no
+// point retrying that automatically.
+export type RefreshUrlResult = { ok: true; url: string } | { ok: false; reason: 'retry' | 'denied' };
+
 interface PdfViewerProps {
   fileUrl: string;
   product: Product;
+  onRefreshUrl: () => Promise<RefreshUrlResult>;
 }
 
 const EXIT_PATH = '/my-library';
+
+// Must match SIGNED_URL_TTL_SECONDS in netlify/functions/get-pdf.ts - if
+// that value ever changes, update this to match, so the proactive refresh
+// below still fires comfortably before the actual signed URL expires.
+const SIGNED_URL_LIFETIME_MS = 5 * 60 * 1000;
+// How long before the signed URL's real expiry to proactively fetch a
+// fresh one - leaves a safety margin for the refresh call itself to
+// complete before the old URL would actually stop working.
+const REFRESH_BEFORE_EXPIRY_MS = 60 * 1000;
+// Backoff between refresh attempts after a transient failure (rate limit,
+// server hiccup, network blip) - short enough to recover well within the
+// remaining margin above, not so short it hammers the function.
+const REFRESH_RETRY_DELAY_MS = 30 * 1000;
 
 // A browser tab that already had an old cached copy of a page (from before
 // a Cache-Control fix was deployed, or just heuristic caching absent one)
@@ -61,8 +81,83 @@ const EXIT_PATH = '/my-library';
 // can never reuse a stale entry here, regardless of any cache header history.
 const getExitUrl = () => `${EXIT_PATH}?_=${Date.now()}`;
 
-export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
+export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefreshUrl }) => {
   const { title, id: productId } = product;
+
+  // The signed URL actually being used to load/fetch the document - starts
+  // as the one handed down from PdfGatePage, but gets silently swapped out
+  // for a fresh one before the old one expires (see the refresh effect
+  // below), instead of ever forcing the buyer back to My Library.
+  const [activeUrl, setActiveUrl] = useState(fileUrl);
+  const onRefreshUrlRef = useRef(onRefreshUrl);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeUrlIssuedAtRef = useRef(Date.now());
+
+  useEffect(() => {
+    onRefreshUrlRef.current = onRefreshUrl;
+  }, [onRefreshUrl]);
+
+  // Proactively fetches a fresh signed URL shortly before the current one
+  // would expire, and swaps it in - which retriggers the document-loading
+  // effect below with the new URL, restoring the exact page/rotation/scroll
+  // mode automatically (that restore logic already exists for reopening a
+  // PDF and doesn't need to change for this). A genuine denial (access was
+  // actually revoked) surfaces a clear message instead of retrying forever;
+  // anything transient (rate limit, network blip, server hiccup) just
+  // retries shortly after instead of giving up.
+  useEffect(() => {
+    let cancelled = false;
+    activeUrlIssuedAtRef.current = Date.now();
+
+    async function attemptRefresh() {
+      const result = await onRefreshUrlRef.current();
+      if (cancelled) return;
+
+      // Narrowed via `'url' in result` rather than `if (result.ok)` - the
+      // two are equivalent given RefreshUrlResult's shape, but the local
+      // toolchain's TS checker was observed failing to narrow the `ok`
+      // discriminant once both union branches carry an extra field each
+      // (reproduced even against a clean, separately-fetched TypeScript
+      // install, so it's an environment quirk, not a real type error) -
+      // this form checks out cleanly and is exactly as type-safe.
+      if ('url' in result) {
+        setActiveUrl(result.url);
+        return;
+      }
+
+      if (result.reason === 'denied') {
+        setLoadError('Your access to this PDF is no longer available. Please go back to My Library.');
+        return;
+      }
+
+      refreshTimeoutRef.current = setTimeout(attemptRefresh, REFRESH_RETRY_DELAY_MS);
+    }
+
+    const msUntilRefresh = () =>
+      Math.max(0, SIGNED_URL_LIFETIME_MS - REFRESH_BEFORE_EXPIRY_MS - (Date.now() - activeUrlIssuedAtRef.current));
+
+    refreshTimeoutRef.current = setTimeout(attemptRefresh, msUntilRefresh());
+
+    // Mobile browsers throttle/suspend timers on a backgrounded tab, so the
+    // scheduled refresh above may never fire on time if the buyer switches
+    // away and back - catching up the instant the tab is visible again
+    // covers that case instead of leaving a dead URL in place until the
+    // buyer happens to trigger a page fetch.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (msUntilRefresh() > 0) return;
+
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+      attemptRefresh();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [activeUrl]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -206,7 +301,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
     // whatever the buyer is actively trying to view. Range-request-based
     // per-page fetching (already supported by R2's CORS setup here) stays
     // fully enabled either way, so pages still load progressively as read.
-    const loadingTask = pdfjsLib.getDocument({ url: fileUrl, disableAutoFetch: true });
+    const loadingTask = pdfjsLib.getDocument({ url: activeUrl, disableAutoFetch: true });
     loadingTaskRef.current = loadingTask;
 
     // Additive: purely feeds the loading overlay's percentage - has no
@@ -240,6 +335,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
           if (savedPrefs.scrollMode === 'single') {
             pdfViewer.scrollMode = ScrollMode.PAGE;
           }
+          // Runs after the unconditional 'page-width' listener registered
+          // above (same event, later registration = later call), so this
+          // correctly overrides that default whenever a real saved value
+          // exists - including on the silent mid-session refresh, which is
+          // exactly what keeps a manually-chosen zoom level from resetting.
+          try {
+            pdfViewer.currentScaleValue = savedPrefs.scaleValue;
+          } catch {
+            // Malformed/stale stored value (e.g. from an older app version) -
+            // harmless to ignore, the earlier listener already applied a
+            // safe default.
+          }
         });
       })
       .catch(() => {
@@ -259,7 +366,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
       pdfDocumentRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileUrl]);
+  }, [activeUrl]);
 
   const goToPage = useCallback(
     (next: number) => {
@@ -324,22 +431,51 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
     [pageInputValue, goToPage]
   );
 
+  // Persists whatever PDF.js's zoom currently is, so it survives both a
+  // silent mid-session refresh (see the refresh effect above) and actually
+  // reopening the PDF later - keeps rotation/scrollMode untouched by always
+  // reading their current state rather than guessing.
+  const persistScaleValue = useCallback(
+    (scaleValue: string) => {
+      saveViewerPrefs(productId, { rotation, scrollMode, scaleValue });
+    },
+    [productId, rotation, scrollMode]
+  );
+
   const handleFitWidth = useCallback(() => {
     if (pdfViewerRef.current) pdfViewerRef.current.currentScaleValue = 'page-width';
+    persistScaleValue('page-width');
     setIsMoreMenuOpen(false);
-  }, []);
+  }, [persistScaleValue]);
 
   const handleFitPage = useCallback(() => {
     if (pdfViewerRef.current) pdfViewerRef.current.currentScaleValue = 'page-fit';
+    persistScaleValue('page-fit');
     setIsMoreMenuOpen(false);
-  }, []);
+  }, [persistScaleValue]);
+
+  const handleZoomIn = useCallback(() => {
+    if (!pdfViewerRef.current) return;
+    pdfViewerRef.current.increaseScale();
+    persistScaleValue(String(pdfViewerRef.current.currentScale));
+  }, [persistScaleValue]);
+
+  const handleZoomOut = useCallback(() => {
+    if (!pdfViewerRef.current) return;
+    pdfViewerRef.current.decreaseScale();
+    persistScaleValue(String(pdfViewerRef.current.currentScale));
+  }, [persistScaleValue]);
 
   const handleRotate = useCallback(() => {
     if (pdfViewerRef.current) {
       const next = ((pdfViewerRef.current.pagesRotation + 90) % 360) as 0 | 90 | 180 | 270;
       pdfViewerRef.current.pagesRotation = next;
       setRotation(next);
-      saveViewerPrefs(productId, { rotation: next, scrollMode });
+      saveViewerPrefs(productId, {
+        rotation: next,
+        scrollMode,
+        scaleValue: pdfViewerRef.current.currentScaleValue
+      });
     }
     setIsMoreMenuOpen(false);
   }, [productId, scrollMode]);
@@ -364,7 +500,11 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
     const next = scrollMode === 'continuous' ? 'single' : 'continuous';
     pdfViewerRef.current.scrollMode = next === 'single' ? ScrollMode.PAGE : ScrollMode.VERTICAL;
     setScrollMode(next);
-    saveViewerPrefs(productId, { rotation, scrollMode: next });
+    saveViewerPrefs(productId, {
+      rotation,
+      scrollMode: next,
+      scaleValue: pdfViewerRef.current.currentScaleValue
+    });
     setIsMoreMenuOpen(false);
   }, [scrollMode, rotation, productId]);
 
@@ -413,8 +553,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
 
       if (event.key === 'ArrowRight') goToPage(pageNumber + 1);
       else if (event.key === 'ArrowLeft') goToPage(pageNumber - 1);
-      else if (event.key === '+' || event.key === '=') pdfViewerRef.current?.increaseScale();
-      else if (event.key === '-') pdfViewerRef.current?.decreaseScale();
+      else if (event.key === '+' || event.key === '=') handleZoomIn();
+      else if (event.key === '-') handleZoomOut();
       else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault();
         setIsSearchOpen(true);
@@ -423,7 +563,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [goToPage, pageNumber]);
+  }, [goToPage, pageNumber, handleZoomIn, handleZoomOut]);
 
   const currentIsBookmarked = isPageBookmarked(productId, pageNumber);
   const readingPercent = pageCount > 0 ? Math.round((pageNumber / pageCount) * 100) : 0;
@@ -673,7 +813,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
         <div className="flex items-center gap-2 ml-2 pl-2 border-l border-white/10">
           <button
             type="button"
-            onClick={() => pdfViewerRef.current?.decreaseScale()}
+            onClick={handleZoomOut}
             aria-label="Zoom out"
             className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
           >
@@ -681,7 +821,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product }) => {
           </button>
           <button
             type="button"
-            onClick={() => pdfViewerRef.current?.increaseScale()}
+            onClick={handleZoomIn}
             aria-label="Zoom in"
             className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
           >

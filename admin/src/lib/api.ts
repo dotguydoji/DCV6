@@ -1,3 +1,11 @@
+import { clearCachedResponse, getCachedResponse, setCachedResponse } from './requestCache';
+
+// Just enough to avoid redundant R2/Firestore reads on a quick reload, not
+// a long-term cache - the admin actively uploads/deletes/grants and needs
+// to see those changes immediately, which is why every mutation below
+// clears its cache key right after succeeding rather than waiting out the TTL.
+const LIST_CACHE_TTL_MS = 120 * 1000;
+
 export interface Buyer {
   email: string;
   productIds: string[];
@@ -36,23 +44,46 @@ const call = async <T>(fn: string, idToken: string, body: Record<string, unknown
   return response.json();
 };
 
-export const listBuyers = (idToken: string) => call<{ buyers: Buyer[] }>('admin-list-buyers', idToken);
+const BUYERS_CACHE_KEY = 'buyers';
+const FILES_CACHE_KEY = 'files';
 
-export const updateBuyer = (
+export const listBuyers = async (idToken: string): Promise<{ buyers: Buyer[] }> => {
+  const cached = getCachedResponse<{ buyers: Buyer[] }>(BUYERS_CACHE_KEY);
+  if (cached) return cached;
+
+  const result = await call<{ buyers: Buyer[] }>('admin-list-buyers', idToken);
+  setCachedResponse(BUYERS_CACHE_KEY, result, LIST_CACHE_TTL_MS);
+  return result;
+};
+
+export const updateBuyer = async (
   idToken: string,
   email: string,
   action: 'add' | 'remove' | 'delete',
   productId?: string | string[]
-) => call<{ ok: true }>('admin-update-buyer', idToken, { email, action, productId });
+) => {
+  const result = await call<{ ok: true }>('admin-update-buyer', idToken, { email, action, productId });
+  clearCachedResponse(BUYERS_CACHE_KEY);
+  return result;
+};
 
-export const listFiles = (idToken: string) =>
-  call<{ files: AdminFile[]; canManageFiles: boolean }>('admin-list-files', idToken);
+export const listFiles = async (idToken: string): Promise<{ files: AdminFile[]; canManageFiles: boolean }> => {
+  const cached = getCachedResponse<{ files: AdminFile[]; canManageFiles: boolean }>(FILES_CACHE_KEY);
+  if (cached) return cached;
+
+  const result = await call<{ files: AdminFile[]; canManageFiles: boolean }>('admin-list-files', idToken);
+  setCachedResponse(FILES_CACHE_KEY, result, LIST_CACHE_TTL_MS);
+  return result;
+};
 
 export const getUploadUrl = (idToken: string, productId: string) =>
   call<{ url: string }>('admin-get-upload-url', idToken, { productId });
 
-export const deleteFile = (idToken: string, productId: string) =>
-  call<{ ok: true }>('admin-delete-file', idToken, { productId });
+export const deleteFile = async (idToken: string, productId: string) => {
+  const result = await call<{ ok: true }>('admin-delete-file', idToken, { productId });
+  clearCachedResponse(FILES_CACHE_KEY);
+  return result;
+};
 
 export const uploadFileToR2 = async (uploadUrl: string, file: File): Promise<void> => {
   const response = await fetch(uploadUrl, {
@@ -64,4 +95,9 @@ export const uploadFileToR2 = async (uploadUrl: string, file: File): Promise<voi
   if (!response.ok) {
     throw new ApiError('Upload failed', response.status);
   }
+
+  // This PUT goes straight to R2, bypassing the call() wrapper above, so
+  // the files-list cache needs to be invalidated here too - otherwise a
+  // freshly uploaded file wouldn't show up until the cache naturally expires.
+  clearCachedResponse(FILES_CACHE_KEY);
 };

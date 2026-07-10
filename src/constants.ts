@@ -151,7 +151,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Beginner',
     folder: 'programming-languages-beginners',
     fileSuffix: 'beginners',
-    price: { en: 120, tl: 150 },
+    price: { en: 150, tl: 199 },
     available: true
   },
   {
@@ -159,7 +159,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Intermediate',
     folder: 'programming-languages-intermediate',
     fileSuffix: 'intermediate',
-    price: { en: 150, tl: 180 },
+    price: { en: 199, tl: 250 },
     available: true
   },
   {
@@ -167,7 +167,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Advanced',
     folder: 'programming-languages-advanced',
     fileSuffix: 'advanced',
-    price: { en: 200, tl: 220 },
+    price: { en: 250, tl: 299 },
     available: true
   },
   {
@@ -183,7 +183,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 120, tl: 150 },
+    price: { en: 99, tl: 99 },
     available: true
   },
   {
@@ -191,7 +191,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Packages',
     folder: 'programming-languages-packages',
     fileSuffix: 'package',
-    price: { en: 400, tl: 500 },
+    price: { en: 499, tl: 599 },
     available: true
   }
 ];
@@ -205,7 +205,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Structured HTML lessons focused on semantic layout, clean markup, and solid page-building fundamentals.',
       tl: 'Tagalog HTML lessons na nakatuon sa semantic layout, malinaw na markup, at matibay na page-building fundamentals.'
     },
-    price: { en: 120, tl: 150 }
+    price: { en: 150, tl: 199 }
   },
   {
     itemKey: 'css',
@@ -215,7 +215,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'Modern CSS coverage for responsive layout, spacing systems, components, and polished visual styling.',
       tl: 'Tagalog CSS coverage para sa responsive layout, spacing systems, components, at mas maayos na visual styling.'
     },
-    price: { en: 199, tl: 220 }
+    price: { en: 199, tl: 250 }
   },
   {
     itemKey: 'jsdom',
@@ -225,7 +225,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'JavaScript DOM lessons that focus on events, interactivity, and the practical logic behind dynamic interfaces.',
       tl: 'Tagalog JavaScript DOM lessons na nakatuon sa events, interactivity, at praktikal na logic sa likod ng dynamic interfaces.'
     },
-    price: { en: 299, tl: 320 }
+    price: { en: 299, tl: 350 }
   },
   {
     itemKey: 'package',
@@ -235,7 +235,7 @@ const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
       en: 'A combined web development package that brings HTML, CSS, and JavaScript DOM notes together in one set.',
       tl: 'Isang pinagsamang web development package na magkakasama ang HTML, CSS, at JavaScript DOM notes sa iisang set.'
     },
-    price: { en: 500, tl: 600 }
+    price: { en: 599, tl: 699 }
   }
 ];
 
@@ -247,7 +247,7 @@ const TOOLS_ITEMS: readonly ToolsItemMeta[] = [
       en: 'Git and GitHub notes focused on version control, repositories, commits, branches, and practical collaboration workflows.',
       tl: 'Git at GitHub notes sa Tagalog na nakatuon sa version control, repositories, commits, branches, at praktikal na collaboration workflows.'
     },
-    price: { en: 299, tl: 350 }
+    price: { en: 350, tl: 399 }
   }
 ];
 
@@ -268,7 +268,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude Subagents notes for breaking tasks into smaller helpers and improving multi-step coding support.',
       tl: 'Claude Subagents notes para hati-hatiin ang tasks sa mas maliliit na helpers at mas mapaganda ang multi-step coding support.'
     },
-    price: { en: 150, tl: 200 }
+    price: { en: 199, tl: 250 }
   },
   // {
   //   itemKey: 'prompt-engineering-basics',
@@ -406,7 +406,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'n8n Automation notes for building visual workflows, integrating APIs, and automating tasks without code.',
       tl: 'n8n Automation notes para sa pagbuo ng visual workflows, pag-integrate ng APIs, at pag-automate ng tasks nang walang code.'
     },
-    price: { en: 299, tl: 350 }
+    price: { en: 399, tl: 499 }
   },
   {
     itemKey: 'openclo',
@@ -415,7 +415,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Open Claw notes for open-source AI clothing and fashion generation workflows.',
       tl: 'Open Claw notes para sa open-source AI clothing at fashion generation workflows.'
     },
-    price: { en: 299, tl: 350 },
+    price: { en: 399, tl: 499 },
   },
   {
     itemKey: 'hermes-agent',
@@ -424,7 +424,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Hermes Agent notes for building and deploying autonomous AI agents with structured task execution.',
       tl: 'Hermes Agent notes para sa pagbuo at pag-deploy ng autonomous AI agents na may structured task execution.'
     },
-    price: { en: 299, tl: 350 },
+    price: { en: 399, tl: 499 },
   }
 ];
 
@@ -712,7 +712,7 @@ export const PRODUCTS: Product[] = [
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
     thumbnail: '/productivity/freshmen-prep.webp',
-    price: 150,
+    price: 199,
     mobileUrl: MOBILE_URL,
     desktopUrl: DESKTOP_URL,
     category: PRODUCTIVITY_CATEGORY,
@@ -724,7 +724,7 @@ export const PRODUCTS: Product[] = [
   description:
     'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
   thumbnail: '/productivity/bscs-advance-study.webp',
-  price: 150,
+  price: 199,
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
   category: PRODUCTIVITY_CATEGORY,
@@ -734,7 +734,7 @@ export const PRODUCTS: Product[] = [
   id: 'ai-claude-notes-en',
   title: 'Claude Notes',
   description: 'First release of Claude Notes with practical guidance for prompts, workflows, and everyday coding support.',
-  price: 299,
+  price: 350,
   thumbnail: getAiThumbnail('claude-code-notes', 'en'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
@@ -746,7 +746,7 @@ export const PRODUCTS: Product[] = [
   id: 'ai-claude-notes-tl',
   title: 'Claude Notes',
   description: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.',
-  price: 350,
+  price: 399,
   thumbnail: getAiThumbnail('claude-code-notes', 'tl'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,

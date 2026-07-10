@@ -61,22 +61,25 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/images/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/favicon.*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/web-app-manifest-*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# DISABLED (2026-07-11, owner request) - static asset long-lived caching
+# turned off. Do not re-enable unless explicitly asked. Kept here
+# (commented out) rather than deleted so it's easy to restore.
+# [[headers]]
+#   for = "/assets/*"
+#   [headers.values]
+#     Cache-Control = "public, max-age=31536000, immutable"
+#
+# [[headers]]
+#   for = "/images/*"
+#   [headers.values]
+#     Cache-Control = "public, max-age=31536000, immutable"
+#
+# [[headers]]
+#   for = "/favicon.*"
+#   [headers.values]
+#     Cache-Control = "public, max-age=31536000, immutable"
+#
+# [[headers]]
+#   for = "/web-app-manifest-*"
+#   [headers.values]
+#     Cache-Control = "public, max-age=31536000, immutable"

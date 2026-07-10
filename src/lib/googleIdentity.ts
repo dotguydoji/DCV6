@@ -1,3 +1,5 @@
+import { clearAllCachedResponses } from './requestCache';
+
 export interface GoogleCredentialResponse {
   credential: string;
 }
@@ -180,10 +182,14 @@ const SILENT_SIGN_IN_COOLDOWN_MS = 30 * 1000;
  * Explicit sign-out: clears our cached token AND tells Google's own library
  * to stop silently restoring a session next time (disableAutoSelect) - this
  * is what keeps "sign out" meaningful, instead of the silent re-auth below
- * immediately logging the buyer back in on their next visit.
+ * immediately logging the buyer back in on their next visit. Also purges
+ * requestCache.ts's response cache (my-library list, PDF signed URLs) so a
+ * second person signing into the same tab can never see a trace of the
+ * previous buyer's cached data.
  */
 export const signOutOfGoogle = (): void => {
   clearCachedIdToken();
+  clearAllCachedResponses();
   try {
     localStorage.removeItem(SILENT_SIGN_IN_LAST_ATTEMPT_KEY);
   } catch {

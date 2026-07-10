@@ -35,7 +35,7 @@ import {
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 
-const LIBRARY_CACHE_TTL_MS = 15 * 60 * 1000;
+const LIBRARY_CACHE_TTL_MS = 20 * 60 * 1000;
 
 type ViewState =
   | { status: 'restoring' }

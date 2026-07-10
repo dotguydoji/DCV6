@@ -20,13 +20,18 @@ interface ReadingProgress {
 export interface ViewerPrefs {
   rotation: 0 | 90 | 180 | 270;
   scrollMode: 'continuous' | 'single';
+  // Whatever PDF.js's own `currentScaleValue` was last set to - either a
+  // keyword ('page-width', 'page-fit') or a plain number as a string (a
+  // manual zoom level from the +/- controls). Stored as-is so restoring it
+  // is just handing the same string back to PDF.js, no translation needed.
+  scaleValue: string;
 }
 
 const BOOKMARKS_KEY_PREFIX = 'pdf-bookmarks:';
 const PROGRESS_KEY_PREFIX = 'pdf-progress:';
 const VIEWER_PREFS_KEY_PREFIX = 'pdf-viewer-prefs:';
 
-const DEFAULT_VIEWER_PREFS: ViewerPrefs = { rotation: 0, scrollMode: 'continuous' };
+const DEFAULT_VIEWER_PREFS: ViewerPrefs = { rotation: 0, scrollMode: 'continuous', scaleValue: 'page-width' };
 
 const readJson = <T>(key: string, fallback: T): T => {
   try {
@@ -99,8 +104,13 @@ export const saveReadingProgress = (productId: string, lastPage: number, pageCou
 // PDF was reopened) while bookmarks/reading-progress persisted - an
 // inconsistent experience with no real reason behind it. Persisting these
 // too, per product, keeps all viewer preferences behaving the same way.
-export const getViewerPrefs = (productId: string): ViewerPrefs =>
-  readJson<ViewerPrefs>(VIEWER_PREFS_KEY_PREFIX + productId, DEFAULT_VIEWER_PREFS);
+// Spread over the defaults (rather than returned as-is) so a prefs object
+// saved before `scaleValue` existed still comes back with a valid value
+// instead of `undefined`.
+export const getViewerPrefs = (productId: string): ViewerPrefs => ({
+  ...DEFAULT_VIEWER_PREFS,
+  ...readJson<Partial<ViewerPrefs>>(VIEWER_PREFS_KEY_PREFIX + productId, DEFAULT_VIEWER_PREFS)
+});
 
 export const saveViewerPrefs = (productId: string, prefs: ViewerPrefs): void => {
   writeJson(VIEWER_PREFS_KEY_PREFIX + productId, prefs);

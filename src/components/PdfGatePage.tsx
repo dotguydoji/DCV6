@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import { PdfViewer } from './PdfViewer';
+import { PdfViewer, RefreshUrlResult } from './PdfViewer';
 import { Product } from '../types';
 import { clearCachedIdToken, getCachedIdToken, getIdTokenEmail, setCachedIdToken } from '../lib/googleIdentity';
 import { recordOpened } from '../lib/libraryPreferences';
@@ -85,6 +85,41 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
     [productId]
   );
 
+  // Lets an already-authorized PdfViewer silently ask for a brand new
+  // signed URL without dropping back through the sign-in/checking states -
+  // used to keep a long reading session alive past the signed URL's short
+  // lifetime, instead of forcing the buyer back to My Library. Reuses the
+  // exact same server call and re-authorization check as a normal open;
+  // nothing about the security check itself is weakened or skipped.
+  const refreshFileUrl = useCallback(async (): Promise<RefreshUrlResult> => {
+    const idToken = getCachedIdToken();
+    if (!idToken) return { ok: false, reason: 'denied' };
+
+    try {
+      const response = await fetch('/.netlify/functions/get-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, productId })
+      });
+      const data = await response.json();
+
+      if (response.ok && data.authorized) {
+        const email = getIdTokenEmail(idToken);
+        const cacheKey = email ? `pdf:${email}:${productId}` : null;
+        if (cacheKey) setCachedResponse(cacheKey, data.url, PDF_URL_CACHE_TTL_MS);
+        return { ok: true, url: data.url };
+      }
+
+      if (response.status === 429 || response.status >= 500) {
+        return { ok: false, reason: 'retry' };
+      }
+
+      return { ok: false, reason: 'denied' };
+    } catch {
+      return { ok: false, reason: 'retry' };
+    }
+  }, [productId]);
+
   useEffect(() => {
     if (hasTriedCachedToken.current) return;
     hasTriedCachedToken.current = true;
@@ -140,7 +175,7 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
   if (state.status === 'authorized') {
     return (
       <div className="fixed inset-0 z-[200]">
-        <PdfViewer fileUrl={state.fileUrl} product={product} />
+        <PdfViewer fileUrl={state.fileUrl} product={product} onRefreshUrl={refreshFileUrl} />
       </div>
     );
   }
