@@ -1,5 +1,5 @@
 git add .
-git commit -m "mobile: compact design 3"
+git commit -m "mobile: cham,burger menu"
 git push -u
 
 npm run build

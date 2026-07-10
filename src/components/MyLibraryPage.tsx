@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, FileText, Heart, LibraryBig, LogOut, RefreshCw, Search, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowLeftCircle,
+  FileText,
+  Heart,
+  LibraryBig,
+  LogOut,
+  Menu,
+  RefreshCw,
+  Search,
+  X
+} from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { getProductById } from '../constants';
 import { Product } from '../types';
@@ -109,26 +120,26 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
       />
     </div>
     <div className="p-4">
-      <h3 className="font-bold text-white truncate mb-1 transition-colors duration-300 group-hover:text-[#1a1d1e]">
+      <h3 className="text-base sm:text-lg font-bold text-white truncate mb-1 transition-colors duration-300 group-hover:text-[#1a1d1e]">
         {product.title}
       </h3>
-      <p className="text-xs text-brand-muted line-clamp-2 mb-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+      <p className="text-sm text-brand-muted line-clamp-2 mb-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
         {product.description}
       </p>
       <div className="flex items-center gap-1.5 flex-wrap">
         {product.level && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
             {formatLevel(product.level)}
           </span>
         )}
         {product.language && (
-          <span className="text-[10px] font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
+          <span className="text-xs font-bold uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
             {product.language === 'en' ? 'English' : 'Tagalog'}
           </span>
         )}
       </div>
       {lastOpenedAt && (
-        <p className="text-[11px] text-brand-muted mt-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+        <p className="text-xs text-brand-muted mt-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
           {formatRelativeDate(lastOpenedAt)}
         </p>
       )}
@@ -145,7 +156,7 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
                   style={{ width: `${readingPercent}%` }}
                 />
               </div>
-              <span className="text-[10px] font-bold text-brand-muted shrink-0 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+              <span className="text-xs font-bold text-brand-muted shrink-0 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
                 {readingPercent}%
               </span>
             </>
@@ -180,7 +191,7 @@ const Shelf: React.FC<ShelfProps> = ({
 
   return (
     <section className="mb-8">
-      <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">{title}</h2>
+      <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">{title}</h2>
       <div className="flex gap-4 overflow-x-auto no-scrollbar pb-1">
         {products.map((product) => (
           <div key={product.id} className="w-[220px] shrink-0">
@@ -201,6 +212,7 @@ const Shelf: React.FC<ShelfProps> = ({
 export const MyLibraryPage: React.FC = () => {
   const [state, setState] = useState<ViewState>({ status: 'restoring' });
   const [profile, setProfile] = useState<IdTokenProfile | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [languageFilter, setLanguageFilter] = useState(ALL_LANGUAGES);
@@ -391,55 +403,82 @@ export const MyLibraryPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#16181a] text-white px-6 py-10">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-6 gap-4">
-            <a
-              href="/"
-              className="flex items-center gap-2 text-sm text-brand-muted hover:text-white transition-colors shrink-0"
-            >
-              <ArrowLeft size={16} />
-              <span className="hidden sm:inline">Back</span>
-            </a>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-2 text-sm text-brand-muted hover:text-white transition-colors shrink-0"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-4 min-w-0 mb-8">
-            {profile?.picture ? (
-              <img
-                src={profile.picture}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="w-12 h-12 rounded-full border-2 border-brand-yellow/60 shrink-0"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-brand-yellow/10 border-2 border-brand-yellow/40 flex items-center justify-center shrink-0">
-                <LibraryBig size={22} className="text-brand-yellow" />
+          <header className="relative flex items-center justify-between gap-4 mb-8 bg-white/5 border border-white/10 rounded-lg px-5 py-4 sm:px-6 sm:py-5">
+            <div className="flex items-center gap-4 min-w-0">
+              {profile?.picture ? (
+                <img
+                  src={profile.picture}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-brand-yellow/60 shrink-0"
+                />
+              ) : (
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand-yellow/10 border-2 border-brand-yellow/40 flex items-center justify-center shrink-0">
+                  <LibraryBig size={26} className="text-brand-yellow" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-3xl font-bold truncate">
+                  {profile?.name ? `Welcome back, ${profile.name}` : 'My Library'}
+                </h1>
+                <p className="text-brand-muted text-sm sm:text-base">
+                  {ownedProducts.length} {ownedProducts.length === 1 ? 'PDF' : 'PDFs'} in your library
+                </p>
               </div>
-            )}
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">
-                {profile?.name ? `Welcome back, ${profile.name}` : 'My Library'}
-              </h1>
-              <p className="text-brand-muted text-sm">
-                {ownedProducts.length} {ownedProducts.length === 1 ? 'PDF' : 'PDFs'} in your library
-              </p>
             </div>
-          </div>
+
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMenuOpen}
+                className={`flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-lg border transition-all duration-300 active:scale-90 ${
+                  isMenuOpen
+                    ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow'
+                    : 'border-white/10 text-brand-muted hover:border-brand-yellow/50 hover:text-brand-yellow'
+                }`}
+              >
+                {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+              </button>
+
+              {isMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} role="presentation" />
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-[#1f2224] border border-white/10 rounded-lg shadow-2xl overflow-hidden z-50 animate-fade-in">
+                    <a
+                      href="/"
+                      className="flex items-center gap-3 px-4 py-3.5 text-sm font-bold text-white hover:bg-white/5 transition-colors"
+                    >
+                      <ArrowLeftCircle size={20} className="text-brand-muted" />
+                      Back to Doji's Library
+                    </a>
+                    <div className="border-t border-white/10" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleSignOut();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3.5 text-left text-sm font-bold text-red-400 hover:bg-red-400/10 transition-colors"
+                    >
+                      <LogOut size={20} />
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </header>
 
           {ownedProducts.length === 0 ? (
             <div className="text-center py-20">
-              <FileText size={40} className="mx-auto text-brand-muted mb-4" />
-              <p className="text-lg font-bold mb-2">You don't have any PDFs yet.</p>
-              <p className="text-brand-muted mb-6">
+              <FileText size={44} className="mx-auto text-brand-muted mb-4" />
+              <p className="text-xl font-bold mb-2">You don't have any PDFs yet.</p>
+              <p className="text-brand-muted text-base mb-6">
                 Once you purchase a note pack, it will show up here automatically.
               </p>
-              <a href="/" className="text-brand-yellow underline">
+              <a href="/" className="text-brand-yellow underline text-base">
                 Browse Doji's Library
               </a>
             </div>
@@ -447,7 +486,7 @@ export const MyLibraryPage: React.FC = () => {
             <>
               {continueReadingProduct && (
                 <section className="mb-8">
-                  <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
+                  <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">
                     Continue Reading
                   </h2>
                   <a
@@ -465,15 +504,15 @@ export const MyLibraryPage: React.FC = () => {
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold truncate">{continueReadingProduct.title}</p>
-                      <p className="text-xs text-brand-muted">
+                      <p className="text-base sm:text-lg font-bold truncate">{continueReadingProduct.title}</p>
+                      <p className="text-sm text-brand-muted">
                         {formatRelativeDate(openedAtById.get(continueReadingProduct.id) ?? Date.now())}
                         {typeof readingPercentById.get(continueReadingProduct.id) === 'number' &&
                           ` · ${readingPercentById.get(continueReadingProduct.id)}% read`}
                       </p>
                     </div>
-                    <span className="hidden sm:flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-yellow shrink-0">
-                      <FileText size={16} />
+                    <span className="hidden sm:flex items-center gap-2 text-base font-bold uppercase tracking-wide text-brand-yellow shrink-0">
+                      <FileText size={18} />
                       Continue
                     </span>
                   </a>
@@ -490,12 +529,12 @@ export const MyLibraryPage: React.FC = () => {
               />
 
               <section>
-                <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">All PDFs</h2>
+                <h2 className="text-base font-bold uppercase tracking-[0.15em] text-brand-muted mb-3">All PDFs</h2>
 
                 <div className="flex flex-col gap-3 mb-5">
                   <div className="relative">
                     <Search
-                      size={16}
+                      size={18}
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none"
                     />
                     <input
@@ -504,7 +543,7 @@ export const MyLibraryPage: React.FC = () => {
                       onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder="Search your library..."
                       aria-label="Search your library"
-                      className="w-full bg-[#242829] border border-white/10 rounded-sm pl-10 pr-9 py-2.5 text-sm text-white placeholder:text-brand-muted outline-none focus:border-brand-yellow/60 transition-colors"
+                      className="w-full bg-[#242829] border border-white/10 rounded-sm pl-10 pr-9 py-2.5 text-base text-white placeholder:text-brand-muted outline-none focus:border-brand-yellow/60 transition-colors"
                     />
                     {searchQuery && (
                       <button
@@ -513,7 +552,7 @@ export const MyLibraryPage: React.FC = () => {
                         aria-label="Clear search"
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white"
                       >
-                        <X size={15} />
+                        <X size={17} />
                       </button>
                     )}
                   </div>
@@ -527,7 +566,7 @@ export const MyLibraryPage: React.FC = () => {
                       value={sortBy}
                       onChange={(event) => setSortBy(event.target.value as SortOption)}
                       aria-label="Sort by"
-                      className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                      className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                     >
                       <option value="recent">Recently Opened</option>
                       <option value="title-asc">Title A–Z</option>
@@ -539,7 +578,7 @@ export const MyLibraryPage: React.FC = () => {
                         value={languageFilter}
                         onChange={(event) => setLanguageFilter(event.target.value)}
                         aria-label="Filter by language"
-                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
                         <option value={ALL_LANGUAGES}>All Languages</option>
                         {languages.map((language) => (
@@ -555,7 +594,7 @@ export const MyLibraryPage: React.FC = () => {
                         value={levelFilter}
                         onChange={(event) => setLevelFilter(event.target.value)}
                         aria-label="Filter by level"
-                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                        className="flex-1 sm:flex-none min-w-0 bg-[#242829] border border-white/10 rounded-sm px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base text-white outline-none focus:border-brand-yellow/60 transition-colors"
                       >
                         <option value={ALL_LEVELS}>All Levels</option>
                         {levels.map((level) => (
@@ -574,7 +613,7 @@ export const MyLibraryPage: React.FC = () => {
                           key={category}
                           type="button"
                           onClick={() => setActiveCategory(category)}
-                          className={`shrink-0 px-3.5 py-2.5 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors ${
+                          className={`shrink-0 px-3.5 py-2.5 rounded-sm text-sm font-bold uppercase tracking-wide transition-colors ${
                             activeCategory === category
                               ? 'bg-brand-yellow text-[#1a1d1e]'
                               : 'border border-white/10 text-brand-muted hover:text-white hover:border-white/20'
@@ -589,7 +628,7 @@ export const MyLibraryPage: React.FC = () => {
 
                 {visibleProducts.length === 0 ? (
                   <div className="text-center py-16">
-                    <p className="text-brand-muted">No PDFs match your search or filters.</p>
+                    <p className="text-brand-muted text-base">No PDFs match your search or filters.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -616,15 +655,15 @@ export const MyLibraryPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#16181a] text-white px-6">
       <div className="max-w-md w-full text-center">
-        <LibraryBig size={40} className="mx-auto text-brand-yellow mb-5" />
-        <h1 className="text-2xl font-bold mb-2">My Library</h1>
-        <p className="text-brand-muted mb-8">
+        <LibraryBig size={44} className="mx-auto text-brand-yellow mb-5" />
+        <h1 className="text-3xl font-bold mb-2">My Library</h1>
+        <p className="text-brand-muted text-base mb-8">
           Sign in with the Gmail you used to purchase your notes to see everything you own.
         </p>
 
         {state.status === 'restoring' && (
-          <div className="flex items-center justify-center gap-2 text-brand-muted" aria-live="polite">
-            <RefreshCw size={16} className="animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-brand-muted text-base" aria-live="polite">
+            <RefreshCw size={18} className="animate-spin" />
             Checking your session…
           </div>
         )}
@@ -636,23 +675,23 @@ export const MyLibraryPage: React.FC = () => {
         )}
 
         {state.status === 'checking' && (
-          <div className="flex items-center justify-center gap-2 text-brand-muted" aria-live="polite">
-            <RefreshCw size={16} className="animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-brand-muted text-base" aria-live="polite">
+            <RefreshCw size={18} className="animate-spin" />
             Loading your library…
           </div>
         )}
 
         {state.status === 'rate-limited' && (
           <div>
-            <p className="text-red-400 font-bold mb-4">
+            <p className="text-red-400 font-bold text-base mb-4">
               Too many attempts in a short time. Please wait a moment and try again.
             </p>
             <button
               type="button"
               onClick={() => fetchLibrary(state.idToken)}
-              className="inline-flex items-center gap-2 text-brand-yellow underline"
+              className="inline-flex items-center gap-2 text-brand-yellow underline text-base"
             >
-              <RefreshCw size={14} />
+              <RefreshCw size={16} />
               Try again
             </button>
           </div>
@@ -660,20 +699,20 @@ export const MyLibraryPage: React.FC = () => {
 
         {state.status === 'error' && (
           <div>
-            <p className="text-red-400 font-bold mb-4">{state.message}</p>
+            <p className="text-red-400 font-bold text-base mb-4">{state.message}</p>
             <button
               type="button"
               onClick={() => fetchLibrary(state.idToken)}
-              className="inline-flex items-center gap-2 text-brand-yellow underline"
+              className="inline-flex items-center gap-2 text-brand-yellow underline text-base"
             >
-              <RefreshCw size={14} />
+              <RefreshCw size={16} />
               Try again
             </button>
           </div>
         )}
 
-        <a href="/" className="flex items-center justify-center gap-2 text-brand-muted underline mt-8 text-sm">
-          <ArrowLeft size={14} />
+        <a href="/" className="flex items-center justify-center gap-2 text-brand-muted underline mt-8 text-base">
+          <ArrowLeft size={16} />
           Back to Doji's Library
         </a>
       </div>
