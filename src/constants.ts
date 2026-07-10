@@ -253,15 +253,6 @@ const TOOLS_ITEMS: readonly ToolsItemMeta[] = [
 
 const AI_ITEMS: readonly AIItemMeta[] = [
   {
-    itemKey: 'claude-code-notes',
-    title: 'Claude Notes',
-    description: {
-      en: 'First release of Claude Notes with practical guidance for prompts, workflows, and everyday coding support.',
-      tl: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.'
-    },
-    price: { en: 299, tl: 350 }
-  },
-  {
     itemKey: 'claude-mcp',
     title: 'Claude MCP',
     description: {
@@ -484,27 +475,7 @@ const AI_COURSES_ITEMS: readonly AICourseItemMeta[] = [
   // }
 ];
 
-const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [
-  {
-    itemKey: 'freshman-prep',
-    title: 'BSIT Advanced Study',
-    description:
-      'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
-    thumbnail: '/productivity/freshmen-prep.webp',
-    price: 150,
-    available: true,
-    // preOrder: true
-  },
-  {
-    itemKey: 'bscs-advance-study',
-    title: 'BSCS Advanced Study Guide',
-    description:
-      'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
-    thumbnail: '/productivity/bscs-advance-study.webp',
-    price: 150,
-    available: true,
-  }
-];
+const PRODUCTIVITY_ITEMS: readonly ProductivityItemMeta[] = [];
 
 type ProductSeed = Omit<Product, 'mobileUrl' | 'desktopUrl'>;
 
@@ -737,46 +708,50 @@ export const PRODUCTS: Product[] = [
   ...productivityProducts,
   {
     id: 'bsit-complete',
-    title: 'BSIT Complete',
-    description: 'Complete BSIT notes package.',
-    price: 0,
-    thumbnail: PREORDER_THUMBNAIL,
+    title: 'BSIT Advanced Study',
+    description:
+      'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
+    thumbnail: '/productivity/freshmen-prep.webp',
+    price: 150,
     mobileUrl: MOBILE_URL,
     desktopUrl: DESKTOP_URL,
-    category: 'Unlisted',
+    category: PRODUCTIVITY_CATEGORY,
     available: true
   },
   {
   id: 'bscs-complete',
-  title: 'BSCS Complete',
-  description: 'Complete BSCS notes package.',
-  price: 0,
-  thumbnail: PREORDER_THUMBNAIL,
+  title: 'BSCS Advanced Study Guide',
+  description:
+    'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
+  thumbnail: '/productivity/bscs-advance-study.webp',
+  price: 150,
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
-  category: 'Unlisted',
+  category: PRODUCTIVITY_CATEGORY,
   available: true
 },
   {
   id: 'ai-claude-notes-en',
-  title: 'AI Claude Notes (EN)',
-  description: 'Comprehensive Claude AI notes in English.',
+  title: 'Claude Notes',
+  description: 'First release of Claude Notes with practical guidance for prompts, workflows, and everyday coding support.',
   price: 299,
-  thumbnail: PREORDER_THUMBNAIL,
+  thumbnail: getAiThumbnail('claude-code-notes', 'en'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
-  category: 'listed',
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
   available: true
 },
 {
   id: 'ai-claude-notes-tl',
-  title: 'AI Claude Notes (TL)',
-  description: 'Comprehensive Claude AI notes in Tagalog.',
-  price: 0,
-  thumbnail: PREORDER_THUMBNAIL,
+  title: 'Claude Notes',
+  description: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.',
+  price: 350,
+  thumbnail: getAiThumbnail('claude-code-notes', 'tl'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
-  category: 'Listed',
+  category: AI_TOOLS_CATEGORY,
+  language: 'tl',
   available: true
 },
 ];
