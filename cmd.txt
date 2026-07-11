@@ -1,6 +1,6 @@
 git add .
-git commit -m "My Library to Desktop View"
+git commit -m "chat bot added"
 git push -u
 
 npm run build
-netlify dev --dir dist
+netlify dev --dir distc

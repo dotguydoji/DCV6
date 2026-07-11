@@ -183,7 +183,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Activities',
     folder: 'programming-languages-activities',
     fileSuffix: 'activities',
-    price: { en: 99, tl: 99 },
+    price: { en: 120, tl: 120 },
     available: true
   },
   {
@@ -412,8 +412,8 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
     itemKey: 'openclo',
     title: 'Open Claw',
     description: {
-      en: 'Open Claw notes for open-source AI clothing and fashion generation workflows.',
-      tl: 'Open Claw notes para sa open-source AI clothing at fashion generation workflows.'
+      en: 'Open Claw notes for setting up and running OpenClaw, an open-source personal AI agent that automates tasks across messaging apps, files, and the web.',
+      tl: 'Open Claw notes para sa pag-setup at pagpapatakbo ng OpenClaw, isang open-source personal AI agent na nag-a-automate ng tasks sa messaging apps, files, at web.'
     },
     price: { en: 399, tl: 499 },
   },
@@ -663,7 +663,7 @@ const aiAutomationProducts = AI_AUTOMATION_ITEMS.flatMap((item) =>
       thumbnail: '/favicon.svg',
       category: AI_AUTOMATION_CATEGORY,
       language,
-      preOrder: false
+      preOrder: true
     })
   )
 );

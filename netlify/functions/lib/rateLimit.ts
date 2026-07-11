@@ -48,18 +48,18 @@ export interface RateLimitResult {
 }
 
 /**
- * @param key - identifies which limit bucket to use (usually the function name)
- * @param maxRequests - max requests allowed per windowMs for one IP
- * @param windowMs - window size in milliseconds
+ * Core bucket check, keyed by any caller-supplied identifier - an IP (see
+ * `checkRateLimit` below) or something else entirely, like an anonymous
+ * client-generated session token (see the chatbot function). Same in-memory,
+ * best-effort caveats as the module doc comment above.
  */
-export const checkRateLimit = (
-  headers: Record<string, string | undefined>,
-  key: string,
+export const checkRateLimitByIdentifier = (
+  namespace: string,
+  identifier: string,
   maxRequests: number,
   windowMs: number
 ): RateLimitResult => {
-  const ip = getClientIp(headers);
-  const bucketKey = `${key}:${ip}`;
+  const bucketKey = `${namespace}:${identifier}`;
   const now = Date.now();
 
   cleanupExpiredBuckets(now);
@@ -80,6 +80,18 @@ export const checkRateLimit = (
 
   return { limited: false, retryAfterSeconds: 0 };
 };
+
+/**
+ * @param key - identifies which limit bucket to use (usually the function name)
+ * @param maxRequests - max requests allowed per windowMs for one IP
+ * @param windowMs - window size in milliseconds
+ */
+export const checkRateLimit = (
+  headers: Record<string, string | undefined>,
+  key: string,
+  maxRequests: number,
+  windowMs: number
+): RateLimitResult => checkRateLimitByIdentifier(key, getClientIp(headers), maxRequests, windowMs);
 
 export const rateLimitedResponse = (retryAfterSeconds: number) => ({
   statusCode: 429,

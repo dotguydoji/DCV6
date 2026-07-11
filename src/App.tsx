@@ -6,6 +6,7 @@ import { lazyWithReload } from './lazyWithReload';
 
 const FAQSection = lazyWithReload(() => import('./components/FAQSection').then((m) => ({ default: m.FAQSection })));
 const CartModal = lazyWithReload(() => import('./components/CartModal').then((m) => ({ default: m.CartModal })));
+const ChatWidget = lazyWithReload(() => import('./components/ChatWidget').then((m) => ({ default: m.ChatWidget })));
 const PdfGatePage = lazyWithReload(() => import('./components/PdfGatePage').then((m) => ({ default: m.PdfGatePage })));
 const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').then((m) => ({ default: m.MyLibraryPage })));
 import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById } from "./constants";
@@ -565,6 +566,12 @@ const App: React.FC = () => {
               </span>
             )}
           </button>
+        )}
+
+        {!isAdminRecordingMode && (
+          <Suspense fallback={null}>
+            <ChatWidget />
+          </Suspense>
         )}
 
         {flyingItems.map(item => {
