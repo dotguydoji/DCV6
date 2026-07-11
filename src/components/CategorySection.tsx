@@ -276,7 +276,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         ref={setSectionRefs}
         className="reveal blueprint-corners transition-all rounded-sm overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform bg-surface-secondary border-border-hairline"
       >
-        <div className="category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline">
+        <div className="category-header tilt-row px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline">
           {typeof index === 'number' && typeof total === 'number' && (
             <div className="flex items-center gap-3 mb-3 lg:mb-4">
               <div className="h-px w-8 lg:w-12 bg-border-strong"></div>

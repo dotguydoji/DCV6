@@ -13,6 +13,7 @@ import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useScrollReveal } from './lib/useScrollReveal';
+import { useGlobalScrollTilt } from './lib/useScrollTilt';
 
 interface FlyingItem {
   id: string;
@@ -100,6 +101,7 @@ const App: React.FC = () => {
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const adminPasswordInputRef = useRef<HTMLInputElement>(null);
   const footerRevealRef = useScrollReveal<HTMLElement>();
+  useGlobalScrollTilt();
 
   const activeCategoryRef = useRef<string | null>(CATEGORIES[0]);
 

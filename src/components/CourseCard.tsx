@@ -36,9 +36,10 @@ export const CourseCard = memo(
     return (
       <div
         ref={cardRef}
-        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-surface border rounded-sm overflow-hidden transition-all duration-300 will-change-transform card-elevated hover:-translate-y-0.5 ${
+        style={{ '--card-scale': isHighlighted ? 1.02 : 1 } as React.CSSProperties}
+        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-surface border rounded-sm overflow-hidden will-change-transform card-elevated card-tilt ${
           isHighlighted
-            ? 'animate-highlight border-border-strong z-10 scale-[1.02]'
+            ? 'animate-highlight border-border-strong z-10'
             : isSelected
               ? 'border-border-strong ring-2 ring-border-strong/20'
               : 'border-border-hairline hover:border-border-strong'

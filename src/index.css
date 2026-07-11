@@ -26,6 +26,7 @@
   --border-hairline: #c7ccd1;
   --border-strong: #17181a;
   --shadow-card: 0 1px 2px rgba(23, 24, 26, 0.05), 0 10px 28px -14px rgba(23, 24, 26, 0.22);
+  --scroll-tilt-x: 0deg;
 }
 
 [data-theme="dark"] {
@@ -501,6 +502,42 @@
   animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 
+/*
+ * Scroll-tied 3D tilt (see src/lib/useScrollTilt.ts, which drives the
+ * shared --scroll-tilt-x variable). Applied per-element rather than to one
+ * huge scrolling container so each row/card rotates around its own small
+ * center - a couple of degrees on a 150-400px element is subtle; the same
+ * couple of degrees on a multi-thousand-pixel container would fling
+ * far-off content wildly off-screen.
+ *
+ * Both classes fold in every transform the element ever needed
+ * (hover-lift, active-press, search-highlight scale) into ONE `transform`
+ * declaration via CSS custom properties. This is required, not stylistic:
+ * `@import "tailwindcss"` puts utility classes like `hover:-translate-y-*`
+ * inside `@layer utilities`, and per the CSS cascade-layers spec, plain
+ * unlayered CSS (this stylesheet's rules) always wins over ANY layered CSS
+ * regardless of source order or specificity - so a separate Tailwind
+ * transform utility here would simply never apply once this rule exists.
+ */
+.tilt-row {
+  transform: perspective(1400px) rotateX(var(--scroll-tilt-x, 0deg));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-tilt {
+  transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))
+    scale(var(--card-scale, 1));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+.card-tilt:hover {
+  transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))
+    scale(var(--card-scale, 1)) translateY(-4px);
+}
+.card-tilt:active {
+  transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))
+    scale(calc(var(--card-scale, 1) * 0.98));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .reveal-stagger > *,
@@ -509,6 +546,14 @@
     animation: none !important;
     transition: none !important;
     opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .tilt-row,
+  .card-tilt,
+  .card-tilt:hover,
+  .card-tilt:active {
+    transition: none !important;
     transform: none !important;
   }
 }
