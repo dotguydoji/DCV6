@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, X } from 'lucide-react';
+import { Bot, Send, X } from 'lucide-react';
 import { getOrCreateChatSessionId } from '../lib/chatbotSession';
 
 const MAX_MESSAGE_LENGTH = 350;
@@ -16,6 +16,19 @@ const GREETING: ChatMessage = {
   text: 'Uy! Ako yung AI assistant ng DC Library. Ano ang maitutulong ko - tanong mo lang tungkol sa notes namin, presyo, o paano gamitin yung site!'
 };
 
+// How long the simulated "typing" beat shows before the greeting message
+// itself appears - purely cosmetic (see the useEffect below), not a real
+// network delay.
+const GREETING_TYPING_DELAY_MS = 700;
+
+const TypingIndicator: React.FC = () => (
+  <div className="self-start bg-gray-900 border border-gray-700 rounded-sm px-4 py-3.5 flex items-center gap-1.5">
+    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  </div>
+);
+
 /**
  * Every message is rendered as a plain text node (never dangerouslySetInnerHTML,
  * never a markdown renderer) - both to match the "plain conversational text"
@@ -31,17 +44,30 @@ const GREETING: ChatMessage = {
  */
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
+  // Starts empty rather than pre-seeded with the greeting - the greeting is
+  // appended (see the effect below) the first time the widget opens, so it
+  // mounts fresh and plays the pop-in animation like a real just-arrived
+  // message instead of just sitting there already visible.
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isGreetingTyping, setIsGreetingTyping] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [noticeText, setNoticeText] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasGreetedRef = useRef(false);
   // Admin recording mode (App.tsx) conditionally unmounts this component -
   // without this guard, a reply arriving after that toggle would call
   // setState on an unmounted component.
   const isMountedRef = useRef(true);
 
   useEffect(() => {
+    // Re-asserted true on every effect run, not just declared in the
+    // useRef initializer - React StrictMode's dev-only double-invoke
+    // (mount -> cleanup -> mount again) runs this cleanup once before the
+    // "real" mount settles, which would otherwise leave this stuck at
+    // false for the component's entire actual mounted lifetime with
+    // nothing ever setting it back to true.
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
@@ -51,7 +77,28 @@ export const ChatWidget: React.FC = () => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isGreetingTyping, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || hasGreetedRef.current) return;
+
+    // The "already greeted" flag is only set once the timer actually fires,
+    // not when it's merely scheduled - React StrictMode's dev-only double-
+    // invoke (mount -> cleanup -> mount again) cancels the first timer via
+    // the cleanup below; setting the flag up front here would have made
+    // that cancelled attempt count as "done" and the second (real) mount
+    // would then skip scheduling a new one entirely, so the greeting would
+    // never actually appear.
+    setIsGreetingTyping(true);
+    const timer = setTimeout(() => {
+      if (!isMountedRef.current) return;
+      hasGreetedRef.current = true;
+      setIsGreetingTyping(false);
+      setMessages((prev) => [...prev, GREETING]);
+    }, GREETING_TYPING_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   const handleSend = useCallback(async () => {
     const trimmed = inputValue.trim();
@@ -126,17 +173,28 @@ export const ChatWidget: React.FC = () => {
 
   return (
     <>
-      {/* Logo only - no border, no background circle - stacked directly
-          above the cart FAB (same right-edge column, bottom-24 sits just
-          above the cart's bottom-6 + its own height). */}
+      {/* Scoped to this component only - not a global stylesheet change.
+          Applied inline (not a Tailwind class) to each message bubble below,
+          so a freshly-mounted bubble (any new message, including the
+          greeting once it's appended) plays this once on arrival. */}
+      <style>{`
+        @keyframes chatMessagePopIn {
+          0% { opacity: 0; transform: scale(0.85) translateY(6px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+
+      {/* Circular, same size/shape as the cart FAB (p-4, rounded-full,
+          shadow-2xl, active:scale-95) - stacked directly above it in the
+          same right-edge column. An AI-themed icon (Bot), not the site logo. */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
         aria-expanded={isOpen}
-        className="fixed bottom-24 right-6 z-[199] w-14 h-14 flex items-center justify-center active:scale-95 transition-transform duration-200"
+        className="fixed bottom-24 right-6 z-[199] bg-orange-500 text-black p-4 rounded-full shadow-2xl hover:bg-orange-400 transition-all duration-300 active:scale-95"
       >
-        <img src="/favicon.svg" alt="" className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" />
+        {isOpen ? <X size={28} strokeWidth={2.5} /> : <Bot size={28} strokeWidth={2.5} />}
       </button>
 
       {isOpen && (
@@ -148,7 +206,7 @@ export const ChatWidget: React.FC = () => {
         >
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 bg-black">
             <div className="flex items-center gap-2">
-              <img src="/favicon.svg" alt="" className="w-5 h-5 object-contain" />
+              <Bot size={18} className="text-orange-500" />
               <span className="f-body font-bold text-white">DC Library Assistant</span>
             </div>
             <button
@@ -165,6 +223,7 @@ export const ChatWidget: React.FC = () => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
+                style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
                 className={`max-w-[85%] rounded-sm px-3.5 py-2.5 text-sm whitespace-pre-wrap break-words ${
                   msg.role === 'user'
                     ? 'self-end bg-orange-500 text-black'
@@ -175,11 +234,7 @@ export const ChatWidget: React.FC = () => {
               </div>
             ))}
 
-            {isSending && (
-              <div className="self-start bg-gray-900 text-gray-400 border border-gray-700 rounded-sm px-3.5 py-2.5 text-sm">
-                Typing…
-              </div>
-            )}
+            {(isSending || isGreetingTyping) && <TypingIndicator />}
 
             {noticeText && (
               <div className="self-center text-xs text-gray-400 text-center px-2">{noticeText}</div>
