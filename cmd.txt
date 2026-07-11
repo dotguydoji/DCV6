@@ -1,6 +1,6 @@
 git add .
-git commit -m "chat bot added"
+git commit -m "neo minimalist ui"
 git push -u
 
 npm run build
-netlify dev --dir distc
+netlify dev --dir dist

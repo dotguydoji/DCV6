@@ -46,12 +46,12 @@ export const ProductCard = memo(
     return (
       <div
         ref={cardRef}
-        className={`group flex-shrink-0 w-[320px] sm:w-[360px] laptop:w-[290px] xl:w-[320px] bg-[#e6ccb3] border rounded-lg overflow-hidden flex flex-col transition-all duration-300 active:scale-[0.98] shadow-2xl shadow-black/20 will-change-transform ${
+        className={`group flex-shrink-0 w-[320px] sm:w-[360px] laptop:w-[290px] xl:w-[320px] bg-surface border rounded-sm overflow-hidden flex flex-col transition-all duration-300 active:scale-[0.98] will-change-transform card-elevated hover:-translate-y-0.5 ${
           isHighlighted
-            ? 'animate-highlight border-brand-yellow z-10 scale-[1.02]'
+            ? 'animate-highlight border-border-strong z-10 scale-[1.02]'
             : isSelected
-              ? 'border-brand-yellow ring-2 ring-brand-yellow/30'
-              : 'border-[rgba(26,29,30,0.1)] hover:border-brand-yellow/40'
+              ? 'border-border-strong ring-2 ring-border-strong/20'
+              : 'border-border-hairline hover:border-border-strong'
         }`}
       >
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-950/50">
@@ -67,41 +67,41 @@ export const ProductCard = memo(
           />
 
           {product.preOrder && (
-            <div className="absolute left-3 top-3 z-10 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg shadow-black/30">
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-surface-inverted px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-text-inverted">
               Pre-order
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-[#e6ccb3] to-transparent opacity-40"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-40"></div>
         </div>
 
-        <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-[#e6ccb3]">
-          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-[#34393a] mb-1 leading-tight group-hover:text-[#1a1d1e] transition-colors duration-300 line-clamp-2 min-h-[2lh]">
+        <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-surface">
+          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-text-primary mb-1 leading-tight transition-colors duration-300 line-clamp-2 min-h-[2lh]">
             {product.title}
           </h3>
-          <p className="text-xs normal-case text-[#5a5048] mb-2 flex-grow tracking-normal leading-relaxed line-clamp-2 opacity-80 font-normal">
+          <p className="text-xs normal-case text-text-secondary mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 font-normal">
             {product.description}
           </p>
 
-          <div className="mt-auto pt-3 border-t border-[rgba(26,29,30,0.1)] bg-[#1a1d1e] rounded-b-lg -mx-5 -mb-5 px-5 pb-5 flex items-center justify-between h-[80px]">
+          <div className="mt-auto border-t border-border-hairline bg-surface-inverted rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between">
             {isAvailable ? (
               <>
                 {hideCommerce ? (
                   <div className="w-full flex items-center justify-start">
-                    <span className="flex items-center justify-center w-12 h-12 border border-white/15 text-white/45">
-                      <Download size={22} strokeWidth={2.5} />
+                    <span className="flex items-center justify-center w-10 h-10 border border-text-inverted/15 text-text-inverted/45">
+                      <Download size={18} strokeWidth={1.5} />
                     </span>
                   </div>
                 ) : (
                   <>
                     <div className="flex flex-col">
                       {typeof product.originalPrice === 'number' && (
-                        <span className="text-sm font-bold tracking-wide text-white/60 line-through">
-                          P {product.originalPrice.toLocaleString()}
+                        <span className="text-sm font-bold tracking-wide text-text-inverted/60 line-through">
+                          <span className="text-[0.5em]">P</span> {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className="f-price text-[#6b9a7d] drop-shadow-none font-semibold leading-none">
-                        P {product.price.toLocaleString()}
+                      <span className="f-price text-text-inverted font-semibold leading-none">
+                        <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                       </span>
                     </div>
                     <button
@@ -109,25 +109,25 @@ export const ProductCard = memo(
                         event.stopPropagation();
                         onToggleSelect(product, event);
                       }}
-                      className={`flex items-center justify-center w-14 h-14 border border-white/20 rounded-none transition-all duration-300 ${
+                      className={`flex items-center justify-center w-11 h-11 border border-text-inverted/20 rounded-none transition-all duration-300 ${
                         isSelected
-                          ? 'text-brand-yellow border-brand-yellow bg-brand-yellow/10'
-                          : 'text-white hover:text-brand-yellow hover:border-brand-yellow hover:bg-white/5'
+                          ? 'text-text-inverted border-text-inverted bg-text-inverted/10'
+                          : 'text-text-inverted/70 hover:text-text-inverted hover:border-text-inverted hover:bg-text-inverted/5'
                       }`}
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
                     >
-                      {isSelected ? <Check size={30} strokeWidth={4} /> : <Plus size={30} strokeWidth={4} />}
+                      {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={2} />}
                     </button>
                   </>
                 )}
               </>
             ) : (
               <>
-                <span className="text-sm font-black uppercase tracking-[0.2em] text-brand-yellow/90">
+                <span className="text-sm font-semibold uppercase tracking-[0.2em] text-text-inverted">
                   Coming Soon
                 </span>
-                <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-text-inverted/60">
                   Not Available
                 </span>
               </>

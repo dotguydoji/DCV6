@@ -22,10 +22,10 @@ const GREETING: ChatMessage = {
 const GREETING_TYPING_DELAY_MS = 700;
 
 const TypingIndicator: React.FC = () => (
-  <div className="self-start bg-gray-900 border border-gray-700 rounded-sm px-4 py-3.5 flex items-center gap-1.5">
-    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+  <div className="self-start bg-surface border border-border-hairline rounded-sm px-4 py-3.5 flex items-center gap-1.5">
+    <span className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+    <span className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+    <span className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
   </div>
 );
 
@@ -37,10 +37,10 @@ const TypingIndicator: React.FC = () => (
  * as HTML/script. React already escapes text children by default; this
  * component just never opts out of that.
  *
- * Colors deliberately stay outside the site's usual brand-yellow/#1a1d1e
- * palette - black, orange, white, and gray only, per design direction, so
- * the widget reads as its own distinct surface rather than blending into
- * the storefront theme.
+ * Uses the same neo-minimalist theme tokens (surface/text/border) as the
+ * rest of the site, so it themes correctly with the light/dark toggle -
+ * this used to be a deliberately separate orange/black/gray palette, but
+ * now joins the unified design system.
  */
 export const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -192,9 +192,9 @@ export const ChatWidget: React.FC = () => {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
         aria-expanded={isOpen}
-        className="fixed bottom-24 right-6 z-[199] bg-orange-500 text-black p-4 rounded-full shadow-2xl hover:bg-orange-400 transition-all duration-300 active:scale-95"
+        className="fixed bottom-24 right-6 z-[199] bg-surface-inverted text-text-inverted p-4 rounded-full shadow-lg hover:opacity-90 transition-all duration-300 active:scale-95"
       >
-        {isOpen ? <X size={28} strokeWidth={2.5} /> : <Bot size={28} strokeWidth={2.5} />}
+        {isOpen ? <X size={28} strokeWidth={1.5} /> : <Bot size={28} strokeWidth={1.5} />}
       </button>
 
       {isOpen && (
@@ -202,32 +202,32 @@ export const ChatWidget: React.FC = () => {
           role="dialog"
           aria-modal="false"
           aria-label="Chat with DC Library Assistant"
-          className="fixed bottom-[168px] right-6 z-[198] w-[calc(100vw-3rem)] max-w-sm h-[70vh] max-h-[560px] flex flex-col rounded-sm border border-gray-700 bg-black shadow-2xl overflow-hidden"
+          className="fixed bottom-[168px] right-6 z-[198] w-[calc(100vw-3rem)] max-w-sm h-[70vh] max-h-[560px] flex flex-col rounded-sm border border-border-hairline bg-surface-secondary shadow-2xl overflow-hidden"
         >
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-800 bg-black">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-hairline bg-surface">
             <div className="flex items-center gap-2">
-              <Bot size={18} className="text-orange-500" />
-              <span className="f-body font-bold text-white">DC Library Assistant</span>
+              <Bot size={18} strokeWidth={1.5} className="text-text-primary" />
+              <span className="f-body font-bold text-text-primary">DC Library Assistant</span>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
               aria-label="Close chat"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors"
             >
-              <X size={20} />
+              <X size={20} strokeWidth={1.5} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-black">
+          <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-surface-secondary">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
                 className={`max-w-[85%] rounded-sm px-3.5 py-2.5 text-sm whitespace-pre-wrap break-words ${
                   msg.role === 'user'
-                    ? 'self-end bg-orange-500 text-black'
-                    : 'self-start bg-gray-900 text-white border border-gray-700'
+                    ? 'self-end bg-surface-inverted text-text-inverted'
+                    : 'self-start bg-surface text-text-primary border border-border-hairline'
                 }`}
               >
                 {msg.text}
@@ -237,13 +237,13 @@ export const ChatWidget: React.FC = () => {
             {(isSending || isGreetingTyping) && <TypingIndicator />}
 
             {noticeText && (
-              <div className="self-center text-xs text-gray-400 text-center px-2">{noticeText}</div>
+              <div className="self-center text-xs text-text-secondary text-center px-2">{noticeText}</div>
             )}
 
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-gray-800 bg-black p-3">
+          <div className="border-t border-border-hairline bg-surface p-3">
             <div className="flex items-end gap-2">
               <textarea
                 value={inputValue}
@@ -252,19 +252,19 @@ export const ChatWidget: React.FC = () => {
                 placeholder="Ask a question..."
                 rows={1}
                 aria-label="Type your message"
-                className="flex-1 resize-none bg-gray-900 border border-gray-700 rounded-sm px-3 py-2.5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-orange-500 transition-colors max-h-24"
+                className="flex-1 resize-none bg-surface-secondary border border-border-hairline rounded-sm px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors max-h-24"
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isOverLimit || isSending}
                 aria-label="Send message"
-                className="flex items-center justify-center w-10 h-10 shrink-0 rounded-sm bg-orange-500 text-black disabled:opacity-40 disabled:cursor-not-allowed hover:bg-orange-400 transition-all"
+                className="flex items-center justify-center w-10 h-10 shrink-0 rounded-sm bg-surface-inverted text-text-inverted disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-all"
               >
-                <Send size={18} />
+                <Send size={18} strokeWidth={1.5} />
               </button>
             </div>
-            <div className={`mt-1.5 text-[11px] flex items-center justify-between ${isOverLimit ? 'text-orange-500' : 'text-gray-500'}`}>
+            <div className={`mt-1.5 text-[11px] flex items-center justify-between ${isOverLimit ? 'text-red-400' : 'text-text-secondary'}`}>
               <span>AI-powered - anonymous session only, no personal data stored.</span>
               <span className="shrink-0 ml-2">{trimmedLength}/{MAX_MESSAGE_LENGTH}</span>
             </div>

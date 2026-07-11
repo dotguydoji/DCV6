@@ -8,6 +8,7 @@ import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { InstallAppButton } from './InstallAppButton';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { NoPdfAccessDialog } from './NoPdfAccessDialog';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
   onSearchSelect: (product: Product) => void;
@@ -175,36 +176,36 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
   return (
     <>
-      <nav className="sticky top-0 z-[60] bg-[#1a1d1e] shadow-[0_8px_40px_rgba(0,0,0,0.6)] h-20 laptop:h-22 xl:h-24 transition-all">
+      <nav className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all [overflow-anchor:none]">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-6 laptop:gap-8">
-          
-          <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default">
-            <img 
-              src="/favicon.svg" 
-              alt="DC Notes Logo" 
+
+          <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default sm:pr-6 laptop:pr-8 sm:border-r sm:border-border-hairline">
+            <img
+              src="/favicon.svg"
+              alt="DC Notes Logo"
               className="w-10 h-10 laptop:w-12 laptop:h-12 object-contain"
               loading="eager"
               decoding="async"
               referrerPolicy="no-referrer"
             />
-            <span className="text-base md:text-xl laptop:text-xl xl:text-2xl font-extrabold text-white uppercase tracking-[0.3em]">
-              Doji's <span className="text-brand-yellow">Library</span>
+            <span className="text-base md:text-xl laptop:text-xl xl:text-2xl font-medium text-text-primary uppercase tracking-[0.3em]">
+              Doji's Library
             </span>
           </div>
 
 
           <div className="hidden sm:flex items-center justify-end flex-grow gap-4 h-full">
             <div ref={searchRef} className="relative w-full max-w-md laptop:max-w-lg">
-              <div 
-                className={`flex items-center bg-[#1a1d1e] border rounded-sm transition-all duration-300 ${
-                  isSearchFocused 
-                    ? 'border-brand-yellow/80 ring-2 ring-brand-yellow/10' 
-                    : 'border-white/10 hover:border-white/20'
+              <div
+                className={`flex items-center bg-surface border rounded-sm transition-all duration-300 ${
+                  isSearchFocused
+                    ? 'border-border-strong ring-2 ring-border-strong/10'
+                    : 'border-border-hairline hover:border-border-strong'
                 }`}
               >
-                <div className="flex items-center justify-center w-10 laptop:w-12 shrink-0 text-brand-gray/60 border-r border-white/5">
-                  <Search size={18} className="laptop:hidden" />
-                  <Search size={20} className="hidden laptop:block" />
+                <div className="flex items-center justify-center w-10 laptop:w-12 shrink-0 text-text-secondary border-r border-border-hairline">
+                  <Search size={18} strokeWidth={1.5} className="laptop:hidden" />
+                  <Search size={20} strokeWidth={1.5} className="hidden laptop:block" />
                 </div>
                 <input
                   ref={inputRef}
@@ -214,7 +215,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                   role="combobox"
                   aria-expanded={isSearchFocused && filteredProducts.length > 0}
                   aria-autocomplete="list"
-                  className="w-full bg-transparent border-none py-2.5 laptop:py-3 px-4 text-white f-body focus:ring-0 placeholder:text-brand-muted appearance-none"
+                  className="w-full bg-transparent border-none py-2.5 laptop:py-3 px-4 text-text-primary f-body focus:ring-0 placeholder:text-text-secondary appearance-none"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onFocus={() => setIsSearchFocused(true)}
@@ -224,16 +225,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               </div>
 
               {isSearchFocused && filteredProducts.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden max-h-[70vh] overflow-y-auto z-[100] animate-in fade-in slide-in-from-top-3 duration-300">
+                <div className="absolute top-full left-0 right-0 mt-4 bg-surface-secondary border border-border-hairline rounded overflow-hidden max-h-[70vh] overflow-y-auto z-[100] shadow-lg">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
-                      className={`w-full px-5 py-4 laptop:px-6 laptop:py-5 text-left border-b border-white/5 last:border-0 transition-all flex items-center gap-4 laptop:gap-5 group ${
-                        index === selectedIndex ? 'bg-white/5' : 'hover:bg-white/5'
+                      className={`w-full px-5 py-4 laptop:px-6 laptop:py-5 text-left border-b border-border-hairline last:border-0 transition-all flex items-center gap-4 laptop:gap-5 group ${
+                        index === selectedIndex ? 'bg-surface' : 'hover:bg-surface'
                       }`}
                       onClick={() => handleSelect(product)}
                     >
-                      <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-sm bg-[#1a1d1e] overflow-hidden shrink-0 border border-white/10 group-hover:border-brand-yellow/40 transition-colors">
+                      <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-sm bg-surface overflow-hidden shrink-0 border border-border-hairline group-hover:border-border-strong transition-colors">
                         <img
                           src={product.thumbnail}
                           alt=""
@@ -244,8 +245,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                         />
                       </div>
                       <div className="overflow-hidden">
-                        <div className={`f-body font-black truncate transition-colors ${index === selectedIndex ? 'text-brand-yellow' : 'text-white'}`}>{product.title}</div>
-                        <div className="f-small text-brand-muted text-[10px] laptop:text-[11px] font-black truncate">{getSearchMeta(product)}</div>
+                        <div className="f-body font-medium truncate transition-colors text-text-primary">{product.title}</div>
+                        <div className="f-small text-text-secondary text-[10px] laptop:text-[11px] font-medium truncate">{getSearchMeta(product)}</div>
                       </div>
                     </button>
                   ))}
@@ -258,22 +259,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               type="button"
               onClick={handleMessengerClick}
               disabled={isCheckingMessengerAccess}
-              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
-              <MessageCircle size={18} />
+              <MessageCircle size={18} strokeWidth={1.5} />
               Join Group Chat
             </button>
             <a
               href="/my-library"
-              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
             >
-              <LibraryBig size={18} />
+              <LibraryBig size={18} strokeWidth={1.5} />
               {hasCachedSession ? 'My Library' : 'Login'}
             </a>
+            <ThemeToggle />
           </div>
 
           <div className="flex sm:hidden items-center gap-4">
             <InstallAppButton variant="icon" {...installPrompt} />
+            <ThemeToggle />
             <button
               onClick={toggleSearch}
               aria-label={isSearchVisible ? 'Close search' : 'Open search'}
@@ -281,11 +284,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               type="button"
               className={`flex items-center justify-center w-12 h-12 rounded border transition-all duration-300 active:scale-90 ${
                 isSearchVisible
-                  ? 'bg-brand-yellow border-brand-yellow text-[#1a1d1e]'
-                  : 'bg-[#1a1d1e] border-white/10 text-brand-gray hover:border-brand-yellow/50'
+                  ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
+                  : 'bg-surface-secondary border-border-hairline text-text-secondary hover:border-border-strong'
               }`}
             >
-              {isSearchVisible ? <X size={24} strokeWidth={3} /> : <Search size={24} />}
+              {isSearchVisible ? <X size={24} strokeWidth={1.5} /> : <Search size={24} strokeWidth={1.5} />}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -293,20 +296,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               aria-expanded={isMenuOpen}
               type="button"
               className={`flex items-center justify-center w-12 h-12 rounded border transition-all duration-300 active:scale-90 ${
-                isMenuOpen ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow' : 'border-white/10 bg-[#1a1d1e] text-brand-gray'
+                isMenuOpen ? 'border-surface-inverted bg-surface-inverted text-text-inverted' : 'border-border-hairline bg-surface-secondary text-text-secondary'
               }`}
             >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
             </button>
           </div>
         </div>
 
         {isSearchVisible && (
-          <div className="fixed top-20 left-0 right-0 bg-[#1a1d1e] border-b border-white/5 p-6 sm:hidden z-[60] animate-in fade-in slide-in-from-top-5 duration-300 shadow-2xl">
+          <div className="fixed top-20 left-0 right-0 bg-surface border-b border-border-hairline p-6 sm:hidden z-[60] shadow-lg">
             <div className="relative" ref={searchRef}>
-              <div className="flex items-stretch bg-[#1a1d1e] border border-brand-yellow/40 rounded-sm focus-within:border-brand-yellow transition-all overflow-hidden">
-                <div className="flex items-center justify-center w-14 shrink-0 bg-brand-yellow/5 text-brand-yellow border-r border-brand-yellow/20">
-                  <Search size={24} strokeWidth={2.5} />
+              <div className="flex items-stretch bg-surface border border-border-strong rounded-sm focus-within:border-text-primary transition-all overflow-hidden">
+                <div className="flex items-center justify-center w-14 shrink-0 bg-surface-secondary text-text-primary border-r border-border-hairline">
+                  <Search size={24} strokeWidth={1.5} />
                 </div>
                 <input
                   ref={inputRef}
@@ -316,7 +319,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                   role="combobox"
                   aria-expanded={filteredProducts.length > 0}
                   aria-autocomplete="list"
-                  className="w-full bg-transparent border-none py-5 px-6 text-white f-body focus:ring-0 appearance-none"
+                  className="w-full bg-transparent border-none py-5 px-6 text-text-primary f-body focus:ring-0 appearance-none"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
@@ -324,18 +327,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                   autoComplete="off"
                 />
               </div>
-              
+
               {filteredProducts.length > 0 && (
-                <div className="mt-4 bg-[#1a1d1e] border border-white/10 rounded shadow-[0_35px_70px_rgba(0,0,0,0.95)] overflow-hidden max-h-[calc(100dvh-11rem)] overflow-y-auto">
+                <div className="mt-4 bg-surface-secondary border border-border-hairline rounded overflow-hidden max-h-[calc(100dvh-11rem)] overflow-y-auto shadow-lg">
                   {filteredProducts.map((product, index) => (
                     <button
                       key={product.id}
-                      className={`w-full px-6 py-6 text-left border-b border-white/5 last:border-0 flex items-center gap-5 ${
-                        index === selectedIndex ? 'bg-white/5' : ''
+                      className={`w-full px-6 py-6 text-left border-b border-border-hairline last:border-0 flex items-center gap-5 ${
+                        index === selectedIndex ? 'bg-surface' : ''
                       }`}
                       onClick={() => handleSelect(product)}
                     >
-                      <div className="w-16 h-16 rounded-sm bg-[#1a1d1e] overflow-hidden shrink-0 border border-white/10">
+                      <div className="w-16 h-16 rounded-sm bg-surface overflow-hidden shrink-0 border border-border-hairline">
                         <img
                           src={product.thumbnail}
                           alt=""
@@ -346,8 +349,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                         />
                       </div>
                       <div className="overflow-hidden">
-                        <div className="f-body font-black text-white truncate">{product.title}</div>
-                        <div className="f-small text-brand-muted text-[11px] font-black truncate">{getSearchMeta(product)}</div>
+                        <div className="f-body font-medium text-text-primary truncate">{product.title}</div>
+                        <div className="f-small text-text-secondary text-[11px] font-medium truncate">{getSearchMeta(product)}</div>
                       </div>
                     </button>
                   ))}
@@ -357,23 +360,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
         )}
 
-        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/5 ${isMenuOpen ? 'max-h-96 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+        <div className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-surface border-b border-border-hairline ${isMenuOpen ? 'max-h-96 opacity-100 shadow-lg' : 'max-h-0 opacity-0 pointer-events-none'}`}>
           <div className="px-4 py-4 flex flex-col gap-2">
             <a
               href="/my-library"
               onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
             >
-              <LibraryBig size={20} />
+              <LibraryBig size={20} strokeWidth={1.5} />
               {hasCachedSession ? 'My Library' : 'Login'}
             </a>
             <button
               type="button"
               onClick={handleMessengerClick}
               disabled={isCheckingMessengerAccess}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
-              <MessageCircle size={20} />
+              <MessageCircle size={20} strokeWidth={1.5} />
               Join Messenger Group Chat
             </button>
           </div>
@@ -382,10 +385,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
       <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
       <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
-      
+
       {(isMenuOpen || (isSearchVisible && searchQuery.length > 0)) && (
-        <div 
-          className="fixed inset-0 z-[55] bg-[#1a1d1e]/85 backdrop-blur-md lg:hidden animate-in fade-in duration-400" 
+        <div
+          className="fixed inset-0 z-[55] bg-black/70 backdrop-blur-md lg:hidden"
           onClick={() => {
             setIsMenuOpen(false);
             setIsSearchVisible(false);

@@ -36,12 +36,12 @@ export const CourseCard = memo(
     return (
       <div
         ref={cardRef}
-        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-[#1a1d1e] border rounded-lg overflow-hidden transition-all duration-300 shadow-2xl shadow-black/50 will-change-transform ${
+        className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-surface border rounded-sm overflow-hidden transition-all duration-300 will-change-transform card-elevated hover:-translate-y-0.5 ${
           isHighlighted
-            ? 'animate-highlight border-brand-yellow z-10 scale-[1.02]'
+            ? 'animate-highlight border-border-strong z-10 scale-[1.02]'
             : isSelected
-              ? 'border-brand-yellow ring-2 ring-brand-yellow/20'
-              : 'border-white/10 hover:border-brand-yellow/40'
+              ? 'border-border-strong ring-2 ring-border-strong/20'
+              : 'border-border-hairline hover:border-border-strong'
         }`}
       >
         {/* Thumbnail */}
@@ -55,28 +55,30 @@ export const CourseCard = memo(
             decoding="async"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1d1e] via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent" />
 
           {/* Course badge — top left */}
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg">
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-surface-inverted px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-text-inverted">
             <Play size={9} fill="currentColor" strokeWidth={0} />
             Course
           </div>
 
           {/* Pre-register badge — top right */}
           {product.preOrder && (
-            <div className="absolute right-3 top-3 z-10 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-[#1a1d1e] shadow-lg">
+            <div className="absolute right-3 top-3 z-10 rounded-full bg-surface-inverted px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-text-inverted">
               Pre-register
             </div>
           )}
 
-          {/* Play button overlay */}
+          {/* Play button overlay - fixed black/white (not theme tokens),
+              sits on top of the photo thumbnail like a conventional video
+              play control, not page chrome that needs to react to theme. */}
           <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="w-11 h-11 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:bg-brand-yellow group-hover:border-brand-yellow transition-all duration-300">
+            <div className="w-11 h-11 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:bg-white group-hover:border-white transition-all duration-300">
               <Play
                 size={16}
                 fill="white"
-                className="ml-0.5 text-white group-hover:fill-black group-hover:text-[#1a1d1e] transition-colors duration-300"
+                className="ml-0.5 text-white group-hover:fill-black group-hover:text-black transition-colors duration-300"
               />
             </div>
           </div>
@@ -84,31 +86,31 @@ export const CourseCard = memo(
 
         {/* Body */}
         <div className="px-4 pt-4 pb-3 flex flex-col flex-grow min-h-0">
-          <h3 className="font-poppins font-bold text-lg lg:text-2xl text-white leading-tight mb-1 group-hover:text-brand-yellow transition-colors duration-300">
+          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-text-primary leading-tight mb-1 transition-colors duration-300">
             {product.title}
           </h3>
 
-          <p className="text-base text-brand-muted leading-relaxed line-clamp-2 tracking-normal normal-case mb-3">
+          <p className="text-base text-text-secondary leading-relaxed line-clamp-2 tracking-normal normal-case mb-3">
             {product.description}
           </p>
 
           {/* Materials list */}
           {product.materials && product.materials.length > 0 && (
-            <div className="overflow-y-auto no-scrollbar rounded-sm border border-white/5 bg-black/40 max-h-[260px]">
+            <div className="overflow-y-auto no-scrollbar rounded-sm border border-border-hairline bg-surface-inverted/5 max-h-[260px]">
               {product.materials.map((material, i) => (
                 <div
                   key={i}
                   className={`flex items-center gap-3 px-3 py-3 ${
-                    i < product.materials!.length - 1 ? 'border-b border-white/5' : ''
+                    i < product.materials!.length - 1 ? 'border-b border-border-hairline' : ''
                   }`}
                 >
-                  <Lock size={13} className="shrink-0 text-white/25" />
+                  <Lock size={13} className="shrink-0 text-text-primary/25" />
                   {material.type === 'video' ? (
-                    <Video size={13} className="shrink-0 text-brand-yellow/70" />
+                    <Video size={13} className="shrink-0 text-text-primary/70" />
                   ) : (
-                    <FileText size={13} className="shrink-0 text-sky-400/80" />
+                    <FileText size={13} className="shrink-0 text-text-primary/70" />
                   )}
-                  <span className="text-base text-white/60 truncate font-medium leading-snug">
+                  <span className="text-base text-text-primary/60 truncate font-medium leading-snug">
                     {material.title}
                   </span>
                 </div>
@@ -118,39 +120,39 @@ export const CourseCard = memo(
         </div>
 
         {/* Price bar */}
-        <div className="px-4 py-4 bg-black border-t border-white/5 flex items-center justify-between h-[72px] shrink-0">
+        <div className="px-4 py-2.5 bg-surface-inverted border-t border-border-hairline flex items-center justify-between shrink-0">
           {isAvailable ? (
             hideCommerce ? (
               <div className="w-full flex items-center justify-start">
-                <span className="flex items-center justify-center w-11 h-11 border border-white/15 text-white/40">
-                  <Play size={20} strokeWidth={2} />
+                <span className="flex items-center justify-center w-10 h-10 border border-text-inverted/15 text-text-inverted/40">
+                  <Play size={18} strokeWidth={1.5} />
                 </span>
               </div>
             ) : (
               <>
-                <span className="f-price text-[#6b9a7d] font-semibold leading-none drop-shadow-none">
-                  P {product.price.toLocaleString()}
+                <span className="f-price text-text-inverted font-semibold leading-none">
+                  <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                 </span>
                 <button
                   onClick={handleToggle}
                   type="button"
                   aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
-                  className={`flex items-center justify-center w-12 h-12 border rounded-none transition-all duration-300 ${
+                  className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
                     isSelected
-                      ? 'text-brand-yellow border-brand-yellow bg-brand-yellow/10'
-                      : 'text-white border-white/20 hover:text-brand-yellow hover:border-brand-yellow hover:bg-white/5'
+                      ? 'text-text-inverted border-text-inverted bg-text-inverted/10'
+                      : 'text-text-inverted/70 border-text-inverted/20 hover:text-text-inverted hover:border-text-inverted hover:bg-text-inverted/5'
                   }`}
                 >
-                  {isSelected ? <Check size={28} strokeWidth={4} /> : <Plus size={28} strokeWidth={4} />}
+                  {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={2} />}
                 </button>
               </>
             )
           ) : (
             <div className="flex items-center justify-between w-full">
-              <span className="text-sm font-black uppercase tracking-[0.2em] text-brand-yellow/90">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-text-inverted">
                 Coming Soon
               </span>
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">
+              <span className="text-xs font-medium uppercase tracking-[0.2em] text-text-inverted/60">
                 Not Available
               </span>
             </div>

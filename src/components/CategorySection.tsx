@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, FileText, Play } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { CourseCard } from './CourseCard';
 import { ProductCard } from './ProductCard';
 import { Product, ProductLanguage, ProductLevel } from '../types';
+import { useScrollReveal } from '../lib/useScrollReveal';
 
 type PendingFocus = {
   itemKey?: string;
@@ -19,6 +20,8 @@ interface CategorySectionProps {
   selectedProductIds: Set<string>;
   onToggleSelect: (product: Product) => void;
   hideCommerce?: boolean;
+  index?: number;
+  total?: number;
 }
 
 const LEVEL_ORDER: ProductLevel[] = [
@@ -60,7 +63,7 @@ const getFocusIndex = (products: Product[], focus: PendingFocus | null) => {
 };
 
 export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProps>(
-  ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false }, ref) => {
+  ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false, index, total }, ref) => {
     const mobileScrollRef = useRef<HTMLDivElement>(null);
     const desktopScrollRef = useRef<HTMLDivElement>(null);
     const mobileCardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -71,6 +74,18 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     const [activeIndex, setActiveIndex] = useState(0);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
+    const revealRef = useScrollReveal<HTMLElement>();
+    const setSectionRefs = useCallback(
+      (node: HTMLElement | null) => {
+        revealRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLElement | null>).current = node;
+        }
+      },
+      [ref, revealRef]
+    );
 
     const availableLanguages = useMemo(
       () =>
@@ -258,66 +273,49 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
     return (
       <section
-        ref={ref}
-        className={`transition-all rounded-xl overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform ${
-          isCourseCategory
-            ? 'bg-[#e6ccb3] border-[#e6ccb3] shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
-            : 'bg-[#34393a] border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
-        }`}
+        ref={setSectionRefs}
+        className="reveal blueprint-corners transition-all rounded-sm overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform bg-surface-secondary border-border-hairline"
       >
-        <div className={`category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b ${
-          isCourseCategory
-            ? 'bg-transparent border-black/15'
-            : 'bg-[#1a1d1e]/40 border-white/5'
-        }`}>
+        <div className="category-header px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline">
+          {typeof index === 'number' && typeof total === 'number' && (
+            <div className="flex items-center gap-3 mb-3 lg:mb-4">
+              <div className="h-px w-8 lg:w-12 bg-border-strong"></div>
+              <span className="text-[10px] lg:text-xs font-medium uppercase tracking-[0.3em] text-text-secondary">
+                {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+              </span>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
             <button
               onClick={onToggle}
-              className="flex-grow flex items-center gap-4 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1d1e] group/title"
+              className="flex-grow flex items-center gap-4 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-surface-secondary group/title"
               aria-expanded={isOpen}
               type="button"
             >
-              <h2 className={`f-heading font-normal transition-colors uppercase tracking-tighter ${
-                isCourseCategory
-                  ? 'text-[#1a1d1e] group-hover/title:text-[#1a1d1e]/70'
-                  : 'text-white group-hover/title:text-brand-yellow'
-              }`}>
+              <h2 className="f-heading font-normal transition-colors uppercase tracking-tighter text-text-primary group-hover/title:text-text-primary/70">
                 {name}
               </h2>
               <div
                 className={`transition-transform duration-300 p-1 border border-transparent rounded-full ${
-                  isCourseCategory
-                    ? isOpen
-                      ? 'rotate-180 text-[#1a1d1e] bg-[#1a1d1e]/10'
-                      : 'text-[#1a1d1e]/60 group-hover/title:text-[#1a1d1e]'
-                    : isOpen
-                      ? 'rotate-180 text-brand-yellow bg-brand-yellow/5'
-                      : 'text-brand-gray group-hover/title:text-white'
+                  isOpen
+                    ? 'rotate-180 text-text-primary bg-text-primary/10'
+                    : 'text-text-secondary group-hover/title:text-text-primary'
                 }`}
               >
-                <ChevronDown size={28} strokeWidth={2.5} />
+                <ChevronDown size={28} strokeWidth={1.5} />
               </div>
               {/* Content-type label */}
-              {isCourseCategory ? (
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#1a1d1e] border border-black/20 bg-[#1a1d1e]/10 px-2.5 py-1 rounded-sm">
+              {isCourseCategory && (
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-text-secondary border border-border-hairline bg-surface-inverted/5 px-2.5 py-1 rounded-sm">
                   <Play size={9} fill="currentColor" strokeWidth={0} />
                   Video Course
-                </span>
-              ) : (
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-white/60 border border-white/8 bg-[#1a1d1e]/20 px-2.5 py-1 rounded-sm">
-                  <FileText size={9} strokeWidth={2} />
-                  PDF
                 </span>
               )}
             </button>
 
             <div className="flex items-center justify-between sm:justify-end gap-6">
               <div className="hidden sm:flex flex-col items-end">
-                <span className={`f-small px-3 py-1.5 rounded-sm border font-extrabold whitespace-nowrap shadow-xl text-xl ${
-                  isCourseCategory
-                    ? 'bg-[#1a1d1e]/10 text-[#1a1d1e] border-black/15'
-                    : 'bg-[#1a1d1e]/60 text-brand-yellow border-white/5'
-                }`}>
+                <span className="f-small px-3 py-1.5 rounded-sm border font-semibold whitespace-nowrap text-xl bg-surface-inverted/10 text-text-primary border-border-hairline">
                   {itemCount} <span className="opacity-50">ITEMS</span>
                 </span>
               </div>
@@ -332,20 +330,19 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         >
           {hasVersionToggle && (
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <span className="text-base font-bold text-white/70 tracking-wide">Versions:</span>
+              <span className="text-base font-medium text-text-secondary tracking-wide">Versions:</span>
               <button
                 type="button"
                 onClick={() => handleLanguageChange('en')}
                 disabled={!availableLanguages.includes('en')}
                 aria-pressed={selectedLanguage === 'en'}
-                className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                className={`text-base font-semibold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'en'
-                    ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
+                    ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
                     : availableLanguages.includes('en')
-                      ? 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
-                      : 'bg-[#1a1d1e]/40 text-white/30 border-white/5 cursor-not-allowed'
+                      ? 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
+                      : 'bg-surface/40 text-text-secondary/40 border-border-hairline cursor-not-allowed'
                 }`}
-                style={{ textShadow: selectedLanguage === 'en' ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
               >
                 English
               </button>
@@ -354,14 +351,13 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                 onClick={() => handleLanguageChange('tl')}
                 disabled={!availableLanguages.includes('tl')}
                 aria-pressed={selectedLanguage === 'tl'}
-                className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                className={`text-base font-semibold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                   selectedLanguage === 'tl'
-                    ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
+                    ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
                     : availableLanguages.includes('tl')
-                      ? 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
-                      : 'bg-[#1a1d1e]/40 text-white/30 border-white/5 cursor-not-allowed'
+                      ? 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
+                      : 'bg-surface/40 text-text-secondary/40 border-border-hairline cursor-not-allowed'
                 }`}
-                style={{ textShadow: selectedLanguage === 'tl' ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
               >
                 Tagalog
               </button>
@@ -370,19 +366,18 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
           {hasLevelToggle && (
             <div className="flex items-center gap-3 mb-4 flex-wrap">
-              <span className="text-base font-bold text-white/70 tracking-wide">Levels:</span>
+              <span className="text-base font-medium text-text-secondary tracking-wide">Levels:</span>
               {availableLevels.map((level, levelIndex) => (
                 <button
                   key={level}
                   type="button"
                   onClick={() => handleLevelChange(level)}
                   aria-pressed={selectedLevel === level}
-                  className={`text-base font-extrabold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
+                  className={`text-base font-semibold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                     selectedLevel === level
-                      ? 'bg-brand-yellow text-[#1a1d1e] border-brand-yellow'
-                      : 'bg-[#1a1d1e] text-white border-white/10 hover:border-brand-yellow hover:text-brand-yellow'
+                      ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
+                      : 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
                   }`}
-                  style={{ textShadow: selectedLevel === level ? 'none' : '0 0 3px rgba(0,0,0,0.8), 0 0 1px #000' }}
                 >
                   <span className="md:hidden">{levelIndex + 1}</span>
                   <span className="hidden md:inline">{LEVEL_LABEL[level]}</span>
@@ -439,8 +434,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                       onClick={() => jumpToCard(index)}
                       className={`transition-all duration-300 rounded-full h-1 ${
                         activeIndex === index
-                          ? 'bg-brand-yellow w-10'
-                          : 'bg-white/10 w-2 hover:bg-white/30'
+                          ? 'bg-surface-inverted w-10'
+                          : 'bg-border-hairline w-2 hover:bg-border-strong'
                       }`}
                       aria-label={`Go to item ${index + 1}`}
                     />
@@ -451,37 +446,34 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   <button
                     onClick={(e) => { e.stopPropagation(); scroll('left'); }}
                     disabled={!canScrollLeft}
-                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-[#1a1d1e] border transition-all active:scale-90 ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-surface border transition-all active:scale-90 ${
                       !canScrollLeft
-                        ? 'opacity-10 border-white/5 text-brand-gray/20 cursor-not-allowed'
-                        : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                        ? 'opacity-30 border-border-hairline text-text-secondary/30 cursor-not-allowed'
+                        : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong hover:bg-surface-inverted/5'
                     }`}
                     aria-label="Previous"
                   >
-                    <ChevronLeft size={20} strokeWidth={3} />
+                    <ChevronLeft size={20} strokeWidth={1.5} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); scroll('right'); }}
                     disabled={!canScrollRight}
-                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-[#1a1d1e] border transition-all active:scale-90 ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-sm bg-surface border transition-all active:scale-90 ${
                       !canScrollRight
-                        ? 'opacity-10 border-white/5 text-brand-gray/20 cursor-not-allowed'
-                        : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow hover:bg-brand-yellow/5'
+                        ? 'opacity-30 border-border-hairline text-text-secondary/30 cursor-not-allowed'
+                        : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong hover:bg-surface-inverted/5'
                     }`}
                     aria-label="Next"
                   >
-                    <ChevronRight size={20} strokeWidth={3} />
+                    <ChevronRight size={20} strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
 
               {/* Tablet / Desktop: vertical scrolling grid */}
               <div className="hidden md:block">
-                <div
-                  ref={desktopScrollRef}
-                  className={isCourseCategory ? '' : 'overflow-y-auto max-h-[820px] no-scrollbar'}
-                >
-                  <div className={`grid gap-4 lg:gap-6 ${isCourseCategory ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+                <div ref={desktopScrollRef}>
+                  <div className={`reveal-stagger grid gap-4 lg:gap-6 ${isCourseCategory ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
                     {visibleProducts.map((product, idx) => (
                       <div
                         key={product.id}
@@ -515,10 +507,10 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               </div>
             </>
           ) : (
-            <div className="min-h-[180px] flex items-center justify-center rounded-lg border border-white/5 bg-[#1a1d1e]/20 text-center px-6">
+            <div className="min-h-[180px] flex items-center justify-center rounded-lg border border-border-hairline bg-surface-inverted/5 text-center px-6">
               <div>
-                <p className="text-white font-bold uppercase tracking-[0.2em] text-base">Coming Soon</p>
-                <p className="text-brand-muted mt-2 max-w-md">
+                <p className="text-text-primary font-semibold uppercase tracking-[0.2em] text-base">Coming Soon</p>
+                <p className="text-text-secondary mt-2 max-w-md">
                   Items for this category are still being prepared.
                 </p>
               </div>

@@ -12,6 +12,7 @@ const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').
 import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById } from "./constants";
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
+import { useScrollReveal } from './lib/useScrollReveal';
 
 interface FlyingItem {
   id: string;
@@ -42,7 +43,7 @@ const MY_LIBRARY_PATH = '/my-library';
  * still just loading.
  */
 const RouteLoadingScreen: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#1a1d1e] text-brand-muted">
+  <div className="min-h-screen flex items-center justify-center bg-surface text-text-secondary">
     Loading…
   </div>
 );
@@ -98,6 +99,7 @@ const App: React.FC = () => {
   const catButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const adminPasswordInputRef = useRef<HTMLInputElement>(null);
+  const footerRevealRef = useScrollReveal<HTMLElement>();
 
   const activeCategoryRef = useRef<string | null>(CATEGORIES[0]);
 
@@ -432,10 +434,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen font-sans selection:bg-brand-yellow selection:text-black relative">
+    <div className="min-h-screen font-sans selection:bg-surface-inverted selection:text-text-inverted relative">
       <a
         href="#main-content"
-        className="fixed left-4 top-4 z-[200] -translate-y-24 focus:translate-y-0 bg-brand-yellow text-[#1a1d1e] px-4 py-3 rounded-sm font-bold uppercase tracking-wider transition-transform"
+        className="fixed left-4 top-4 z-[200] -translate-y-24 focus:translate-y-0 bg-surface-inverted text-text-inverted px-4 py-3 rounded-sm font-bold uppercase tracking-wider transition-transform"
       >
         Skip to content
       </a>
@@ -447,9 +449,9 @@ const App: React.FC = () => {
       <div className="relative z-10">
         <Navbar onSearchSelect={handleSearchSelect} />
         
-        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-[#1a1d1e] border-b border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+        <div className="sticky top-20 laptop:top-[88px] xl:top-24 z-50 bg-surface border-b border-border-hairline">
           <div className="max-w-[1600px] mx-auto px-4 lg:px-6 flex items-center">
-            <div 
+            <div
               ref={catContainerRef}
               className="flex-grow flex gap-6 whitespace-nowrap overflow-x-auto no-scrollbar py-4 lg:py-5 relative"
             >
@@ -462,10 +464,10 @@ const App: React.FC = () => {
                     onClick={() => jumpToCategory(cat)}
                     className={`inline-flex items-center justify-center px-6 py-3 rounded-sm transition-all border font-poppins text-sm md:text-base ${
                       activeCategory === cat
-                        ? 'bg-brand-yellow/15 border-brand-yellow text-brand-yellow'
+                        ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
                         : isCourseTab
-                          ? 'bg-brand-yellow/5 border-brand-yellow/30 text-brand-yellow/60 hover:text-brand-yellow hover:border-brand-yellow'
-                          : 'bg-transparent border-white/10 text-brand-muted hover:text-white hover:border-white/30'
+                          ? 'bg-transparent border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
+                          : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
                     }`}
                   >
                     {cat}
@@ -474,37 +476,46 @@ const App: React.FC = () => {
               })}
             </div>
 
-            <div className="hidden lg:flex items-center gap-2 pl-6 ml-6 border-l border-white/5">
-              <button 
+            <div className="hidden lg:flex items-center gap-2 pl-6 ml-6 border-l border-border-hairline">
+              <button
                 onClick={() => scrollCatBar('left')}
-                className="flex items-center justify-center w-10 h-10 rounded-sm bg-black border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-all active:scale-90"
+                className="flex items-center justify-center w-10 h-10 rounded-sm bg-surface-secondary border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-all active:scale-90"
                 aria-label="Scroll left"
               >
-                <ChevronLeft size={20} strokeWidth={3} />
+                <ChevronLeft size={20} strokeWidth={1.5} />
               </button>
-              <button 
+              <button
                 onClick={() => scrollCatBar('right')}
-                className="flex items-center justify-center w-10 h-10 rounded-sm bg-black border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-all active:scale-90"
+                className="flex items-center justify-center w-10 h-10 rounded-sm bg-surface-secondary border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-all active:scale-90"
                 aria-label="Scroll right"
               >
-                <ChevronRight size={20} strokeWidth={3} />
+                <ChevronRight size={20} strokeWidth={1.5} />
               </button>
             </div>
           </div>
         </div>
         
-        <header className="relative w-full py-8 md:py-12 lg:py-16 laptop:py-20 bg-[#1a1d1e] overflow-hidden">
-          <div className="hero-dots"></div>
-          <div className="absolute -top-20 -right-20 w-[280px] h-[280px] rounded-full border border-[rgba(230,204,179,0.28)] pointer-events-none"></div>
-          <div className="absolute -bottom-16 -left-16 w-[200px] h-[200px] rounded-full border border-[rgba(230,204,179,0.28)] pointer-events-none"></div>
-          <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
-            <div className="relative z-20 border-l-4 lg:border-l-8 border-brand-yellow pl-8 lg:pl-12 py-2 lg:py-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-normal text-[#e6ccb3] leading-[1.1] tracking-tighter drop-shadow-2xl">
+        <header className="relative w-full py-8 md:py-12 lg:py-16 laptop:py-20 bg-surface overflow-hidden">
+          <div className="hero-grid"></div>
+          <div className="absolute -top-20 -right-20 w-[280px] h-[280px] rounded-full border border-border-hairline pointer-events-none"></div>
+          <div className="absolute -bottom-16 -left-16 w-[200px] h-[200px] rounded-full border border-border-hairline pointer-events-none"></div>
+          <div className="max-w-[1600px] mx-auto px-4 lg:px-6 relative">
+            <div className="hidden lg:flex animate-hero-in absolute top-0 right-4 xl:right-10 items-center gap-3 text-text-secondary">
+              <span className="text-xs font-medium uppercase tracking-[0.3em]">
+                {String(CATEGORIES.length).padStart(2, '0')} Categories
+              </span>
+              <div className="h-px w-10 bg-border-hairline"></div>
+            </div>
+            <div className="animate-hero-in relative z-20 border-l-4 lg:border-l-8 border-text-primary pl-8 lg:pl-12 py-2 lg:py-4">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl laptop:text-8xl font-normal text-text-primary leading-[1.1] tracking-tighter">
                 {SITE_CONTENT.hero.mainTitle}
               </h1>
-              <p className="f-small text-[#8a7d6f] mt-6 lg:mt-10 font-normal tracking-[0.4em] opacity-40">
-                {SITE_CONTENT.hero.subTitle}
-              </p>
+              <div className="flex items-center gap-4 mt-6 lg:mt-10 animate-hero-in-delayed">
+                <div className="h-px w-8 bg-border-strong"></div>
+                <p className="f-small text-text-secondary font-normal tracking-[0.4em]">
+                  {SITE_CONTENT.hero.subTitle}
+                </p>
+              </div>
             </div>
           </div>
         </header>
@@ -512,11 +523,13 @@ const App: React.FC = () => {
         <main id="main-content" className="max-w-[1600px] mx-auto px-4 lg:px-6 pb-40">
 
           <div className="relative">
-            {CATEGORIES.map(categoryName => (
-              <CategorySection 
+            {CATEGORIES.map((categoryName, categoryIndex) => (
+              <CategorySection
                 key={categoryName}
                 ref={el => { categoryRefs.current[categoryName] = el; }}
                 name={categoryName}
+                index={categoryIndex}
+                total={CATEGORIES.length}
                 isOpen={!!openCategories[categoryName]}
                 onToggle={() => toggleCategory(categoryName)}
                 products={productsByCategory[categoryName] ?? []}
@@ -534,20 +547,20 @@ const App: React.FC = () => {
           </Suspense>
         </main>
 
-        <footer className="border-t border-white/5 bg-[#1a1d1e] py-24 md:py-40 px-4 lg:px-6 relative z-10">
+        <footer ref={footerRevealRef} className="reveal border-t border-border-hairline bg-surface py-24 md:py-40 px-4 lg:px-6 relative z-10">
           <div className="max-w-[1600px] mx-auto flex flex-col items-center md:items-start text-center md:text-left gap-16">
             <div className="space-y-8 flex flex-col items-center md:items-start w-full">
-              <div className="text-2xl font-normal text-white uppercase tracking-[0.4em] border-b-2 border-brand-yellow w-fit pb-2">
+              <div className="text-2xl font-normal text-text-primary uppercase tracking-[0.4em] border-b-2 border-text-primary w-fit pb-2">
                 {SITE_CONTENT.brandName}
               </div>
-              <p className="f-body text-brand-muted leading-relaxed max-w-md font-normal">
+              <p className="f-body text-text-secondary leading-relaxed max-w-md font-normal">
                 {SITE_CONTENT.footer.description}
               </p>
             </div>
           </div>
-          
-          <div className="max-w-[1600px] mx-auto mt-24 md:mt-40 pt-12 border-t border-white/5 flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
-            <p className="f-small text-brand-muted font-normal">{SITE_CONTENT.footer.copyright}</p>
+
+          <div className="max-w-[1600px] mx-auto mt-24 md:mt-40 pt-12 border-t border-border-hairline flex flex-col items-center gap-10 text-center md:flex-row md:justify-between">
+            <p className="f-small text-text-secondary font-normal">{SITE_CONTENT.footer.copyright}</p>
           </div>
         </footer>
 
@@ -556,12 +569,12 @@ const App: React.FC = () => {
             ref={cartButtonRef}
             onClick={() => setIsCartOpen(true)}
             key={cartBounceKey}
-            className="fixed bottom-6 right-6 z-[99] bg-white text-[#1a1d1e] p-4 rounded-full shadow-2xl hover:bg-white/80 transition-all duration-300 active:scale-95 group cart-bounce"
+            className="fixed bottom-6 right-6 z-[99] bg-surface-inverted text-text-inverted p-4 rounded-full shadow-lg hover:opacity-90 transition-all duration-300 active:scale-95 group cart-bounce"
             aria-label="Open cart"
           >
-            <ShoppingCart size={28} strokeWidth={2.5} />
+            <ShoppingCart size={28} strokeWidth={1.5} />
             {selectedProducts.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-[#1e2122]">
+              <span className="absolute -top-2 -right-2 bg-surface text-text-primary rounded-full h-7 w-7 flex items-center justify-center text-xs font-bold border-2 border-surface-inverted">
                 {selectedProducts.length}
               </span>
             )}
@@ -623,19 +636,19 @@ const App: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="admin-modal-title"
-            className="relative w-full max-w-md rounded-lg border border-white/10 bg-[#2a2e2f] shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md rounded-lg border border-border-hairline bg-surface-secondary shadow-2xl overflow-hidden"
           >
-            <div className="border-b border-white/10 bg-[#1a1d1e] px-6 py-4">
-              <h2 id="admin-modal-title" className="text-xl font-black uppercase tracking-[0.18em] text-white">
+            <div className="border-b border-border-hairline bg-surface px-6 py-4">
+              <h2 id="admin-modal-title" className="text-xl font-black uppercase tracking-[0.18em] text-text-primary">
                 Admin Access
               </h2>
-              <p className="mt-2 text-base text-brand-muted">
+              <p className="mt-2 text-base text-text-secondary">
                 Enter the admin password to hide prices and the cart icon.
               </p>
             </div>
 
             <form onSubmit={handleAdminPasswordSubmit} className="px-6 py-5">
-              <label className="block text-sm font-bold uppercase tracking-[0.18em] text-white/60 mb-2">
+              <label className="block text-sm font-bold uppercase tracking-[0.18em] text-text-secondary mb-2">
                 Password
               </label>
               <input
@@ -648,7 +661,7 @@ const App: React.FC = () => {
                     setAdminPasswordError('');
                   }
                 }}
-                className="w-full rounded-sm border border-white/10 bg-black px-4 py-3 text-white outline-none transition-all focus:border-brand-yellow"
+                className="w-full rounded-sm border border-border-hairline bg-surface px-4 py-3 text-text-primary outline-none transition-all focus:border-border-strong"
                 autoComplete="off"
               />
 
@@ -660,13 +673,13 @@ const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeAdminPrompt}
-                  className="rounded-sm border border-white/10 bg-transparent px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-white/70 transition-colors hover:border-white/30 hover:text-white"
+                  className="rounded-sm border border-border-hairline bg-transparent px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-sm border border-brand-yellow bg-brand-yellow px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-black transition-all hover:bg-transparent hover:text-brand-yellow"
+                  className="rounded-sm border border-surface-inverted bg-surface-inverted px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-text-inverted transition-all hover:opacity-90"
                 >
                   Unlock
                 </button>
