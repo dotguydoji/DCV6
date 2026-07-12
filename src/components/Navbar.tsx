@@ -5,7 +5,9 @@ import { Product } from "../types";
 import { getCachedIdToken, getIdTokenEmail } from '../lib/googleIdentity';
 import { fetchOwnedProductIds } from '../lib/libraryAccess';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
+import { getInstallGuide } from '../lib/installGuides';
 import { InstallAppButton } from './InstallAppButton';
+import { InstallGuideModal } from './InstallGuideModal';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { NoPdfAccessDialog } from './NoPdfAccessDialog';
 import { ThemeToggle } from './ThemeToggle';
@@ -16,6 +18,11 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const installPrompt = useInstallPrompt();
+  const installGuide = useMemo(
+    () => getInstallGuide(installPrompt.platform, installPrompt.browser, installPrompt.hasNativePrompt),
+    [installPrompt.platform, installPrompt.browser, installPrompt.hasNativePrompt]
+  );
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
@@ -254,7 +261,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               )}
             </div>
 
-            <InstallAppButton {...installPrompt} />
+            <InstallAppButton
+              variant="desktop"
+              canInstall={installPrompt.canInstall}
+              guide={installGuide}
+              onOpen={() => setIsInstallModalOpen(true)}
+            />
             <button
               type="button"
               onClick={handleMessengerClick}
@@ -275,7 +287,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
 
           <div className="flex lg:hidden items-center gap-4">
-            <InstallAppButton variant="icon" {...installPrompt} />
             <ThemeToggle />
             <button
               onClick={toggleSearch}
@@ -370,6 +381,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               <LibraryBig size={20} strokeWidth={1.5} />
               {hasCachedSession ? 'My Library' : 'Login'}
             </a>
+            <InstallAppButton
+              variant="mobile"
+              canInstall={installPrompt.canInstall}
+              guide={installGuide}
+              onOpen={() => {
+                setIsMenuOpen(false);
+                setIsInstallModalOpen(true);
+              }}
+            />
             <button
               type="button"
               onClick={handleMessengerClick}
@@ -385,6 +405,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
       <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
       <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
+
+      {isInstallModalOpen && (
+        <InstallGuideModal
+          guide={installGuide}
+          onClose={() => setIsInstallModalOpen(false)}
+          onInstallNow={() => {
+            setIsInstallModalOpen(false);
+            installPrompt.promptInstall();
+          }}
+        />
+      )}
 
       {(isMenuOpen || (isSearchVisible && searchQuery.length > 0)) && (
         <div
