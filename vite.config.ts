@@ -44,6 +44,17 @@ export default defineConfig(() => {
             ]
           },
           workbox: {
+            // Without these, a new worker only ever reaches "waiting" -
+            // skipWaiting still needs a client to post it the SKIP_WAITING
+            // message (registerServiceWorker.ts does that), but even once
+            // activated, clientsClaim is what makes it take over tabs that
+            // are ALREADY open (not just future navigations). Without it, an
+            // already-open tab's controllerchange listener has nothing to
+            // fire on, so a tab that's just sitting there never self-updates
+            // - only a fresh navigation would. Both are needed together for
+            // an open-but-idle tab to actually recover on its own.
+            skipWaiting: true,
+            clientsClaim: true,
             globPatterns: ['**/*.{html,ico,svg,webmanifest}', 'assets/index-*.{js,css}', 'assets/vendor-*.js'],
             globIgnores: ['**/pdf-viewer-lib-*', '**/PdfGatePage-*', '**/MyLibraryPage-*', '**/cart-modal-*', '**/faq-section-*'],
             navigateFallbackDenylist: [/^\/\.netlify\/functions\//, /^\/view\//, /^\/my-library/],
