@@ -130,7 +130,7 @@ export const ProductCard = memo(
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
                     >
-                      {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={2} />}
+                      {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={3} />}
                     </button>
                   </>
                 )}

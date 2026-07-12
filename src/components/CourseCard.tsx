@@ -160,7 +160,7 @@ export const CourseCard = memo(
                       : 'text-black/70 border-black/20 hover:text-black hover:border-black hover:bg-black/5 dark:text-white/70 dark:border-white/20 dark:hover:text-white dark:hover:border-white dark:hover:bg-white/5'
                   }`}
                 >
-                  {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={2} />}
+                  {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={3} />}
                 </button>
               </>
             )
