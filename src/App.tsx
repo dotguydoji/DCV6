@@ -14,6 +14,7 @@ import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useScrollReveal } from './lib/useScrollReveal';
 import { useGlobalScrollTilt } from './lib/useScrollTilt';
+import { scheduleScrollUnlessUserIntervenes } from './lib/scrollGuard';
 
 interface FlyingItem {
   id: string;
@@ -98,6 +99,7 @@ const App: React.FC = () => {
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const catContainerRef = useRef<HTMLDivElement>(null);
   const catButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [catBarOverflows, setCatBarOverflows] = useState(false);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const adminPasswordInputRef = useRef<HTMLInputElement>(null);
   const footerRevealRef = useScrollReveal<HTMLElement>();
@@ -316,6 +318,28 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // The prev/next scroll buttons next to the category tab bar are only
+  // useful once the tabs actually overflow the available width - on a wide
+  // enough screen every tab already fits, so the buttons had nothing to do
+  // and were just clutter. ResizeObserver (rather than a plain window
+  // resize listener) also catches width changes from things like a
+  // sidebar/font load, not just the window itself.
+  useEffect(() => {
+    const container = catContainerRef.current;
+    if (!container) return;
+
+    const checkOverflow = () => {
+      setCatBarOverflows(container.scrollWidth - container.clientWidth > 1);
+    };
+
+    checkOverflow();
+
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   useEffect(() => {
     if (activeCategory && catContainerRef.current) {
       const activeBtn = catButtonRefs.current[activeCategory];
@@ -346,7 +370,7 @@ const App: React.FC = () => {
     if (element) {
       const headerElement = element.querySelector('.category-header');
       const targetElement = headerElement || element;
-      
+
       const offset = window.innerWidth >= 1024 ? 200 : 176;
       const elementRect = targetElement.getBoundingClientRect();
       const elementPosition = elementRect.top + window.scrollY;
@@ -359,9 +383,17 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Schedules an auto-scroll to a just-opened/jumped-to category, but backs
+  // off entirely if the visitor starts scrolling manually before it fires -
+  // see scrollGuard.ts for why.
+  const scrollToCategorySoon = useCallback(
+    (catName: string, delayMs: number) => scheduleScrollUnlessUserIntervenes(() => scrollToCategory(catName), delayMs),
+    [scrollToCategory]
+  );
+
   const toggleCategory = useCallback((catName: string) => {
     const isOpening = !openCategories[catName];
-    
+
     setOpenCategories(prev => {
       if (isOpening) {
         return { [catName]: true };
@@ -372,9 +404,9 @@ const App: React.FC = () => {
     });
 
     if (isOpening) {
-      setTimeout(() => scrollToCategory(catName), 600);
+      scrollToCategorySoon(catName, 600);
     }
-  }, [openCategories, scrollToCategory]);
+  }, [openCategories, scrollToCategorySoon]);
 
   const jumpToCategory = useCallback((catName: string) => {
     if (openCategories[catName]) {
@@ -383,8 +415,8 @@ const App: React.FC = () => {
     }
 
     setOpenCategories(prev => ({ ...prev, [catName]: true }));
-    setTimeout(() => scrollToCategory(catName), 50);
-  }, [openCategories, scrollToCategory]);
+    scrollToCategorySoon(catName, 50);
+  }, [openCategories, scrollToCategory, scrollToCategorySoon]);
 
   const handleSearchSelect = useCallback((product: Product) => {
     setHighlightedProductId(product.id);
@@ -478,6 +510,7 @@ const App: React.FC = () => {
               })}
             </div>
 
+            {catBarOverflows && (
             <div className="hidden lg:flex items-center gap-2 pl-6 ml-6 border-l border-border-hairline">
               <button
                 onClick={() => scrollCatBar('left')}
@@ -494,9 +527,10 @@ const App: React.FC = () => {
                 <ChevronRight size={20} strokeWidth={1.5} />
               </button>
             </div>
+            )}
           </div>
         </div>
-        
+
         <header className="relative w-full py-8 md:py-12 lg:py-16 laptop:py-20 bg-surface overflow-hidden">
           <div className="hero-grid"></div>
           <div className="absolute -top-20 -right-20 w-[280px] h-[280px] rounded-full border border-border-hairline pointer-events-none"></div>

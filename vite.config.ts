@@ -15,7 +15,19 @@ export default defineConfig(() => {
         tailwindcss(),
         VitePWA({
           registerType: 'autoUpdate',
-          injectRegister: 'script-defer',
+          // false, not 'script-defer' - the auto-injected script only ever
+          // calls navigator.serviceWorker.register() with no update-detection
+          // or reload logic at all, regardless of registerType. That's what
+          // let a visitor's browser keep running an old service worker
+          // (serving its own cached HTML/JS, referencing asset filenames a
+          // newer deploy had already deleted) indefinitely - the browser only
+          // swaps in a waiting new worker once every open tab for the site is
+          // fully closed, which "left the tab open in the background" never
+          // satisfies. src/registerServiceWorker.ts (called from index.tsx)
+          // uses the real virtual:pwa-register module instead, which
+          // actually activates a new worker immediately and reloads the page
+          // once it takes over.
+          injectRegister: false,
           manifest: {
             name: "Doji's Library",
             short_name: "Doji's Library",

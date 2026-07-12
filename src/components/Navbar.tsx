@@ -281,7 +281,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
             >
               <LibraryBig size={18} strokeWidth={1.5} />
-              {hasCachedSession ? 'My Library' : 'Login'}
+              {hasCachedSession ? 'My Library' : 'Sign In'}
             </a>
             <ThemeToggle />
           </div>
@@ -379,7 +379,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
             >
               <LibraryBig size={20} strokeWidth={1.5} />
-              {hasCachedSession ? 'My Library' : 'Login'}
+              {hasCachedSession ? 'My Library' : 'Sign In'}
             </a>
             <InstallAppButton
               variant="mobile"

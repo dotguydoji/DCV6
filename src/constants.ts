@@ -814,7 +814,7 @@ export const FAQS: FAQItem[] = [
   {
     question: "How do I find PDFs I've already purchased?",
     answer:
-      'Click "Login" at the top of the site and sign in with the same Gmail you used to purchase. You\'ll see every PDF you own in one place under "My Library," anytime you want to reopen them.'
+      'Click "Sign In" at the top of the site and sign in with the same Gmail you used to purchase. You\'ll see every PDF you own in one place under "My Library," anytime you want to reopen them.'
   },
   {
     question: 'Is signing in with Google safe? Do you see my password?',

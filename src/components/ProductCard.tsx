@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { Check, Download, Plus } from 'lucide-react';
 import { Product } from '../types';
+import { scheduleScrollUnlessUserIntervenes } from '../lib/scrollGuard';
 
 interface ProductCardProps {
   product: Product;
@@ -14,29 +15,22 @@ interface ProductCardProps {
 export const ProductCard = memo(
   ({ product, isHighlighted, isSelected, onToggleSelect, hideCommerce = false, priority = false }: ProductCardProps) => {
     const cardRef = useRef<HTMLDivElement>(null);
-    const scrollTimeoutRef = useRef<number | null>(null);
     const isAvailable = product.available !== false;
 
     useEffect(() => {
-      if (isHighlighted && cardRef.current) {
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
+      if (!isHighlighted || !cardRef.current) return;
 
-        scrollTimeoutRef.current = window.setTimeout(() => {
-          cardRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center'
-          });
-        }, 300);
-      }
-
-      return () => {
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-      };
+      // Backs off if the visitor starts scrolling manually before this
+      // fires - see scrollGuard.ts for why (a delayed smooth scroll fighting
+      // the visitor's own scroll input feels like scrolling "stopped
+      // working").
+      return scheduleScrollUnlessUserIntervenes(() => {
+        cardRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }, 300);
     }, [isHighlighted]);
 
     const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -84,12 +78,12 @@ export const ProductCard = memo(
             {product.description}
           </p>
 
-          <div className="mt-auto border-t border-border-hairline bg-surface-inverted rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between">
+          <div className="mt-auto border-t border-border-hairline bg-black rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between">
             {isAvailable ? (
               <>
                 {hideCommerce ? (
                   <div className="w-full flex items-center justify-start">
-                    <span className="flex items-center justify-center w-10 h-10 border border-text-inverted/15 text-text-inverted/45">
+                    <span className="flex items-center justify-center w-10 h-10 border border-white/15 text-white/45">
                       <Download size={18} strokeWidth={1.5} />
                     </span>
                   </div>
@@ -97,11 +91,11 @@ export const ProductCard = memo(
                   <>
                     <div className="flex flex-col">
                       {typeof product.originalPrice === 'number' && (
-                        <span className="text-sm font-bold tracking-wide text-text-inverted/60 line-through">
+                        <span className="text-sm font-bold tracking-wide text-white/60 line-through">
                           <span className="text-[0.5em]">P</span> {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className="f-price text-text-inverted font-semibold leading-none">
+                      <span className="f-price text-white font-semibold leading-none">
                         <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                       </span>
                     </div>
@@ -110,10 +104,10 @@ export const ProductCard = memo(
                         event.stopPropagation();
                         onToggleSelect(product, event);
                       }}
-                      className={`flex items-center justify-center w-11 h-11 border border-text-inverted/20 rounded-none transition-all duration-300 ${
+                      className={`flex items-center justify-center w-11 h-11 border border-white/20 rounded-none transition-all duration-300 ${
                         isSelected
-                          ? 'text-text-inverted border-text-inverted bg-text-inverted/10'
-                          : 'text-text-inverted/70 hover:text-text-inverted hover:border-text-inverted hover:bg-text-inverted/5'
+                          ? 'text-white border-white bg-white/10'
+                          : 'text-white/70 hover:text-white hover:border-white hover:bg-white/5'
                       }`}
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
@@ -125,10 +119,10 @@ export const ProductCard = memo(
               </>
             ) : (
               <>
-                <span className="text-sm font-semibold uppercase tracking-[0.2em] text-text-inverted">
+                <span className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
                   Coming Soon
                 </span>
-                <span className="text-xs font-medium uppercase tracking-[0.2em] text-text-inverted/60">
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
                   Not Available
                 </span>
               </>

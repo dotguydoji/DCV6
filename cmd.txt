@@ -1,5 +1,5 @@
 git add .
-git commit -m "install to menu (device specific)"
+git commit -m "glitych white fix"
 git push -u
 
 npm run build

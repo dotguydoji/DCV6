@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { Check, FileText, Lock, Play, Plus, Video } from 'lucide-react';
 import { Product } from '../types';
+import { scheduleScrollUnlessUserIntervenes } from '../lib/scrollGuard';
 
 interface CourseCardProps {
   product: Product;
@@ -17,12 +18,13 @@ export const CourseCard = memo(
     const isAvailable = product.available !== false;
 
     useEffect(() => {
-      if (isHighlighted && cardRef.current) {
-        const t = window.setTimeout(() => {
-          cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }, 300);
-        return () => window.clearTimeout(t);
-      }
+      if (!isHighlighted || !cardRef.current) return;
+
+      // Backs off if the visitor starts scrolling manually before this
+      // fires - see scrollGuard.ts for why.
+      return scheduleScrollUnlessUserIntervenes(() => {
+        cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }, 300);
     }, [isHighlighted]);
 
     const handleToggle = useCallback(
@@ -121,17 +123,17 @@ export const CourseCard = memo(
         </div>
 
         {/* Price bar */}
-        <div className="px-4 py-2.5 bg-surface-inverted border-t border-border-hairline flex items-center justify-between shrink-0">
+        <div className="px-4 py-2.5 bg-black border-t border-border-hairline flex items-center justify-between shrink-0">
           {isAvailable ? (
             hideCommerce ? (
               <div className="w-full flex items-center justify-start">
-                <span className="flex items-center justify-center w-10 h-10 border border-text-inverted/15 text-text-inverted/40">
+                <span className="flex items-center justify-center w-10 h-10 border border-white/15 text-white/40">
                   <Play size={18} strokeWidth={1.5} />
                 </span>
               </div>
             ) : (
               <>
-                <span className="f-price text-text-inverted font-semibold leading-none">
+                <span className="f-price text-white font-semibold leading-none">
                   <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                 </span>
                 <button
@@ -140,8 +142,8 @@ export const CourseCard = memo(
                   aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
                   className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
                     isSelected
-                      ? 'text-text-inverted border-text-inverted bg-text-inverted/10'
-                      : 'text-text-inverted/70 border-text-inverted/20 hover:text-text-inverted hover:border-text-inverted hover:bg-text-inverted/5'
+                      ? 'text-white border-white bg-white/10'
+                      : 'text-white/70 border-white/20 hover:text-white hover:border-white hover:bg-white/5'
                   }`}
                 >
                   {isSelected ? <Check size={22} strokeWidth={2} /> : <Plus size={22} strokeWidth={2} />}
@@ -150,10 +152,10 @@ export const CourseCard = memo(
             )
           ) : (
             <div className="flex items-center justify-between w-full">
-              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-text-inverted">
+              <span className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
                 Coming Soon
               </span>
-              <span className="text-xs font-medium uppercase tracking-[0.2em] text-text-inverted/60">
+              <span className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
                 Not Available
               </span>
             </div>
