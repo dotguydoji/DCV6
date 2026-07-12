@@ -7,7 +7,7 @@ import {
   AlertTriangle, Palette,
   Minus, Table as TableIcon, PaintBucket,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, XCircle, Trash2,
-  Code, Code2, Link as LinkIcon, Calculator as CalcIcon,
+  Code, Code2, Link as LinkIcon,
   List, ListOrdered, ListChecks, Subscript, Superscript,
   Undo2, Redo2, AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
@@ -119,8 +119,6 @@ interface NotebookEditorProps {
   content: string;
   onUpdate: (content: string) => void;
   readOnly?: boolean;
-  toggleCalculator?: () => void;
-  isCalculatorOpen?: boolean;
   compact?: boolean;
 }
 
@@ -203,7 +201,7 @@ const FORMAT_STATE_COMMANDS = [
 ] as const;
 
 export const NotebookEditor: React.FC<NotebookEditorProps> = ({
-  content, onUpdate, readOnly = false, toggleCalculator, isCalculatorOpen, compact
+  content, onUpdate, readOnly = false, compact
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
@@ -871,7 +869,12 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-surface rounded-sm overflow-hidden border border-border-hairline shadow-lg">
-      <div className="flex flex-wrap gap-1 p-2 border-b border-border-hairline bg-surface-secondary items-center sticky top-0 z-10 shrink-0">
+      {/* Single horizontally-swipeable row below `sm` (mobile) so the tools
+          never eat into the text area's vertical space - wraps into normal
+          multi-row layout from `sm` up, where there's room to spare.
+          notebook-toolbar (index.css) makes every child shrink-0 so items
+          overflow into the scrollable row instead of squishing. */}
+      <div className="notebook-toolbar flex flex-nowrap sm:flex-wrap gap-1 p-2 border-b border-border-hairline bg-surface-secondary items-center sticky top-0 z-10 shrink-0 overflow-x-auto sm:overflow-x-visible no-scrollbar">
         <ToolbarButton onClick={() => execCmd('undo')} title="Undo"><Undo2 className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton onClick={() => execCmd('redo')} title="Redo"><Redo2 className="w-4 h-4" /></ToolbarButton>
         <div className="w-px h-6 bg-border-hairline mx-1"></div>
@@ -944,10 +947,6 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           <label className="p-1.5 hover:bg-surface-secondary rounded-sm cursor-pointer flex items-center justify-center relative w-8 h-8" title="Pick Highlight Color"><input type="color" value={backColor} onChange={(e) => applyColor('back', e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /><div className="w-3 h-3 rounded-full border border-border-hairline" style={{ backgroundColor: backColor }}></div></label>
         </div>
         <div className="flex-grow"></div>
-
-        {toggleCalculator && (
-          <ToolbarButton onClick={toggleCalculator} active={isCalculatorOpen} title="Toggle Calculator"><CalcIcon className="w-4 h-4" /></ToolbarButton>
-        )}
 
         <div className="relative" ref={downloadMenuRef}>
           <ToolbarButton onClick={() => setShowDownloadMenu(!showDownloadMenu)} active={showDownloadMenu} title="Download Page"><Download className="w-4 h-4" /></ToolbarButton>

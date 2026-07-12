@@ -43,6 +43,8 @@ import { PdfInfoModal } from './pdf-viewer/PdfInfoModal';
 import { PdfLoadingOverlay } from './pdf-viewer/PdfLoadingOverlay';
 import { PdfNotebookPanel } from './pdf-viewer/PdfNotebookPanel';
 import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfRangeTransport';
+import { useIdleTimeout } from '../lib/useIdleTimeout';
+import { IdleWarningModal } from './IdleWarningModal';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -77,6 +79,13 @@ const REFRESH_BEFORE_EXPIRY_MS = 60 * 1000;
 // server hiccup, network blip) - short enough to recover well within the
 // remaining margin above, not so short it hammers the function.
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
+
+// After this long with zero interaction (mouse/keyboard/touch/scroll
+// anywhere on the page), warn the reader before pausing the proactive
+// signed-URL refresh below - an open-but-truly-abandoned tab would
+// otherwise keep calling get-pdf.ts (and reading Firestore) forever.
+const IDLE_TIMEOUT_MS = 20 * 60 * 1000;
+const IDLE_WARNING_DURATION_MS = 60 * 1000;
 
 // PDF.js's own default is 64KB (2**16) per range request - for a typical
 // text-plus-a-few-images study PDF page, that's often several separate
@@ -121,6 +130,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   // declaration order on mount - always runs before the document-loading
   // effect that reads it.
   const forceRefreshRef = useRef<() => Promise<void>>(async () => {});
+  // Set by the idle-timeout hook below (via pauseRefreshRef/resumeRefreshRef)
+  // - while true, the scheduled refresh below is a deliberate no-op instead
+  // of calling onRefreshUrl. This never touches the document, viewer,
+  // scroll position, or any saved data - it only stops the one thing that
+  // would otherwise keep hitting the server on its own with nobody reading.
+  const isIdlePausedRef = useRef(false);
+  const pauseRefreshRef = useRef<() => void>(() => {});
+  const resumeRefreshRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     onRefreshUrlRef.current = onRefreshUrl;
@@ -141,6 +158,13 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       Math.max(0, SIGNED_URL_LIFETIME_MS - REFRESH_BEFORE_EXPIRY_MS - (Date.now() - activeUrlIssuedAtRef.current));
 
     async function attemptRefresh(isForced = false) {
+      // Idle-paused and this wasn't an explicit resume/on-demand call: skip
+      // the request entirely rather than let a coincidentally-scheduled
+      // timer fire while nobody's there. Resuming (see resumeRefreshRef
+      // below) always passes isForced=true, which bypasses this guard and
+      // restarts normal scheduling from that point.
+      if (isIdlePausedRef.current && !isForced) return;
+
       const result = await onRefreshUrlRef.current();
       if (cancelled) return;
 
@@ -170,6 +194,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
     }
 
     forceRefreshRef.current = () => attemptRefresh(true);
+
+    pauseRefreshRef.current = () => {
+      isIdlePausedRef.current = true;
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+    };
+    resumeRefreshRef.current = () => {
+      isIdlePausedRef.current = false;
+      // Rather than guess how stale currentUrlRef.current got while paused,
+      // just get a fresh one immediately and let normal proactive
+      // scheduling resume from there.
+      attemptRefresh(true);
+    };
 
     refreshTimeoutRef.current = setTimeout(() => attemptRefresh(), msUntilRefresh());
 
@@ -240,6 +276,13 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const viewportHeight = useVisualViewportHeight();
+
+  const { isWarning: isIdleWarning, secondsRemaining: idleSecondsRemaining, stayActive } = useIdleTimeout({
+    idleTimeoutMs: IDLE_TIMEOUT_MS,
+    warningDurationMs: IDLE_WARNING_DURATION_MS,
+    onPause: () => pauseRefreshRef.current(),
+    onResume: () => resumeRefreshRef.current()
+  });
 
   useEffect(() => {
     setPageInputValue(String(pageNumber));
@@ -835,7 +878,11 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         </div>
       )}
 
-      <div className="flex-1 relative overflow-hidden flex min-h-0">
+      {/* flex-col on mobile stacks the notebook below the PDF (a proper
+          split, not an overlay) instead of side-by-side - flex-row from
+          `sm` up puts it back on the right as a side panel. The bottom
+          toolbar (page nav/zoom) below this row is unaffected either way. */}
+      <div className="flex-1 relative overflow-hidden flex flex-col sm:flex-row min-h-0">
         {isThumbnailPanelOpen && (
           <PdfThumbnailPanel
             pdfDocument={pdfDocumentRef.current}
@@ -952,6 +999,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           </ul>
         </PdfInfoModal>
       )}
+
+      <IdleWarningModal open={isIdleWarning} secondsRemaining={idleSecondsRemaining} onStayActive={stayActive} />
     </div>
   );
 };

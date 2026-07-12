@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Book, FileText, Plus, Trash2, ChevronRight, ChevronDown,
-  FolderOpen, X, ChevronsLeft, Calculator as CalcIcon, PanelLeft,
+  FolderOpen, X, ChevronsLeft, PanelLeft,
   CloudOff, ShieldAlert
 } from 'lucide-react';
 import { NotebookEditor, NotebookDeleteModal } from './NotebookEditor';
-import { NotebookCalculator } from './NotebookCalculator';
 import { NotebookConsentModal } from './NotebookConsentModal';
 import {
   NotebookStorage,
@@ -51,7 +50,6 @@ export const NotebookWorkspace: React.FC<NotebookWorkspaceProps> = ({ variant = 
   const [persistMode, setPersistMode] = useState<PersistMode>('checking');
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isPanel);
   const [deleteModal, setDeleteModal] = useState<DeleteModalState | null>(null);
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   // The Notebook has no backend at all - every note lives only in this
   // browser's localStorage. The first time it's opened on a device, that
@@ -292,13 +290,6 @@ export const NotebookWorkspace: React.FC<NotebookWorkspaceProps> = ({ variant = 
                 <span className="text-text-secondary text-sm italic">Select a page</span>
               )}
             </div>
-            <button
-              onClick={() => setIsCalculatorOpen((prev) => !prev)}
-              className={`p-2 rounded-sm hover:bg-surface-secondary transition-colors shrink-0 ${isCalculatorOpen ? 'text-text-primary bg-surface-secondary' : 'text-text-secondary hover:text-text-primary'}`}
-              title="Toggle Calculator"
-            >
-              <CalcIcon className="w-4 h-4" />
-            </button>
           </div>
 
           <div className="flex-1 overflow-hidden p-2 md:p-4 relative min-h-0">
@@ -318,20 +309,6 @@ export const NotebookWorkspace: React.FC<NotebookWorkspaceProps> = ({ variant = 
           </div>
         </div>
       </div>
-
-      {isCalculatorOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsCalculatorOpen(false)}>
-          <div className="w-full max-w-xs bg-surface border border-border-hairline rounded-sm shadow-2xl p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-text-primary text-sm flex items-center gap-2"><CalcIcon className="w-4 h-4" /> Calculator</h3>
-              <button onClick={() => setIsCalculatorOpen(false)} className="text-text-secondary hover:text-text-primary p-1 rounded-sm hover:bg-surface-secondary">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <NotebookCalculator />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

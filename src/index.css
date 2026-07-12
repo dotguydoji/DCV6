@@ -467,7 +467,7 @@
 .reveal {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .reveal.is-revealed {
   opacity: 1;
@@ -477,20 +477,20 @@
 .reveal-stagger > * {
   opacity: 0;
   transform: translateY(18px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.32s ease, transform 0.32s ease;
 }
 .is-revealed .reveal-stagger > * {
   opacity: 1;
   transform: translateY(0);
 }
-.reveal-stagger > *:nth-child(2) { transition-delay: 60ms; }
-.reveal-stagger > *:nth-child(3) { transition-delay: 120ms; }
-.reveal-stagger > *:nth-child(4) { transition-delay: 180ms; }
-.reveal-stagger > *:nth-child(5) { transition-delay: 240ms; }
-.reveal-stagger > *:nth-child(6) { transition-delay: 300ms; }
-.reveal-stagger > *:nth-child(7) { transition-delay: 360ms; }
-.reveal-stagger > *:nth-child(8) { transition-delay: 420ms; }
-.reveal-stagger > *:nth-child(n + 9) { transition-delay: 480ms; }
+.reveal-stagger > *:nth-child(2) { transition-delay: 35ms; }
+.reveal-stagger > *:nth-child(3) { transition-delay: 70ms; }
+.reveal-stagger > *:nth-child(4) { transition-delay: 105ms; }
+.reveal-stagger > *:nth-child(5) { transition-delay: 140ms; }
+.reveal-stagger > *:nth-child(6) { transition-delay: 175ms; }
+.reveal-stagger > *:nth-child(7) { transition-delay: 210ms; }
+.reveal-stagger > *:nth-child(8) { transition-delay: 245ms; }
+.reveal-stagger > *:nth-child(n + 9) { transition-delay: 280ms; }
 
 @keyframes heroIn {
   from {
@@ -676,4 +676,14 @@
 .notebook-checklist-item[data-checked="true"] .notebook-checklist-text {
   text-decoration: line-through;
   opacity: 0.55;
+}
+
+/*
+ * On mobile the toolbar becomes a single horizontally-scrollable row
+ * (NotebookEditor.tsx uses flex-nowrap below `sm`) - without this, buttons/
+ * selects/dividers would shrink to fit the viewport instead of overflowing
+ * into the scrollable row, since flex items are shrinkable by default.
+ */
+.notebook-toolbar > * {
+  flex-shrink: 0;
 }

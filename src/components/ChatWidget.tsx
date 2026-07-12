@@ -1,13 +1,29 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Send, X } from 'lucide-react';
+import { Bot, FileText, Send, X } from 'lucide-react';
 import { getOrCreateChatSessionId } from '../lib/chatbotSession';
+import { getProductById } from '../constants';
+import { Product } from '../types';
 
 const MAX_MESSAGE_LENGTH = 350;
+
+// Matches the breakpoint the site's own nav already uses to decide
+// "mobile vs desktop" (Navbar's search box goes from a full-screen sheet to
+// an inline dropdown at the same width) - reused here so "close the chat
+// first on mobile" kicks in at the same point the rest of the UI already
+// treats as the mobile/desktop line.
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 1023px)';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
+  /** Only ever a real, currently-available catalog id (validated server-side) - never trusted further than "looks up a real product or is ignored." */
+  productId?: string | null;
+}
+
+interface ChatWidgetProps {
+  /** Same handler the search bar uses (App.tsx's handleSearchSelect) - highlights the product and scrolls its category into view. */
+  onProductSelect?: (product: Product) => void;
 }
 
 const GREETING: ChatMessage = {
@@ -42,7 +58,7 @@ const TypingIndicator: React.FC = () => (
  * this used to be a deliberately separate orange/black/gray palette, but
  * now joins the unified design system.
  */
-export const ChatWidget: React.FC = () => {
+export const ChatWidget: React.FC<ChatWidgetProps> = ({ onProductSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   // Starts empty rather than pre-seeded with the greeting - the greeting is
   // appended (see the effect below) the first time the widget opens, so it
@@ -144,8 +160,9 @@ export const ChatWidget: React.FC = () => {
       if (!isMountedRef.current) return;
 
       const replyText: string = typeof data.reply === 'string' ? data.reply : 'Sorry, I had trouble replying to that.';
+      const productId: string | null = typeof data.productId === 'string' ? data.productId : null;
 
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: replyText }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: replyText, productId }]);
     } catch {
       if (isMountedRef.current) {
         setNoticeText('Something went wrong sending that. Please try again in a moment.');
@@ -156,6 +173,22 @@ export const ChatWidget: React.FC = () => {
       }
     }
   }, [inputValue, isSending]);
+
+  // Same idea as clicking a search result: highlight + jump to it. On
+  // mobile the chat sheet covers most of the screen, so there's nowhere
+  // for "jump to it" to be visible unless the sheet closes first - on
+  // desktop the storefront is already visible behind/beside the chat, so
+  // it stays open and the jump happens immediately.
+  const handleProductChipClick = useCallback(
+    (product: Product) => {
+      const isMobile = window.matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+      if (isMobile) {
+        setIsOpen(false);
+      }
+      onProductSelect?.(product);
+    },
+    [onProductSelect]
+  );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -220,19 +253,37 @@ export const ChatWidget: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-surface-secondary">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
-                className={`max-w-[85%] rounded-sm px-3.5 py-2.5 text-sm whitespace-pre-wrap break-words ${
-                  msg.role === 'user'
-                    ? 'self-end bg-surface-inverted text-text-inverted'
-                    : 'self-start bg-surface text-text-primary border border-border-hairline'
-                }`}
-              >
-                {msg.text}
-              </div>
-            ))}
+            {messages.map((msg) => {
+              const matchedProduct = msg.productId ? getProductById(msg.productId) : undefined;
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col gap-1.5 max-w-[85%] ${msg.role === 'user' ? 'self-end items-end' : 'self-start items-start'}`}
+                >
+                  <div
+                    style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
+                    className={`rounded-sm px-3.5 py-2.5 text-sm whitespace-pre-wrap break-words ${
+                      msg.role === 'user'
+                        ? 'bg-surface-inverted text-text-inverted'
+                        : 'bg-surface text-text-primary border border-border-hairline'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                  {matchedProduct && (
+                    <button
+                      type="button"
+                      onClick={() => handleProductChipClick(matchedProduct)}
+                      style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
+                      className="flex items-center gap-2 text-left text-xs font-medium px-3 py-2.5 rounded-sm border border-border-hairline bg-surface-secondary hover:border-border-strong hover:bg-surface transition-colors max-w-full"
+                    >
+                      <FileText size={14} strokeWidth={1.5} className="shrink-0 text-text-secondary" />
+                      <span className="truncate text-text-primary">View: {matchedProduct.title}</span>
+                    </button>
+                  )}
+                </div>
+              );
+            })}
 
             {(isSending || isGreetingTyping) && <TypingIndicator />}
 

@@ -18,6 +18,12 @@ export const useScrollReveal = <T extends HTMLElement>() => {
       return;
     }
 
+    // Positive bottom margin makes the observer's effective area extend
+    // *below* the real viewport, so the reveal fires while the section is
+    // still approaching from below instead of waiting until it's already
+    // 80px into view - by the time it actually scrolls into sight, the
+    // animation has a head start (often already finished on a fast scroll)
+    // instead of visibly lagging behind the scroll position.
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -27,7 +33,7 @@ export const useScrollReveal = <T extends HTMLElement>() => {
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -80px 0px' }
+      { threshold: 0, rootMargin: '0px 0px 200px 0px' }
     );
 
     observer.observe(node);

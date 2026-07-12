@@ -55,7 +55,7 @@ export const PdfMoreMenu: React.FC<PdfMoreMenuProps> = ({
   onShowShortcuts,
   onExit
 }) => (
-  <div className="absolute right-4 top-16 z-30 w-60 bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl overflow-hidden">
+  <div className="absolute right-4 top-16 z-50 w-60 bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl overflow-hidden">
     <MenuItem icon={<ScanLine size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Fit Width" onClick={onFitWidth} />
     <MenuItem icon={<Scan size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Fit Page" onClick={onFitPage} />
     <MenuItem icon={<RotateCw size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Rotate Page" onClick={onRotate} />

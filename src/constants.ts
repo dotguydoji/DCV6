@@ -17,7 +17,11 @@ const PREORDER_THUMBNAIL = '/favicon.svg';
 // regardless of volume, unlike Netlify's bandwidth cap. Falls back to the
 // old local /images path when the env var isn't set (e.g. a fresh local
 // checkout before .env is configured), so dev still works without it.
-const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL ?? '';
+// Optional chaining on `.env` itself (not just the var) - this file is also
+// imported by plain tsx/Node scripts (catalog:sync, chatbot-index:sync),
+// where import.meta.env doesn't exist at all (it's a Vite-only construct),
+// which previously crashed those scripts outright.
+const IMAGE_BASE_URL = import.meta.env?.VITE_IMAGE_BASE_URL ?? '';
 
 const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
   en: 'english',

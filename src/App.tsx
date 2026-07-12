@@ -637,7 +637,7 @@ const App: React.FC = () => {
 
         {!isAdminRecordingMode && (
           <Suspense fallback={null}>
-            <ChatWidget />
+            <ChatWidget onProductSelect={handleSearchSelect} />
           </Suspense>
         )}
 

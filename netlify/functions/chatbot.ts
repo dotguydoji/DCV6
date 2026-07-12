@@ -6,6 +6,7 @@ import { tryConsumeDailyBudget } from './lib/chatbotUsage';
 import { sanitizeModelReply, sanitizeUserMessage } from './lib/sanitize';
 import { isValidChatbotSessionId } from './lib/validation';
 import { CHATBOT_KNOWLEDGE_BASE } from './lib/chatbotKnowledgeBase.generated';
+import { CHATBOT_PRODUCT_INDEX } from './lib/chatbotProductIndex.generated';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 // The "-latest" alias auto-resolves to whichever Flash-Lite version is
@@ -43,10 +44,27 @@ const DAILY_BUDGET_MAX = 850;
 // of calling Gemini again - saves quota and money for zero UX cost.
 interface CachedReply {
   reply: string;
+  productId: string | null;
   expiresAt: number;
 }
 const duplicateCache = new Map<string, CachedReply>();
 const DUPLICATE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+// Lets the model point the reply at one specific catalog item (so the
+// frontend can offer a "jump to it" action, same idea as picking a search
+// result) - constrained to only real, currently-available product ids via
+// both the schema enum below AND this explicit re-check after the call,
+// so a hallucinated id can never reach the client even if the model's
+// structured-output guarantee ever slipped.
+const VALID_PRODUCT_IDS = new Set(CHATBOT_PRODUCT_INDEX.map((p) => p.id));
+const PRODUCT_ID_REFERENCE = CHATBOT_PRODUCT_INDEX.map((p) => `${p.id} :: ${p.title} (${p.category})`).join('\n');
+const PRODUCT_MATCHING_INSTRUCTIONS = `
+
+---
+When your reply confirms or is specifically about ONE particular item from the catalog list below, set "productId" to its exact id from this list. If your reply is general, compares multiple items, or you aren't confident which single item it refers to, set "productId" to null. Never invent an id that isn't in this list.
+
+Catalog (id :: title (category)):
+${PRODUCT_ID_REFERENCE}`;
 
 // Only the site's own pages should ever be able to call this function - a
 // script or another site calling it directly would bypass the session-token
@@ -99,7 +117,7 @@ const jsonResponse = (statusCode: number, body: Record<string, unknown>, extraHe
 
 const errorResponse = (statusCode: number, error: string) => jsonResponse(statusCode, { error });
 
-const replyResponse = (reply: string) => jsonResponse(200, { reply });
+const replyResponse = (reply: string, productId: string | null = null) => jsonResponse(200, { reply, productId });
 
 const tooManyMessagesResponse = (retryAfterSeconds: number) =>
   jsonResponse(
@@ -133,7 +151,12 @@ const cleanupDuplicateCache = (now: number): void => {
   }
 };
 
-const callGemini = async (userMessage: string): Promise<string> => {
+interface GeminiChatResult {
+  reply: string;
+  productId: string | null;
+}
+
+const callGemini = async (userMessage: string): Promise<GeminiChatResult> => {
   // Header auth (Google's own current recommended usage) rather than a
   // ?key= query param - also keeps the key out of URLs entirely (query
   // strings are more likely to end up in access logs, browser history,
@@ -143,7 +166,7 @@ const callGemini = async (userMessage: string): Promise<string> => {
     headers: { 'Content-Type': 'application/json', 'X-goog-api-key': GEMINI_API_KEY },
     body: JSON.stringify({
       systemInstruction: {
-        parts: [{ text: CHATBOT_KNOWLEDGE_BASE }]
+        parts: [{ text: CHATBOT_KNOWLEDGE_BASE + PRODUCT_MATCHING_INSTRUCTIONS }]
       },
       contents: [
         {
@@ -152,8 +175,27 @@ const callGemini = async (userMessage: string): Promise<string> => {
         }
       ],
       generationConfig: {
-        maxOutputTokens: 350,
-        temperature: 0.3
+        // A little more headroom than the reply cap alone, to cover the
+        // JSON wrapper (`{"reply":"...","productId":"..."}`) without
+        // truncating the actual reply content.
+        maxOutputTokens: 400,
+        temperature: 0.3,
+        responseMimeType: 'application/json',
+        // Constrains "productId" to either exactly one real catalog id or
+        // JSON null - the model structurally can't return an id we don't
+        // recognize, on top of the explicit re-check below.
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            reply: { type: 'STRING' },
+            productId: {
+              type: 'STRING',
+              enum: Array.from(VALID_PRODUCT_IDS),
+              nullable: true
+            }
+          },
+          required: ['reply']
+        }
       }
     })
   });
@@ -174,7 +216,22 @@ const callGemini = async (userMessage: string): Promise<string> => {
     throw new Error('Gemini returned no text');
   }
 
-  return text.trim();
+  let parsed: { reply?: unknown; productId?: unknown };
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // The model didn't honor the JSON schema for some reason (rare, but
+    // structured output isn't a 100% guarantee) - fall back to treating
+    // the raw text as the reply itself rather than erroring the whole
+    // request out over a missing product match.
+    return { reply: text.trim(), productId: null };
+  }
+
+  const reply = typeof parsed.reply === 'string' ? parsed.reply.trim() : text.trim();
+  const rawProductId = typeof parsed.productId === 'string' ? parsed.productId : null;
+  const productId = rawProductId && VALID_PRODUCT_IDS.has(rawProductId) ? rawProductId : null;
+
+  return { reply, productId };
 };
 
 export const handler: Handler = async (event) => {
@@ -250,7 +307,7 @@ export const handler: Handler = async (event) => {
   const cacheKey = `${sessionId}::${normalizedMessage}`;
   const cached = duplicateCache.get(cacheKey);
   if (cached && cached.expiresAt > now) {
-    return replyResponse(cached.reply);
+    return replyResponse(cached.reply, cached.productId);
   }
 
   try {
@@ -267,11 +324,13 @@ export const handler: Handler = async (event) => {
       return replyResponse(FALLBACK_BUSY_REPLY);
     }
 
-    const reply = sanitizeModelReply(await callGemini(trimmedMessage));
+    const geminiResult = await callGemini(trimmedMessage);
+    const reply = sanitizeModelReply(geminiResult.reply);
+    const productId = geminiResult.productId;
 
-    duplicateCache.set(cacheKey, { reply, expiresAt: now + DUPLICATE_CACHE_TTL_MS });
+    duplicateCache.set(cacheKey, { reply, productId, expiresAt: now + DUPLICATE_CACHE_TTL_MS });
 
-    return replyResponse(reply);
+    return replyResponse(reply, productId);
   } catch (err) {
     // Never leak internals to the client (the friendly fallback below is
     // all it ever sees) - but swallowing the real error entirely left

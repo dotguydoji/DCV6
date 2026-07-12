@@ -15,7 +15,7 @@ export const PdfBookmarksPanel: React.FC<PdfBookmarksPanelProps> = ({
   onRemove,
   onClose
 }) => (
-  <div className="absolute right-4 top-16 z-30 w-64 max-h-[60vh] overflow-y-auto bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl">
+  <div className="absolute right-4 top-16 z-50 w-64 max-h-[60vh] overflow-y-auto bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl">
     <div className="flex items-center justify-between px-4 py-3 border-b border-border-hairline sticky top-0 bg-surface-secondary">
       <span className="text-sm font-medium text-text-primary">Bookmarks</span>
       <button type="button" onClick={onClose} aria-label="Close bookmarks" className="text-text-secondary hover:text-text-primary">
