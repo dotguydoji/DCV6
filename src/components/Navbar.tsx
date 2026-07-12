@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue, useCallback } from 'react';
-import { Menu, X, Search, LibraryBig, MessageCircle } from 'lucide-react';
+import { Menu, X, Search, LibraryBig, MessageCircle, NotebookPen } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
 import { getCachedIdToken, getIdTokenEmail } from '../lib/googleIdentity';
@@ -26,7 +26,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
+  const [noPdfAccessMessage, setNoPdfAccessMessage] = useState<string | undefined>(undefined);
   const [isCheckingMessengerAccess, setIsCheckingMessengerAccess] = useState(false);
+  const [isCheckingNotebookAccess, setIsCheckingNotebookAccess] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -122,6 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
     const idToken = getCachedIdToken();
     if (!idToken) {
+      setNoPdfAccessMessage(undefined);
       setIsNoPdfAccessDialogOpen(true);
       return;
     }
@@ -133,6 +136,32 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
     if (result.status === 'ok' && result.productIds.length > 0) {
       setIsMessengerDialogOpen(true);
     } else {
+      setNoPdfAccessMessage(undefined);
+      setIsNoPdfAccessDialogOpen(true);
+    }
+  }, []);
+
+  // Same "must own at least one PDF" gate as the Messenger button above -
+  // reuses the same server call/cache, just navigates to the Notebook
+  // instead of opening a dialog on success.
+  const handleNotebookClick = useCallback(async () => {
+    setIsMenuOpen(false);
+
+    const idToken = getCachedIdToken();
+    if (!idToken) {
+      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
+      setIsNoPdfAccessDialogOpen(true);
+      return;
+    }
+
+    setIsCheckingNotebookAccess(true);
+    const result = await fetchOwnedProductIds(idToken, getIdTokenEmail(idToken));
+    setIsCheckingNotebookAccess(false);
+
+    if (result.status === 'ok' && result.productIds.length > 0) {
+      window.location.href = '/notebook';
+    } else {
+      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
       setIsNoPdfAccessDialogOpen(true);
     }
   }, []);
@@ -276,6 +305,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               <MessageCircle size={18} strokeWidth={1.5} />
               Join Group Chat
             </button>
+            <button
+              type="button"
+              onClick={handleNotebookClick}
+              disabled={isCheckingNotebookAccess}
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <NotebookPen size={18} strokeWidth={1.5} />
+              Notebook
+            </button>
             <a
               href="/my-library"
               className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
@@ -399,12 +437,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               <MessageCircle size={20} strokeWidth={1.5} />
               Join Messenger Group Chat
             </button>
+            <button
+              type="button"
+              onClick={handleNotebookClick}
+              disabled={isCheckingNotebookAccess}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <NotebookPen size={20} strokeWidth={1.5} />
+              Notebook
+            </button>
           </div>
         </div>
       </nav>
 
       <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
-      <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
+      <NoPdfAccessDialog
+        open={isNoPdfAccessDialogOpen}
+        onClose={() => setIsNoPdfAccessDialogOpen(false)}
+        message={noPdfAccessMessage}
+      />
 
       {isInstallModalOpen && (
         <InstallGuideModal

@@ -10,6 +10,7 @@ import {
   LogOut,
   MessageCircle,
   Menu,
+  NotebookPen,
   RefreshCw,
   Search,
   X
@@ -164,6 +165,7 @@ export const MyLibraryPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
+  const [noPdfAccessMessage, setNoPdfAccessMessage] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [languageFilter, setLanguageFilter] = useState(ALL_LANGUAGES);
@@ -420,6 +422,7 @@ export const MyLibraryPage: React.FC = () => {
                     if (ownedProducts.length > 0) {
                       setIsMessengerDialogOpen(true);
                     } else {
+                      setNoPdfAccessMessage(undefined);
                       setIsNoPdfAccessDialogOpen(true);
                     }
                   }}
@@ -427,6 +430,21 @@ export const MyLibraryPage: React.FC = () => {
                 >
                   <MessageCircle size={18} strokeWidth={1.5} />
                   Join Group Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (ownedProducts.length > 0) {
+                      window.location.href = '/notebook';
+                    } else {
+                      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
+                      setIsNoPdfAccessDialogOpen(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+                >
+                  <NotebookPen size={18} strokeWidth={1.5} />
+                  Notebook
                 </button>
                 <button
                   type="button"
@@ -483,6 +501,7 @@ export const MyLibraryPage: React.FC = () => {
                   if (ownedProducts.length > 0) {
                     setIsMessengerDialogOpen(true);
                   } else {
+                    setNoPdfAccessMessage(undefined);
                     setIsNoPdfAccessDialogOpen(true);
                   }
                 }}
@@ -490,6 +509,22 @@ export const MyLibraryPage: React.FC = () => {
               >
                 <MessageCircle size={20} strokeWidth={1.5} />
                 Join Messenger Group Chat
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  if (ownedProducts.length > 0) {
+                    window.location.href = '/notebook';
+                  } else {
+                    setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
+                    setIsNoPdfAccessDialogOpen(true);
+                  }
+                }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
+              >
+                <NotebookPen size={20} strokeWidth={1.5} />
+                Notebook
               </button>
               <button
                 type="button"
@@ -514,7 +549,11 @@ export const MyLibraryPage: React.FC = () => {
           )}
 
           <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
-          <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
+          <NoPdfAccessDialog
+            open={isNoPdfAccessDialogOpen}
+            onClose={() => setIsNoPdfAccessDialogOpen(false)}
+            message={noPdfAccessMessage}
+          />
 
           <main className="max-w-[1600px] mx-auto px-4 lg:px-6 py-10 lg:py-14">
             {ownedProducts.length === 0 ? (

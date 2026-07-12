@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LayoutGrid,
   MoreVertical,
+  NotebookPen,
   Search,
   X,
   ZoomIn,
@@ -40,6 +41,8 @@ import { PdfBookmarksPanel } from './pdf-viewer/PdfBookmarksPanel';
 import { PdfMoreMenu } from './pdf-viewer/PdfMoreMenu';
 import { PdfInfoModal } from './pdf-viewer/PdfInfoModal';
 import { PdfLoadingOverlay } from './pdf-viewer/PdfLoadingOverlay';
+import { PdfNotebookPanel } from './pdf-viewer/PdfNotebookPanel';
+import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfRangeTransport';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -63,7 +66,9 @@ const EXIT_PATH = '/my-library';
 // Must match SIGNED_URL_TTL_SECONDS in netlify/functions/get-pdf.ts - if
 // that value ever changes, update this to match, so the proactive refresh
 // below still fires comfortably before the actual signed URL expires.
-const SIGNED_URL_LIFETIME_MS = 5 * 60 * 1000;
+// (Deliberately revised from 5 to 11 minutes - owner decision, 2026-07-13 -
+// see the comment on SIGNED_URL_TTL_SECONDS in get-pdf.ts for the tradeoff.)
+const SIGNED_URL_LIFETIME_MS = 11 * 60 * 1000;
 // How long before the signed URL's real expiry to proactively fetch a
 // fresh one - leaves a safety margin for the refresh call itself to
 // complete before the old URL would actually stop working.
@@ -72,6 +77,14 @@ const REFRESH_BEFORE_EXPIRY_MS = 60 * 1000;
 // server hiccup, network blip) - short enough to recover well within the
 // remaining margin above, not so short it hammers the function.
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
+
+// PDF.js's own default is 64KB (2**16) per range request - for a typical
+// text-plus-a-few-images study PDF page, that's often several separate
+// requests just to render one page. Quadrupling it to 256KB cuts the
+// request count roughly 4x for the same bytes, with disableAutoFetch above
+// still preventing the opposite problem (grabbing the whole file at once
+// for a PDF the buyer may only read a few pages of).
+const RANGE_CHUNK_SIZE_BYTES = 256 * 1024;
 
 // A browser tab that already had an old cached copy of a page (from before
 // a Cache-Control fix was deployed, or just heuristic caching absent one)
@@ -85,32 +98,49 @@ const getExitUrl = () => `${EXIT_PATH}?_=${Date.now()}`;
 export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefreshUrl }) => {
   const { title, id: productId } = product;
 
-  // The signed URL actually being used to load/fetch the document - starts
-  // as the one handed down from PdfGatePage, but gets silently swapped out
-  // for a fresh one before the old one expires (see the refresh effect
-  // below), instead of ever forcing the buyer back to My Library.
-  const [activeUrl, setActiveUrl] = useState(fileUrl);
+  // The signed URL actually being used for byte-range fetches - starts as
+  // the one handed down from PdfGatePage, but gets silently swapped out for
+  // a fresh one before the old one expires (see the refresh effect below).
+  // Deliberately a ref, not state: the whole point is that renewing it must
+  // NEVER retrigger the document-loading effect below, which is what used
+  // to tear down and rebuild the entire PDF.js viewer (visible loading
+  // screen, reader dropped back to page 1) every ~4 minutes. A
+  // PDFDataRangeTransport (see lib/pdfRangeTransport.ts) reads this ref on
+  // every future byte-range fetch, so only *future* fetches ever see the
+  // refreshed URL - already-rendered pages and the reader's exact scroll
+  // position are completely untouched by a refresh.
+  const currentUrlRef = useRef(fileUrl);
   const onRefreshUrlRef = useRef(onRefreshUrl);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeUrlIssuedAtRef = useRef(Date.now());
+  // Lets the range transport (built once, in the document-loading effect
+  // below) force an out-of-schedule refresh if a byte-range fetch fails -
+  // e.g. the reader kept scrolling into unfetched pages right as the
+  // proactive refresh below was about to fire. Assigned synchronously by
+  // the effect right below this one, which - because effects run in
+  // declaration order on mount - always runs before the document-loading
+  // effect that reads it.
+  const forceRefreshRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     onRefreshUrlRef.current = onRefreshUrl;
   }, [onRefreshUrl]);
 
   // Proactively fetches a fresh signed URL shortly before the current one
-  // would expire, and swaps it in - which retriggers the document-loading
-  // effect below with the new URL, restoring the exact page/rotation/scroll
-  // mode automatically (that restore logic already exists for reopening a
-  // PDF and doesn't need to change for this). A genuine denial (access was
+  // would expire, and swaps it into currentUrlRef - a plain ref mutation,
+  // invisible to React and to the reader. A genuine denial (access was
   // actually revoked) surfaces a clear message instead of retrying forever;
   // anything transient (rate limit, network blip, server hiccup) just
-  // retries shortly after instead of giving up.
+  // retries shortly after instead of giving up. Runs once for the life of
+  // this component instance (not keyed on the URL - there's no more React
+  // state for it to react to).
   useEffect(() => {
     let cancelled = false;
-    activeUrlIssuedAtRef.current = Date.now();
 
-    async function attemptRefresh() {
+    const msUntilRefresh = () =>
+      Math.max(0, SIGNED_URL_LIFETIME_MS - REFRESH_BEFORE_EXPIRY_MS - (Date.now() - activeUrlIssuedAtRef.current));
+
+    async function attemptRefresh(isForced = false) {
       const result = await onRefreshUrlRef.current();
       if (cancelled) return;
 
@@ -122,7 +152,10 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       // install, so it's an environment quirk, not a real type error) -
       // this form checks out cleanly and is exactly as type-safe.
       if ('url' in result) {
-        setActiveUrl(result.url);
+        currentUrlRef.current = result.url;
+        activeUrlIssuedAtRef.current = Date.now();
+        if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = setTimeout(() => attemptRefresh(), msUntilRefresh());
         return;
       }
 
@@ -131,13 +164,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         return;
       }
 
-      refreshTimeoutRef.current = setTimeout(attemptRefresh, REFRESH_RETRY_DELAY_MS);
+      if (!isForced) {
+        refreshTimeoutRef.current = setTimeout(() => attemptRefresh(), REFRESH_RETRY_DELAY_MS);
+      }
     }
 
-    const msUntilRefresh = () =>
-      Math.max(0, SIGNED_URL_LIFETIME_MS - REFRESH_BEFORE_EXPIRY_MS - (Date.now() - activeUrlIssuedAtRef.current));
+    forceRefreshRef.current = () => attemptRefresh(true);
 
-    refreshTimeoutRef.current = setTimeout(attemptRefresh, msUntilRefresh());
+    refreshTimeoutRef.current = setTimeout(() => attemptRefresh(), msUntilRefresh());
 
     // Mobile browsers throttle/suspend timers on a backgrounded tab, so the
     // scheduled refresh above may never fire on time if the buyer switches
@@ -158,7 +192,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [activeUrl]);
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -192,6 +226,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   const [pageInputValue, setPageInputValue] = useState('1');
   const [isThumbnailPanelOpen, setIsThumbnailPanelOpen] = useState(false);
   const [isBookmarksPanelOpen, setIsBookmarksPanelOpen] = useState(false);
+  const [isNotebookPanelOpen, setIsNotebookPanelOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   // Rotation/scroll-mode persist per product (same as bookmarks/reading
@@ -296,66 +331,103 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
     setLoadProgress(0);
     setIsFirstPageRendered(false);
 
-    // disableAutoFetch stops PDF.js from silently downloading the rest of
-    // the file in the background after the first pages render - for large
-    // (16-50MB) PDFs that background fetch competes for bandwidth with
-    // whatever the buyer is actively trying to view. Range-request-based
-    // per-page fetching (already supported by R2's CORS setup here) stays
-    // fully enabled either way, so pages still load progressively as read.
-    const loadingTask = pdfjsLib.getDocument({ url: activeUrl, disableAutoFetch: true });
-    loadingTaskRef.current = loadingTask;
+    (async () => {
+      const initialUrl = currentUrlRef.current;
+      // A custom range transport needs the file's total byte length up
+      // front - discovered via a single 1-byte Range probe rather than an
+      // extra full request. If that probe can't determine it (should be
+      // rare: Range support against this exact host is already required
+      // for the per-page lazy loading below to work at all), loading still
+      // works via the plain URL - it just means a future URL expiry can't
+      // be papered over invisibly and would fall back to a full reload.
+      const length = await probeContentLength(initialUrl);
+      if (cancelled) return;
 
-    // Additive: purely feeds the loading overlay's percentage - has no
-    // effect on how or what actually gets fetched.
-    loadingTask.onProgress = (data: { loaded: number; total: number }) => {
-      if (cancelled || !data.total) return;
-      setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
-    };
+      // disableAutoFetch stops PDF.js from silently downloading the rest of
+      // the file in the background after the first pages render - for large
+      // (16-50MB) PDFs that background fetch competes for bandwidth with
+      // whatever the buyer is actively trying to view. Range-request-based
+      // per-page fetching (already supported by R2's CORS setup here) stays
+      // fully enabled either way, so pages still load progressively as read.
+      const loadingTask =
+        length !== null
+          ? pdfjsLib.getDocument({
+              range: createRefreshableRangeTransport({
+                length,
+                getUrl: () => currentUrlRef.current,
+                onRecoverableFailure: () => forceRefreshRef.current(),
+                onFatalFailure: () => {
+                  if (!cancelled) {
+                    setLoadError('Your session needs a refresh. Please reload this page.');
+                  }
+                }
+              }),
+              disableAutoFetch: true,
+              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
+            })
+          : pdfjsLib.getDocument({
+              url: initialUrl,
+              disableAutoFetch: true,
+              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
+            });
 
-    loadingTask.promise
-      .then((pdfDocument) => {
-        if (cancelled) return;
-        pdfViewer.setDocument(pdfDocument);
-        linkService.setDocument(pdfDocument, null);
-        setPageCount(pdfDocument.numPages);
-        setPageNumber(1);
-        setIsLoading(false);
+      if (cancelled) {
+        loadingTask.destroy();
+        return;
+      }
+      loadingTaskRef.current = loadingTask;
 
-        // Additive: keep a reference for the thumbnail panel, and resume
-        // from wherever the buyer last left off, if we have it saved.
-        pdfDocumentRef.current = pdfDocument;
-        const progress = getReadingProgress(productId);
-        const savedPrefs = getViewerPrefs(productId);
-        eventBus.on('pagesinit', () => {
-          if (progress && progress.lastPage > 1 && progress.lastPage <= pdfDocument.numPages) {
-            pdfViewer.currentPageNumber = progress.lastPage;
-          }
-          if (savedPrefs.rotation !== 0) {
-            pdfViewer.pagesRotation = savedPrefs.rotation;
-          }
-          if (savedPrefs.scrollMode === 'single') {
-            pdfViewer.scrollMode = ScrollMode.PAGE;
-          }
-          // Runs after the unconditional 'page-width' listener registered
-          // above (same event, later registration = later call), so this
-          // correctly overrides that default whenever a real saved value
-          // exists - including on the silent mid-session refresh, which is
-          // exactly what keeps a manually-chosen zoom level from resetting.
-          try {
-            pdfViewer.currentScaleValue = savedPrefs.scaleValue;
-          } catch {
-            // Malformed/stale stored value (e.g. from an older app version) -
-            // harmless to ignore, the earlier listener already applied a
-            // safe default.
+      // Additive: purely feeds the loading overlay's percentage - has no
+      // effect on how or what actually gets fetched.
+      loadingTask.onProgress = (data: { loaded: number; total: number }) => {
+        if (cancelled || !data.total) return;
+        setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
+      };
+
+      loadingTask.promise
+        .then((pdfDocument) => {
+          if (cancelled) return;
+          pdfViewer.setDocument(pdfDocument);
+          linkService.setDocument(pdfDocument, null);
+          setPageCount(pdfDocument.numPages);
+          setPageNumber(1);
+          setIsLoading(false);
+
+          // Additive: keep a reference for the thumbnail panel, and resume
+          // from wherever the buyer last left off, if we have it saved.
+          pdfDocumentRef.current = pdfDocument;
+          const progress = getReadingProgress(productId);
+          const savedPrefs = getViewerPrefs(productId);
+          eventBus.on('pagesinit', () => {
+            if (progress && progress.lastPage > 1 && progress.lastPage <= pdfDocument.numPages) {
+              pdfViewer.currentPageNumber = progress.lastPage;
+            }
+            if (savedPrefs.rotation !== 0) {
+              pdfViewer.pagesRotation = savedPrefs.rotation;
+            }
+            if (savedPrefs.scrollMode === 'single') {
+              pdfViewer.scrollMode = ScrollMode.PAGE;
+            }
+            // Runs after the unconditional 'page-width' listener registered
+            // above (same event, later registration = later call), so this
+            // correctly overrides that default whenever a real saved value
+            // exists.
+            try {
+              pdfViewer.currentScaleValue = savedPrefs.scaleValue;
+            } catch {
+              // Malformed/stale stored value (e.g. from an older app version) -
+              // harmless to ignore, the earlier listener already applied a
+              // safe default.
+            }
+          });
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setLoadError('This PDF link has expired. Please go back and open it again.');
+            setIsLoading(false);
           }
         });
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLoadError('This PDF link has expired. Please go back and open it again.');
-          setIsLoading(false);
-        }
-      });
+    })();
 
     return () => {
       cancelled = true;
@@ -366,8 +438,13 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       eventBusRef.current = null;
       pdfDocumentRef.current = null;
     };
+    // Mount-only, deliberately: this used to depend on the signed URL and
+    // rebuild the entire viewer on every refresh (the visible "restarts
+    // every 5 minutes" bug) - the URL is now a ref the range transport
+    // reads lazily, so there's nothing here that should ever retrigger this
+    // effect for the life of this component instance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeUrl]);
+  }, []);
 
   const goToPage = useCallback(
     (next: number) => {
@@ -637,6 +714,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           >
             {bookmarks.length}
           </button>
+          <button
+            type="button"
+            onClick={() => setIsNotebookPanelOpen((prev) => !prev)}
+            aria-label="Toggle notebook"
+            className={`flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
+              isNotebookPanelOpen
+                ? 'border-border-strong text-text-primary'
+                : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+            }`}
+          >
+            <NotebookPen size={18} strokeWidth={1.5} />
+          </button>
           <div className="relative">
             <button
               type="button"
@@ -774,6 +863,10 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             <PdfLoadingOverlay percent={isLoading ? loadProgress : Math.max(loadProgress, 95)} />
           )}
         </div>
+
+        {isNotebookPanelOpen && (
+          <PdfNotebookPanel onClose={() => setIsNotebookPanelOpen(false)} />
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-t border-border-hairline bg-surface shrink-0">

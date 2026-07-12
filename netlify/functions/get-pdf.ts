@@ -8,7 +8,14 @@ import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 import { isValidProductId } from './lib/validation';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? '';
-const SIGNED_URL_TTL_SECONDS = 5 * 60;
+// Deliberately revised from 5 to 11 minutes (owner decision, 2026-07-13) to
+// cut how often the client needs to re-hit this function during a long
+// reading session - previously every ~4 minutes, now every ~10. This is a
+// real, accepted tradeoff: a leaked/logged/shared signed URL now stays
+// usable for ~11 minutes instead of ~5 before needing re-authorization.
+// Must match SIGNED_URL_LIFETIME_MS in src/components/PdfViewer.tsx and
+// PDF_URL_CACHE_TTL_MS in src/components/PdfGatePage.tsx - keep all three synced.
+const SIGNED_URL_TTL_SECONDS = 11 * 60;
 // Was 20/min - raised after real reload-heavy usage (a buyer or the owner
 // refreshing repeatedly while testing) hit this limit during normal, non-
 // abusive use. 40/min is still well below what a scripted abuse attempt

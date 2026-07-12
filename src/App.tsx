@@ -9,6 +9,7 @@ const CartModal = lazyWithReload(() => import('./components/CartModal').then((m)
 const ChatWidget = lazyWithReload(() => import('./components/ChatWidget').then((m) => ({ default: m.ChatWidget })));
 const PdfGatePage = lazyWithReload(() => import('./components/PdfGatePage').then((m) => ({ default: m.PdfGatePage })));
 const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').then((m) => ({ default: m.MyLibraryPage })));
+const NotebookPage = lazyWithReload(() => import('./components/NotebookPage').then((m) => ({ default: m.NotebookPage })));
 import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById } from "./constants";
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
@@ -36,6 +37,7 @@ const normalizePathname = (pathname: string) => {
 
 const VIEW_PATH_PATTERN = /^\/view\/(.+)$/;
 const MY_LIBRARY_PATH = '/my-library';
+const NOTEBOOK_PATH = '/notebook';
 
 /**
  * Shown while a lazy-loaded route's code is still downloading. Without
@@ -69,6 +71,14 @@ const App: React.FC = () => {
     return normalizePathname(window.location.pathname) === MY_LIBRARY_PATH;
   }, []);
 
+  const isNotebookPath = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return normalizePathname(window.location.pathname) === NOTEBOOK_PATH;
+  }, []);
+
   const isNotFound = useMemo(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -79,7 +89,7 @@ const App: React.FC = () => {
       return false;
     }
 
-    return !VIEW_PATH_PATTERN.test(pathname) && pathname !== MY_LIBRARY_PATH;
+    return !VIEW_PATH_PATTERN.test(pathname) && pathname !== MY_LIBRARY_PATH && pathname !== NOTEBOOK_PATH;
   }, []);
 
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
@@ -463,6 +473,14 @@ const App: React.FC = () => {
     return (
       <Suspense fallback={<RouteLoadingScreen />}>
         <MyLibraryPage />
+      </Suspense>
+    );
+  }
+
+  if (isNotebookPath) {
+    return (
+      <Suspense fallback={<RouteLoadingScreen />}>
+        <NotebookPage />
       </Suspense>
     );
   }

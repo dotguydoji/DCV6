@@ -4,14 +4,22 @@ import { Lock } from 'lucide-react';
 interface NoPdfAccessDialogProps {
   open: boolean;
   onClose: () => void;
+  /** Defaults to the Messenger group chat wording - pass a different reason for other PDF-gated features (e.g. the Notebook). */
+  message?: string;
 }
 
 /**
  * Shown instead of MessengerJoinDialog when the signed-in buyer (or a
  * signed-out visitor) owns zero PDFs - same modal shell/style, just a
- * dead-end message rather than a join link.
+ * dead-end message rather than a join link. Reused by any other feature
+ * gated on "must own at least one PDF" (e.g. the Notebook), via the
+ * `message` prop.
  */
-export const NoPdfAccessDialog: React.FC<NoPdfAccessDialogProps> = ({ open, onClose }) => {
+export const NoPdfAccessDialog: React.FC<NoPdfAccessDialogProps> = ({
+  open,
+  onClose,
+  message = 'You need to have at least one PDF access in order to join the Messenger group chat.'
+}) => {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -56,7 +64,7 @@ export const NoPdfAccessDialog: React.FC<NoPdfAccessDialogProps> = ({ open, onCl
           PDF Access Required
         </h2>
         <p id="no-pdf-access-message" className="f-body text-brand-muted mb-6 sm:mb-8">
-          You need to have at least one PDF access in order to join the Messenger group chat.
+          {message}
         </p>
         <div className="flex justify-end">
           <button

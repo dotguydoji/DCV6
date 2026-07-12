@@ -8,9 +8,10 @@ import { clearCachedIdToken, getCachedIdToken, getIdTokenEmail, setCachedIdToken
 import { recordOpened } from '../lib/libraryPreferences';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 
-// Slightly under the server's 5-minute signed URL lifetime (get-pdf.ts),
+// Slightly under the server's signed URL lifetime (11 minutes, get-pdf.ts),
 // so a cached URL is never handed out right at the edge of expiring.
-const PDF_URL_CACHE_TTL_MS = 4.5 * 60 * 1000;
+// (Revised from 5 to 11 minutes server-side - owner decision, 2026-07-13.)
+const PDF_URL_CACHE_TTL_MS = 10 * 60 * 1000;
 
 interface PdfGatePageProps {
   product: Product | undefined;

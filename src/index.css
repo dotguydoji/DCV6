@@ -593,3 +593,87 @@
 .liquid-wave-back {
   animation: liquid-wave-back 4.6s linear infinite;
 }
+
+/*
+ * Notebook rich-text content - scoped to .notebook-editor-content only.
+ * Tailwind's preflight zeroes out ul/ol list-style and spacing globally,
+ * so bullets/numbers/heading hierarchy need to be restored explicitly here
+ * (without this, bullet/numbered lists render with no visible markers at
+ * all). Plain CSS (not @apply) since these are semantic HTML elements
+ * produced by the rich text editor, not utility-class markup.
+ */
+.notebook-editor-content h1 { font-size: 1.875em; font-weight: 700; margin: 0.75em 0 0.4em; line-height: 1.25; }
+.notebook-editor-content h2 { font-size: 1.5em; font-weight: 700; margin: 0.7em 0 0.4em; line-height: 1.3; }
+.notebook-editor-content h3 { font-size: 1.25em; font-weight: 700; margin: 0.6em 0 0.35em; line-height: 1.35; }
+.notebook-editor-content h4 { font-size: 1.1em; font-weight: 600; margin: 0.6em 0 0.3em; }
+.notebook-editor-content h5 { font-size: 1em; font-weight: 600; margin: 0.5em 0 0.3em; }
+.notebook-editor-content h6 { font-size: 0.9em; font-weight: 600; margin: 0.5em 0 0.3em; color: var(--text-secondary); }
+.notebook-editor-content ul { list-style: disc; padding-left: 1.4em; margin: 0.4em 0; }
+.notebook-editor-content ol { list-style: decimal; padding-left: 1.4em; margin: 0.4em 0; }
+.notebook-editor-content li { margin: 0.2em 0; }
+.notebook-editor-content blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 1em;
+  margin: 0.75em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.notebook-editor-content code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--surface-secondary);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+.notebook-editor-content a { color: inherit; text-decoration: underline; }
+.notebook-editor-content sub { vertical-align: sub; font-size: 0.75em; }
+.notebook-editor-content sup { vertical-align: super; font-size: 0.75em; }
+
+/*
+ * Checklist items are rendered as a non-native structure (div + two spans,
+ * toggled via a data-checked attribute) instead of real <input
+ * type="checkbox"> elements - contentEditable + native form controls don't
+ * mix well (checkboxes aren't part of the text flow DOMPurify/undo expect),
+ * and this keeps <input> off the sanitizer's allowlist entirely.
+ */
+.notebook-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0.3em 0;
+}
+.notebook-checklist-box {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-block;
+}
+.notebook-checklist-item[data-checked="true"] .notebook-checklist-box {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  position: relative;
+}
+.notebook-checklist-item[data-checked="true"] .notebook-checklist-box::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--surface);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.notebook-checklist-text {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+.notebook-checklist-item[data-checked="true"] .notebook-checklist-text {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
