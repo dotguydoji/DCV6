@@ -49,7 +49,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     Cross-Origin-Opener-Policy = "same-origin-allow-popups"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # index.html points to the current build's hashed asset filenames (the
 # /assets/* files below, which ARE safe to cache forever since their name
@@ -61,14 +61,20 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# DISABLED (2026-07-11, owner request) - static asset long-lived caching
-# turned off. Do not re-enable unless explicitly asked. Kept here
-# (commented out) rather than deleted so it's easy to restore.
-# [[headers]]
-#   for = "/assets/*"
-#   [headers.values]
-#     Cache-Control = "public, max-age=31536000, immutable"
-#
+# Re-enabled 2026-07-12 (owner request) for /assets/* only - every filename
+# in there is content-hashed by Vite (e.g. index-PvON8DTc.css), so a new
+# deploy always produces new filenames. Caching those forever has zero
+# staleness risk: a changed file is never served under the same URL twice.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# /images/*, /favicon.*, and /web-app-manifest-* stay DISABLED (2026-07-11,
+# owner request) - unlike /assets/*, these filenames are NOT content-hashed,
+# so long-lived caching here really could serve a stale file after a
+# same-name replacement. Do not re-enable unless explicitly asked. Kept
+# here (commented out) rather than deleted so it's easy to restore.
 # [[headers]]
 #   for = "/images/*"
 #   [headers.values]

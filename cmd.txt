@@ -1,5 +1,5 @@
 git add .
-git commit -m "neo minimalist ui"
+git commit -m "thumbanils goes to cloud"
 git push -u
 
 npm run build

@@ -12,6 +12,13 @@ const AI_AUTOMATION_CATEGORY = 'AI Tools & Automations';
 const PRODUCTIVITY_CATEGORY = 'ADVANCED STUDY';
 const PREORDER_THUMBNAIL = '/favicon.svg';
 
+// Product thumbnails are served from a dedicated public R2 bucket
+// (dc-notes-images), not Netlify's own bandwidth - R2 downloads are free
+// regardless of volume, unlike Netlify's bandwidth cap. Falls back to the
+// old local /images path when the env var isn't set (e.g. a fresh local
+// checkout before .env is configured), so dev still works without it.
+const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL ?? '';
+
 const LANGUAGE_FILE_SEGMENT: Record<ProductLanguage, 'english' | 'tagalog'> = {
   en: 'english',
   tl: 'tagalog'
@@ -550,17 +557,17 @@ const getProgrammingLanguageThumbnail = (
   itemKey: ProgrammingLanguageKey,
   level: ProgrammingLevelMeta,
   language: ProductLanguage
-) => `/images/${level.folder}/${itemKey}-${level.fileSuffix}-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
+) => `${IMAGE_BASE_URL}/images/${level.folder}/${itemKey}-${level.fileSuffix}-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
 
 const getWebDevelopmentThumbnail = (fileStem: string, language: ProductLanguage) =>
   fileStem === 'webdev-package'
-    ? `/images/wevdevelopment/${fileStem}-${LANGUAGE_FILE_SEGMENT[language]}.webp`
-    : `/images/wevdevelopment/${fileStem}-webdevelopment-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
+    ? `${IMAGE_BASE_URL}/images/wevdevelopment/${fileStem}-${LANGUAGE_FILE_SEGMENT[language]}.webp`
+    : `${IMAGE_BASE_URL}/images/wevdevelopment/${fileStem}-webdevelopment-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
 
 const getToolsThumbnail = (itemKey: ToolsItemKey, language: ProductLanguage) => {
   switch (itemKey) {
     case 'git-github-notes':
-      return `/images/tools/git-github-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
+      return `${IMAGE_BASE_URL}/images/tools/git-github-${LANGUAGE_FILE_SEGMENT[language]}.webp`;
     default:
       return '/web-app-manifest-512x512.png';
   }
@@ -570,11 +577,11 @@ const getAiThumbnail = (itemKey: AIItemKey, language: ProductLanguage) => {
   const seg = LANGUAGE_FILE_SEGMENT[language];
   switch (itemKey) {
     case 'claude-code-notes':
-      return `/images/ai-tools/claude-code-${seg}.webp`;
+      return `${IMAGE_BASE_URL}/images/ai-tools/claude-code-${seg}.webp`;
     case 'claude-mcp':
-      return `/images/ai-tools/claude-mcp-${seg === 'english' ? 'eng' : 'tag'}.webp`;
+      return `${IMAGE_BASE_URL}/images/ai-tools/claude-mcp-${seg === 'english' ? 'eng' : 'tag'}.webp`;
     case 'claude-subagents':
-      return `/images/ai-tools/claude-subagents-${seg === 'english' ? 'eng' : 'tag'}.webp`;
+      return `${IMAGE_BASE_URL}/images/ai-tools/claude-subagents-${seg === 'english' ? 'eng' : 'tag'}.webp`;
     default:
       return '/favicon.svg';
   }
@@ -711,7 +718,7 @@ export const PRODUCTS: Product[] = [
     title: 'BSIT Advanced Study',
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
-    thumbnail: '/productivity/freshmen-prep.webp',
+    thumbnail: `${IMAGE_BASE_URL}/images/advance%20study/freshmen-prep.webp`,
     price: 199,
     mobileUrl: MOBILE_URL,
     desktopUrl: DESKTOP_URL,
@@ -723,7 +730,7 @@ export const PRODUCTS: Product[] = [
   title: 'BSCS Advanced Study Guide',
   description:
     'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
-  thumbnail: '/productivity/bscs-advance-study.webp',
+  thumbnail: `${IMAGE_BASE_URL}/images/advance%20study/bscs-advance-study.webp`,
   price: 199,
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,

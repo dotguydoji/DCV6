@@ -188,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               decoding="async"
               referrerPolicy="no-referrer"
             />
-            <span className="text-base md:text-xl laptop:text-xl xl:text-2xl font-medium text-text-primary uppercase tracking-[0.3em]">
+            <span className="hidden sm:block text-base md:text-xl laptop:text-xl xl:text-2xl font-normal text-text-primary uppercase tracking-[0.12em]">
               Doji's Library
             </span>
           </div>
