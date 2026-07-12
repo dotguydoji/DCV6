@@ -271,56 +271,69 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       setSelectedLevel(nextLevel);
     };
 
+    // The ref/`.reveal` element's className must stay a fixed, unchanging
+    // string. useScrollReveal adds "is-revealed" via classList.add()
+    // directly on the DOM node, bypassing React - if this element's
+    // className were a template that varies with `isOpen` (as it
+    // previously was), every toggle would make React rewrite the whole
+    // className attribute, silently dropping "is-revealed" and resetting
+    // the section to its pre-reveal opacity:0 state (the "categories
+    // disappear on click" bug). All the hover/lift/invert styling that
+    // does need to vary with `isOpen` lives on the inner div instead,
+    // which nothing external ever mutates.
     return (
-      <section
-        ref={setSectionRefs}
-        className="reveal blueprint-corners transition-all rounded-sm overflow-hidden border mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform bg-surface-secondary border-border-hairline"
-      >
-        <div className="category-header tilt-row px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline">
-          {typeof index === 'number' && typeof total === 'number' && (
-            <div className="flex items-center gap-3 mb-3 lg:mb-4">
-              <div className="h-px w-8 lg:w-12 bg-border-strong"></div>
-              <span className="text-[10px] lg:text-xs font-medium uppercase tracking-[0.3em] text-text-secondary">
-                {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-              </span>
-            </div>
-          )}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
-            <button
-              onClick={onToggle}
-              className="flex-grow flex items-center gap-4 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-surface-secondary group/title"
-              aria-expanded={isOpen}
-              type="button"
-            >
-              <h2 className="f-heading font-normal transition-colors uppercase tracking-tighter text-text-primary group-hover/title:text-text-primary/70">
+      <section ref={setSectionRefs} className="reveal mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform">
+        <div className="blueprint-corners rounded-sm overflow-hidden border bg-surface-secondary border-border-hairline">
+        {/*
+          Hover lift/invert lives on the header only (not this outer shell),
+          so it keeps responding even while the category is expanded, and
+          never touches the product grid below. Always-on `group` (no more
+          isOpen gating) - the header itself is the hover target regardless
+          of open/closed state. `duration-300 ease-out` gives the color/
+          background swap a deliberate, non-instant feel instead of
+          snapping. The translate needs the `!` (important) modifier
+          because the .reveal.is-revealed entrance-animation rule in
+          index.css sets `transform: translateY(0)` at equal CSS
+          specificity and would otherwise silently win, making the lift
+          never render.
+        */}
+        <div className="group relative category-header tilt-row px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline [transition:background-color_0.3s_ease-out,translate_0.3s_ease-out,box-shadow_0.3s_ease-out,transform_0.3s_ease-out]! hover:bg-surface-inverted hover:-translate-y-1! hover:shadow-2xl">
+          <button
+            onClick={onToggle}
+            className="w-full flex items-center justify-between gap-4 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-surface-secondary"
+            aria-expanded={isOpen}
+            type="button"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <h2 className="f-heading font-normal transition-colors uppercase tracking-tighter text-text-primary group-hover:text-text-inverted">
                 {name}
               </h2>
-              <div
-                className={`transition-transform duration-300 p-1 border border-transparent rounded-full ${
-                  isOpen
-                    ? 'rotate-180 text-text-primary bg-text-primary/10'
-                    : 'text-text-secondary group-hover/title:text-text-primary'
-                }`}
-              >
-                <ChevronDown size={28} strokeWidth={1.5} />
-              </div>
               {/* Content-type label */}
               {isCourseCategory && (
-                <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-text-secondary border border-border-hairline bg-surface-inverted/5 px-2.5 py-1 rounded-sm">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.18em] text-text-secondary group-hover:text-text-inverted border border-border-hairline bg-surface-inverted/5 px-2.5 py-1 rounded-sm">
                   <Play size={9} fill="currentColor" strokeWidth={0} />
                   Video Course
                 </span>
               )}
-            </button>
+            </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-6">
+            <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+              <div
+                className={`shrink-0 transition-transform duration-300 p-1 border border-transparent rounded-full ${
+                  isOpen
+                    ? 'rotate-180 text-text-primary bg-text-primary/10'
+                    : 'text-text-secondary group-hover:text-text-inverted'
+                }`}
+              >
+                <ChevronDown size={28} strokeWidth={1.5} />
+              </div>
               <div className="hidden sm:flex flex-col items-end">
-                <span className="f-small px-3 py-1.5 rounded-sm border font-semibold whitespace-nowrap text-xl bg-surface-inverted/10 text-text-primary border-border-hairline">
+                <span className="f-small px-3 py-1.5 rounded-sm border font-semibold whitespace-nowrap text-xl bg-surface-inverted/10 text-text-primary group-hover:text-text-inverted border-border-hairline">
                   {itemCount} <span className="opacity-50">ITEMS</span>
                 </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div
@@ -330,7 +343,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
         >
           {hasVersionToggle && (
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <span className="text-base font-medium text-text-secondary tracking-wide">Versions:</span>
+              <span className="w-24 shrink-0 inline-block text-base font-medium text-text-secondary tracking-wide">Versions:</span>
               <button
                 type="button"
                 onClick={() => handleLanguageChange('en')}
@@ -340,8 +353,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   selectedLanguage === 'en'
                     ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
                     : availableLanguages.includes('en')
-                      ? 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
-                      : 'bg-surface/40 text-text-secondary/40 border-border-hairline cursor-not-allowed'
+                      ? 'text-text-primary border-border-hairline hover:border-border-strong'
+                      : 'text-text-secondary/40 border-border-hairline cursor-not-allowed'
                 }`}
               >
                 English
@@ -355,8 +368,8 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   selectedLanguage === 'tl'
                     ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
                     : availableLanguages.includes('tl')
-                      ? 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
-                      : 'bg-surface/40 text-text-secondary/40 border-border-hairline cursor-not-allowed'
+                      ? 'text-text-primary border-border-hairline hover:border-border-strong'
+                      : 'text-text-secondary/40 border-border-hairline cursor-not-allowed'
                 }`}
               >
                 Tagalog
@@ -366,7 +379,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
 
           {hasLevelToggle && (
             <div className="flex items-center gap-3 mb-4 flex-wrap">
-              <span className="text-base font-medium text-text-secondary tracking-wide">Levels:</span>
+              <span className="w-24 shrink-0 inline-block text-base font-medium text-text-secondary tracking-wide">Levels:</span>
               {availableLevels.map((level, levelIndex) => (
                 <button
                   key={level}
@@ -376,7 +389,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
                   className={`text-base font-semibold uppercase tracking-wider px-3 py-1 rounded-sm border transition-all ${
                     selectedLevel === level
                       ? 'bg-surface-inverted text-text-inverted border-surface-inverted'
-                      : 'bg-surface text-text-primary border-border-hairline hover:border-border-strong'
+                      : 'text-text-primary border-border-hairline hover:border-border-strong'
                   }`}
                 >
                   <span className="md:hidden">{levelIndex + 1}</span>
@@ -516,6 +529,7 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               </div>
             </div>
           )}
+        </div>
         </div>
       </section>
     );

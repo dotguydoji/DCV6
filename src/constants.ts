@@ -120,7 +120,7 @@ export const SITE_CONTENT: SiteContent = {
   brandName: 'DC NOTES',
   brandTagline: 'Notes',
   hero: {
-    mainTitle: 'Simple at Madaling Intindihin.',
+    mainTitle: 'Learn the easy way.',
     subTitle: 'DC NOTES / TECHNICAL LIBRARY'
   },
   footer: {

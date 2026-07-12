@@ -26,6 +26,10 @@
   --border-hairline: #c7ccd1;
   --border-strong: #17181a;
   --shadow-card: 0 1px 2px rgba(23, 24, 26, 0.05), 0 10px 28px -14px rgba(23, 24, 26, 0.22);
+  /* Hover-only "lifting off the page" shadow - deliberately darker and
+     wider-spread than the resting --shadow-card above, so the hovered
+     card reads as a natural cast shadow rather than a subtle outline. */
+  --shadow-card-hover: 0 8px 10px rgba(23, 24, 26, 0.15), 0 28px 56px -16px rgba(23, 24, 26, 0.45);
   --scroll-tilt-x: 0deg;
 }
 
@@ -39,6 +43,9 @@
   --border-hairline: #383c40;
   --border-strong: #f2f2f2;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 32px -14px rgba(0, 0, 0, 0.65);
+  /* Needs to be noticeably darker/more opaque than the light-mode version
+     to still read as a visible shadow against an already-dark surface. */
+  --shadow-card-hover: 0 10px 14px rgba(0, 0, 0, 0.55), 0 32px 64px -16px rgba(0, 0, 0, 0.85);
 }
 
 /*
@@ -527,11 +534,19 @@
 .card-tilt {
   transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))
     scale(var(--card-scale, 1));
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  /* box-shadow is in this list deliberately - without it, the hover
+     shadow below would snap in instantly instead of easing in. */
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .card-tilt:hover {
+  /* "Elevate forward" - a small scale-up (toward the viewer) combined
+     with a modest lift, rather than the old plain translateY. Purely a
+     transform + shadow change, so it never affects layout or neighboring
+     cards. --shadow-card-hover (theme-aware, see :root/[data-theme=dark])
+     replaces the old hover:border-border-strong outline. */
   transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))
-    scale(var(--card-scale, 1)) translateY(-4px);
+    scale(calc(var(--card-scale, 1) * 1.035)) translateY(-6px);
+  box-shadow: var(--shadow-card-hover);
 }
 .card-tilt:active {
   transform: perspective(1000px) rotateX(var(--scroll-tilt-x, 0deg)) rotateY(calc(var(--scroll-tilt-x, 0deg) * -0.6))

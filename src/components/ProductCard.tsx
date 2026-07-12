@@ -46,7 +46,7 @@ export const ProductCard = memo(
             ? 'animate-highlight border-border-strong z-10'
             : isSelected
               ? 'border-border-strong ring-2 ring-border-strong/20'
-              : 'border-border-hairline hover:border-border-strong'
+              : 'border-border-hairline'
         }`}
       >
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-950/50">
