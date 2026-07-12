@@ -11,7 +11,14 @@ const HEIGHT_STORAGE_KEY = 'dcv6-notebook-panel-height';
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 160;
 const DEFAULT_WIDTH = 420;
-const DEFAULT_HEIGHT_RATIO = 0.45;
+// Mobile bottom sheet opens at 30% of the device's height so the drag handle
+// (and PDF behind it) stay reachable right away instead of the panel
+// defaulting to something that swallows most of the screen.
+const DEFAULT_HEIGHT_RATIO = 0.3;
+// The reader can shrink the sheet, but never past this - dragging it fully
+// out of view would just be a confusing way to "close" it when a close
+// button already exists for that.
+const MIN_HEIGHT_RATIO = 0.1;
 const DESKTOP_MEDIA_QUERY = '(min-width: 640px)';
 // Not a preference cap - the reader decides how wide/tall the notebook gets.
 // This only keeps the PDF itself from being crushed to nothing.
@@ -23,8 +30,11 @@ const clampWidth = (width: number) => {
 };
 
 const clampHeight = (height: number, containerHeight: number) => {
+  // Absolute floor guards very short viewports; otherwise the minimum
+  // tracks the container so it stays ~10% of the actual device height.
+  const minHeight = Math.max(80, containerHeight * MIN_HEIGHT_RATIO);
   const cap = Math.max(MIN_HEIGHT, containerHeight - MIN_PDF_SPACE_PX);
-  return Math.min(Math.max(height, MIN_HEIGHT), cap);
+  return Math.min(Math.max(height, minHeight), Math.max(minHeight, cap));
 };
 
 const getStoredWidth = (): number => {
@@ -73,9 +83,11 @@ type DragAxis = 'width' | 'height';
  *
  * Desktop: a side panel, resizable by dragging its left edge horizontally.
  * Mobile: a bottom sheet stacked under the PDF (the parent row switches to
- * a column layout - see PdfViewer.tsx), resizable by dragging its top edge
- * vertically. Either way, the reader decides the size - the resize handles
- * only stop short of crushing the PDF itself to zero space.
+ * a column layout - see PdfViewer.tsx), resized via a permanent drag handle
+ * centered in its header. Either way, the reader decides the size - the
+ * resize handles only stop short of crushing the PDF to zero space, and on
+ * mobile also stop short of shrinking the sheet below ~10% of the device's
+ * height (the close button is what fully dismisses it, not dragging).
  */
 export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -91,6 +103,11 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
   });
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<{ axis: DragAxis; start: number; startSize: number; containerSize: number } | null>(null);
+  // Latest pointer position during a drag, applied to the DOM directly from
+  // a rAF loop rather than through React state on every pointermove - see
+  // the comment on `rafLoop` below for why.
+  const latestPointerRef = useRef(0);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_MEDIA_QUERY);
@@ -99,22 +116,45 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
     return () => mql.removeEventListener('change', handleChange);
   }, []);
 
-  const handlePointerMove = useCallback((e: PointerEvent) => {
+  // Mobile touch/pointermove can fire far more often than the display can
+  // paint, and each move used to call setWidth/setHeight directly - a full
+  // React re-render of this panel (plus the NotebookWorkspace/rich-text
+  // editor tree inside it) on every single one of those events, which is
+  // what produced the lag/glitchy-hanging feel while dragging on a phone.
+  // Instead, only the latest pointer position is recorded per event
+  // (cheap); a rAF loop (one commit per painted frame, no more) reads that
+  // and writes the panel's size straight to the DOM via the ref, bypassing
+  // React entirely until the drag ends. React only re-renders once, on
+  // pointerup, to commit the final size to state.
+  const rafLoop = useCallback(() => {
     const drag = dragStateRef.current;
-    if (!drag) return;
+    const wrapper = wrapperRef.current;
+    if (!drag || !wrapper) {
+      rafIdRef.current = null;
+      return;
+    }
 
     if (drag.axis === 'width') {
-      // Dragging the left edge leftward should widen the panel (it sits on
-      // the right side of the viewer), so width grows as clientX decreases.
-      const delta = drag.start - e.clientX;
-      setWidth(clampWidth(drag.startSize + delta));
+      const delta = drag.start - latestPointerRef.current;
+      wrapper.style.width = `${clampWidth(drag.startSize + delta)}px`;
     } else {
-      // Dragging the top edge upward should grow the panel (it's pinned to
-      // the bottom of the screen), so height grows as clientY decreases.
-      const delta = drag.start - e.clientY;
-      setHeight(clampHeight(drag.startSize + delta, drag.containerSize));
+      const delta = drag.start - latestPointerRef.current;
+      wrapper.style.height = `${clampHeight(drag.startSize + delta, drag.containerSize)}px`;
     }
+
+    rafIdRef.current = requestAnimationFrame(rafLoop);
   }, []);
+
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => {
+      if (!dragStateRef.current) return;
+      latestPointerRef.current = dragStateRef.current.axis === 'width' ? e.clientX : e.clientY;
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(rafLoop);
+      }
+    },
+    [rafLoop]
+  );
 
   const handlePointerUp = useCallback(() => {
     const drag = dragStateRef.current;
@@ -126,16 +166,25 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
     document.removeEventListener('pointermove', handlePointerMove);
     document.removeEventListener('pointerup', handlePointerUp);
 
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+
+    // Commits the size the rAF loop already painted to the DOM (read back
+    // off the live element, not recomputed) into React state exactly once -
+    // this is the only re-render the whole drag causes.
+    const wrapper = wrapperRef.current;
     if (drag.axis === 'width') {
-      setWidth((current) => {
-        setStoredWidth(current);
-        return current;
-      });
+      const finalWidth = Math.round(wrapper ? clampWidth(wrapper.getBoundingClientRect().width) : drag.startSize);
+      setWidth(finalWidth);
+      setStoredWidth(finalWidth);
     } else {
-      setHeight((current) => {
-        setStoredHeight(current);
-        return current;
-      });
+      const finalHeight = Math.round(
+        wrapper ? clampHeight(wrapper.getBoundingClientRect().height, drag.containerSize) : drag.startSize
+      );
+      setHeight(finalHeight);
+      setStoredHeight(finalHeight);
     }
   }, [handlePointerMove]);
 
@@ -150,6 +199,7 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
         startSize: axis === 'width' ? width : height,
         containerSize
       };
+      latestPointerRef.current = dragStateRef.current.start;
       setIsDragging(true);
       document.body.style.cursor = axis === 'width' ? 'col-resize' : 'row-resize';
       document.body.style.userSelect = 'none';
@@ -163,6 +213,7 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
     return () => {
       document.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('pointerup', handlePointerUp);
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
@@ -174,9 +225,9 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
       className={`w-full shrink-0 bg-surface flex flex-col z-30 relative border-border-hairline ${
         isDesktop ? 'border-l' : 'border-t'
       }`}
-      style={isDesktop ? { width } : { height }}
+      style={{ ...(isDesktop ? { width } : { height }), willChange: isDragging ? (isDesktop ? 'width' : 'height') : undefined }}
     >
-      {isDesktop ? (
+      {isDesktop && (
         <div
           onPointerDown={handleDragStart('width')}
           role="separator"
@@ -186,24 +237,29 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
         >
           <div className={`w-px h-full mx-auto ${isDragging ? 'bg-border-strong' : 'bg-transparent group-hover:bg-border-strong'} transition-colors`} />
         </div>
-      ) : (
-        <div
-          onPointerDown={handleDragStart('height')}
-          role="separator"
-          aria-orientation="horizontal"
-          aria-label="Resize notebook panel height"
-          className={`sm:hidden absolute left-0 right-0 top-0 h-4 -mt-2 cursor-row-resize z-40 group touch-none flex items-center justify-center ${isDragging ? 'bg-border-strong/20' : ''}`}
-        >
-          <div className={`h-1 w-10 rounded-full ${isDragging ? 'bg-border-strong' : 'bg-border-hairline group-hover:bg-border-strong'} transition-colors`} />
-        </div>
       )}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-border-hairline shrink-0">
+      <div className="relative flex items-center justify-between px-3 py-3 border-b border-border-hairline shrink-0">
         <span className="f-small text-text-secondary">Notebook</span>
+        {!isDesktop && (
+          // Permanent, always-visible drag handle - sits in the header so it
+          // stays reachable no matter how small the sheet gets, instead of
+          // relying on a strip at the panel's top edge that can end up off
+          // the reader's reachable area when the sheet opens large.
+          <div
+            onPointerDown={handleDragStart('height')}
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Drag to resize notebook panel height"
+            className="sm:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-16 flex items-center justify-center cursor-row-resize touch-none z-10"
+          >
+            <div className={`h-1 w-10 rounded-full ${isDragging ? 'bg-border-strong' : 'bg-border-hairline'} transition-colors`} />
+          </div>
+        )}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close notebook"
-          className="text-text-secondary hover:text-text-primary"
+          className="relative z-20 text-text-secondary hover:text-text-primary"
         >
           <X size={16} strokeWidth={1.5} />
         </button>

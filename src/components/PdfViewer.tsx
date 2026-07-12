@@ -264,6 +264,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   const [isBookmarksPanelOpen, setIsBookmarksPanelOpen] = useState(false);
   const [isNotebookPanelOpen, setIsNotebookPanelOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   // Rotation/scroll-mode persist per product (same as bookmarks/reading
   // progress) instead of always resetting to defaults on reopen.
@@ -616,6 +617,21 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
+  // Mobile-only: tapping anywhere outside the "more options" menu closes it.
+  // Desktop keeps its existing behavior (toggle button / item selection only)
+  // since a stray mouse click there is far less likely to be accidental.
+  useEffect(() => {
+    if (!isMoreMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (window.innerWidth >= 640) return;
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMoreMenuOpen]);
+
   const handleToggleScrollMode = useCallback(() => {
     if (!pdfViewerRef.current) return;
     const next = scrollMode === 'continuous' ? 'single' : 'continuous';
@@ -769,7 +785,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           >
             <NotebookPen size={18} strokeWidth={1.5} />
           </button>
-          <div className="relative">
+          <div className="relative" ref={moreMenuRef}>
             <button
               type="button"
               onClick={() => setIsMoreMenuOpen((prev) => !prev)}

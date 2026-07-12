@@ -17,8 +17,8 @@ interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
-  /** Only ever a real, currently-available catalog id (validated server-side) - never trusted further than "looks up a real product or is ignored." */
-  productId?: string | null;
+  /** Only ever real, currently-available catalog ids (validated server-side) - never trusted further than "look up a real product or get ignored." Plural: a topic/category question ("do you have PDFs for Claude?") or a beginner/career question can surface several relevant items, not just one. */
+  productIds?: string[];
 }
 
 interface ChatWidgetProps {
@@ -160,9 +160,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ onProductSelect }) => {
       if (!isMountedRef.current) return;
 
       const replyText: string = typeof data.reply === 'string' ? data.reply : 'Sorry, I had trouble replying to that.';
-      const productId: string | null = typeof data.productId === 'string' ? data.productId : null;
+      const productIds: string[] = Array.isArray(data.productIds)
+        ? data.productIds.filter((id: unknown): id is string => typeof id === 'string')
+        : [];
 
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: replyText, productId }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: replyText, productIds }]);
     } catch {
       if (isMountedRef.current) {
         setNoticeText('Something went wrong sending that. Please try again in a moment.');
@@ -254,7 +256,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ onProductSelect }) => {
 
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-surface-secondary">
             {messages.map((msg) => {
-              const matchedProduct = msg.productId ? getProductById(msg.productId) : undefined;
+              // getProductById never throws (falls back to a placeholder for
+              // an unrecognized id - see constants.ts) but the server already
+              // guarantees every id here is real, so this is just a lookup.
+              const matchedProducts = (msg.productIds ?? [])
+                .map((id) => getProductById(id))
+                .filter((p): p is Product => Boolean(p));
               return (
                 <div
                   key={msg.id}
@@ -270,17 +277,18 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ onProductSelect }) => {
                   >
                     {msg.text}
                   </div>
-                  {matchedProduct && (
+                  {matchedProducts.map((product) => (
                     <button
+                      key={product.id}
                       type="button"
-                      onClick={() => handleProductChipClick(matchedProduct)}
+                      onClick={() => handleProductChipClick(product)}
                       style={{ animation: 'chatMessagePopIn 0.25s ease-out' }}
                       className="flex items-center gap-2 text-left text-xs font-medium px-3 py-2.5 rounded-sm border border-border-hairline bg-surface-secondary hover:border-border-strong hover:bg-surface transition-colors max-w-full"
                     >
                       <FileText size={14} strokeWidth={1.5} className="shrink-0 text-text-secondary" />
-                      <span className="truncate text-text-primary">View: {matchedProduct.title}</span>
+                      <span className="truncate text-text-primary">View: {product.title}</span>
                     </button>
-                  )}
+                  ))}
                 </div>
               );
             })}

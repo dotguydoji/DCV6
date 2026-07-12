@@ -207,7 +207,11 @@ export const NotebookWorkspace: React.FC<NotebookWorkspaceProps> = ({ variant = 
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {/* overscroll-y-contain only in the PDF-viewer-embedded panel
+                (isPanel) - stops a swipe-down here from chaining into the
+                page and triggering the browser's pull-to-refresh, without
+                changing anything on the standalone /notebook page. */}
+            <div className={`flex-1 overflow-y-auto p-2 space-y-1 ${isPanel ? 'overscroll-y-contain' : ''}`}>
               {data.notebooks.map((nb) => (
                 <div key={nb.id} className="mb-2">
                   <div className={`group flex items-center gap-1 px-2 py-1.5 rounded-sm cursor-pointer ${data.activeNotebookId === nb.id ? 'bg-surface-secondary' : 'hover:bg-surface-secondary/60'}`}>

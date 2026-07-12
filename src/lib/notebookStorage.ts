@@ -39,8 +39,10 @@ export const createDefaultNotebookStorage = (): NotebookStorage => {
   const defaultPage: NotebookPageData = {
     id: generateNotebookId(),
     title: 'Welcome Note',
-    content:
-      '<div>Welcome to your Notebook!</div><div><br></div><div>Everything you write here is saved automatically to this device.</div>',
+    // Empty, same canonical "blank" markup as createPage() below - the
+    // editor shows its own "Write your notes here." placeholder (see
+    // NotebookEditor.tsx) instead of this seeding real text into the note.
+    content: '<div><br></div>',
     createdAt: now,
     updatedAt: now
   };

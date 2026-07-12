@@ -31,12 +31,14 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({ variant, can
       aria-label={guide.label}
       className={
         variant === 'desktop'
-          ? 'flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors'
+          ? 'flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors'
           : 'flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors'
       }
     >
       <Download size={variant === 'desktop' ? 18 : 20} strokeWidth={1.5} />
-      {guide.label}
+      {/* Icon-only between lg and xl on desktop, same collapse as the other
+          nav buttons - see Navbar.tsx's search-bar min-width comment. */}
+      {variant === 'desktop' ? <span className="hidden xl:inline">{guide.label}</span> : guide.label}
     </button>
   );
 };

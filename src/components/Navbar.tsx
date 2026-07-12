@@ -231,7 +231,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
 
 
           <div className="hidden lg:flex items-center justify-end flex-grow gap-4 h-full">
-            <div ref={searchRef} className="relative w-full max-w-md laptop:max-w-lg">
+            {/* min-w-[220px]: the icon column (~40-48px) plus enough room for a
+                placeholder/typed query like "JavaScript" or a two-word result
+                ("Advanced Level") at the input's own font size without the text
+                clipping - below this, the buttons beside it give up their text
+                labels (see the xl:inline spans below) instead of squeezing this
+                any further. */}
+            <div ref={searchRef} className="relative w-full min-w-[220px] max-w-md laptop:max-w-lg">
               <div
                 className={`flex items-center h-11 laptop:h-12 bg-surface border rounded-sm transition-all duration-300 ${
                   isSearchFocused
@@ -300,26 +306,32 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               type="button"
               onClick={handleMessengerClick}
               disabled={isCheckingMessengerAccess}
-              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              aria-label="Join Group Chat"
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <MessageCircle size={18} strokeWidth={1.5} />
-              Join Group Chat
+              {/* Icon-only from lg up to xl (1280px) - the search bar's own
+                  min-width takes priority over these labels in that range;
+                  text comes back once there's room for both. */}
+              <span className="hidden xl:inline">Join Group Chat</span>
             </button>
             <button
               type="button"
               onClick={handleNotebookClick}
               disabled={isCheckingNotebookAccess}
-              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              aria-label="Notebook"
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <NotebookPen size={18} strokeWidth={1.5} />
-              Notebook
+              <span className="hidden xl:inline">Notebook</span>
             </button>
             <a
               href="/my-library"
-              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+              aria-label={hasCachedSession ? 'My Library' : 'Sign In'}
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
             >
               <LibraryBig size={18} strokeWidth={1.5} />
-              {hasCachedSession ? 'My Library' : 'Sign In'}
+              <span className="hidden xl:inline">{hasCachedSession ? 'My Library' : 'Sign In'}</span>
             </a>
             <ThemeToggle />
           </div>

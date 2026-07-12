@@ -228,3 +228,165 @@ export const attemptSilentSignIn = (): boolean => {
   window.google.accounts.id.prompt();
   return true;
 };
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+// Every Google ID token expires exactly 1 hour after it's issued, no matter
+// how active the buyer is, and Google doesn't offer a way to mint a
+// longer-lived one - before this, nothing renewed it ahead of that, so
+// whatever needed the token next (a My Library fetch, a PDF signed-URL
+// refresh) would find it already expired and treat that as a sign-out. That
+// produced the reported "logged out after ~30-60 minutes" symptom even
+// though the buyer never asked to be signed out.
+//
+// This background renewal silently re-issues a fresh token before each one
+// expires, chaining them indefinitely - the maximum session length this
+// architecture can offer isn't a bigger number we can configure (there's no
+// TTL knob on a Google ID token), it's "however long the buyer's own Google
+// browser session stays active," which is exactly the Facebook-style
+// "signed in until you sign out or clear your data" behavior being asked
+// for here, and exactly Google's own recommended pattern for keeping a
+// visitor signed in with google.accounts.id (auto_select + periodic
+// prompt()) rather than any kind of custom long-lived session cookie of our
+// own (which this app has never had, and doesn't need for that reason).
+//
+// The renewal itself is scheduled event-driven (a single precisely-timed
+// setTimeout for the moment the renewal window opens) rather than polling
+// on a fixed interval, so there's zero background work at all for the ~50
+// minutes out of every hour a token doesn't need anything done - this is
+// what keeps the "reduce unnecessary requests" side of the tradeoff, while
+// the generous buffer/grace windows below are what keeps it reliable even
+// through a backgrounded tab's timer throttling.
+const KEEP_ALIVE_RENEW_BEFORE_EXPIRY_MS = 10 * 60 * 1000;
+// Mobile browsers in particular can throttle a backgrounded tab's timers by
+// many minutes - this is the outer bound on how late a catch-up renewal
+// attempt is still worth trying (e.g. the buyer left the tab open in the
+// background and comes back well after the token technically expired).
+// Past this, silently retrying stops making sense and the existing
+// reactive expiry check (getCachedIdToken returning null) takes back over,
+// exactly as it did before this feature existed.
+const KEEP_ALIVE_GRACE_AFTER_EXPIRY_MS = 15 * 60 * 1000;
+// While inside the renewal window and not yet renewed (e.g. still inside
+// attemptSilentSignIn's own 30s anti-spam cooldown from a very recent
+// attempt), this is the backoff between retries - deliberately not tight
+// polling, since nothing about the token's state changes faster than that.
+const KEEP_ALIVE_RETRY_DELAY_MS = 2 * 60 * 1000;
+
+let keepAliveClientInitialized = false;
+
+const ensureKeepAliveClientInitialized = (): boolean => {
+  if (keepAliveClientInitialized) return true;
+  if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) return false;
+
+  window.google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    // Silent renewal only, so it just needs to update the cached token -
+    // nothing here needs to react to a fresh sign-in (no page-specific UI
+    // transition), unlike GoogleSignInButton's own separate initialize()
+    // call/callback for the visible, click-driven sign-in flow.
+    callback: (response: GoogleCredentialResponse) => {
+      setCachedIdToken(response.credential);
+    },
+    auto_select: true,
+    cancel_on_tap_outside: false
+  });
+  keepAliveClientInitialized = true;
+  return true;
+};
+
+const attemptRenewal = async (): Promise<void> => {
+  try {
+    await loadGoogleIdentityScript();
+  } catch {
+    return;
+  }
+  if (!ensureKeepAliveClientInitialized()) return;
+  attemptSilentSignIn();
+};
+
+let keepAliveTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * The single scheduling decision point - re-reads the cached token fresh
+ * every time it runs (on the timer itself, or from one of the event
+ * listeners below) rather than trusting any previously-computed state, so
+ * it's always reacting to what's actually in storage right now (including
+ * a renewal that already landed, an explicit sign-out, or a sign-in/out
+ * that happened in a different tab).
+ */
+const scheduleNextCheck = (): void => {
+  if (keepAliveTimeoutId !== null) {
+    clearTimeout(keepAliveTimeoutId);
+    keepAliveTimeoutId = null;
+  }
+
+  let rawToken: string | null;
+  try {
+    rawToken = localStorage.getItem(ID_TOKEN_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  // No token at all means never signed in, or an explicit sign-out
+  // (signOutOfGoogle removes it) - stay fully idle, no wakeups scheduled,
+  // and never silently prompt someone who hasn't chosen to sign in here.
+  if (!rawToken) return;
+
+  const expiryMs = getTokenExpiryMs(rawToken);
+  if (expiryMs === null) return;
+
+  const remaining = expiryMs - Date.now();
+  if (remaining < -KEEP_ALIVE_GRACE_AFTER_EXPIRY_MS) return;
+
+  if (remaining > KEEP_ALIVE_RENEW_BEFORE_EXPIRY_MS) {
+    keepAliveTimeoutId = setTimeout(scheduleNextCheck, remaining - KEEP_ALIVE_RENEW_BEFORE_EXPIRY_MS);
+    return;
+  }
+
+  void attemptRenewal();
+  // Bounded retry loop: each pass either lands a renewal (pushing
+  // `remaining` back out ~50 minutes on the next call, so this falls back
+  // into the single-precise-wakeup branch above) or the grace deadline
+  // eventually passes and the early return above stops it from
+  // rescheduling at all.
+  keepAliveTimeoutId = setTimeout(scheduleNextCheck, KEEP_ALIVE_RETRY_DELAY_MS);
+};
+
+/**
+ * Call once, for the lifetime of the app (see App.tsx) - safe to call from
+ * multiple mounts since the timer/listeners are module-scoped and
+ * de-duplicated, but only one call site is actually needed. Returns a
+ * cleanup function for symmetry with a useEffect, though in practice this
+ * only ever unmounts when the whole app does.
+ */
+export const startAuthSessionKeepAlive = (): (() => void) => {
+  scheduleNextCheck();
+
+  // The precisely-timed setTimeout above can still land late if the tab was
+  // backgrounded (browsers throttle timers there) - visibility/focus fire
+  // promptly the moment the buyer actually comes back, so this is the real
+  // safety net for that case, re-evaluating fresh rather than waiting for
+  // whatever's left of the original delay.
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') scheduleNextCheck();
+  };
+  document.addEventListener('visibilitychange', onVisible);
+  window.addEventListener('focus', onVisible);
+
+  // Keeps multiple tabs in sync: a sign-in, sign-out, or renewal in one tab
+  // updates this tab's own schedule immediately instead of it acting on a
+  // stale plan computed before the change.
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === ID_TOKEN_STORAGE_KEY || event.key === null) scheduleNextCheck();
+  };
+  window.addEventListener('storage', onStorage);
+
+  return () => {
+    document.removeEventListener('visibilitychange', onVisible);
+    window.removeEventListener('focus', onVisible);
+    window.removeEventListener('storage', onStorage);
+    if (keepAliveTimeoutId !== null) {
+      clearTimeout(keepAliveTimeoutId);
+      keepAliveTimeoutId = null;
+    }
+  };
+};

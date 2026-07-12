@@ -44,24 +44,33 @@ const DAILY_BUDGET_MAX = 850;
 // of calling Gemini again - saves quota and money for zero UX cost.
 interface CachedReply {
   reply: string;
-  productId: string | null;
+  productIds: string[];
   expiresAt: number;
 }
 const duplicateCache = new Map<string, CachedReply>();
 const DUPLICATE_CACHE_TTL_MS = 5 * 60 * 1000;
 
-// Lets the model point the reply at one specific catalog item (so the
-// frontend can offer a "jump to it" action, same idea as picking a search
-// result) - constrained to only real, currently-available product ids via
-// both the schema enum below AND this explicit re-check after the call,
-// so a hallucinated id can never reach the client even if the model's
-// structured-output guarantee ever slipped.
+// Lets the model point the reply at specific catalog items (so the frontend
+// can offer "jump to it" chips, same idea as picking a search result) -
+// constrained to only real, currently-available product ids via both the
+// schema enum below AND this explicit re-check after the call, so a
+// hallucinated id can never reach the client even if the model's
+// structured-output guarantee ever slipped. A list rather than a single id
+// so a category/topic question ("do you have anything for Claude?") or a
+// beginner/career question ("I'm a BSIT beginner") can surface every
+// genuinely relevant item, not just one - see Section 5 of the knowledge
+// base for when to use one vs. several.
+const MAX_RECOMMENDED_PRODUCTS = 4;
 const VALID_PRODUCT_IDS = new Set(CHATBOT_PRODUCT_INDEX.map((p) => p.id));
 const PRODUCT_ID_REFERENCE = CHATBOT_PRODUCT_INDEX.map((p) => `${p.id} :: ${p.title} (${p.category})`).join('\n');
 const PRODUCT_MATCHING_INSTRUCTIONS = `
 
 ---
-When your reply confirms or is specifically about ONE particular item from the catalog list below, set "productId" to its exact id from this list. If your reply is general, compares multiple items, or you aren't confident which single item it refers to, set "productId" to null. Never invent an id that isn't in this list.
+"productIds" lets you attach clickable "view this" suggestions to your reply - set it to a list of exact ids from the catalog below (never invent an id that isn't in this list, never more than ${MAX_RECOMMENDED_PRODUCTS}):
+- Reply is about/confirms ONE specific item → that item's id alone.
+- Visitor asks whether you carry something in a topic/category ("do you have PDFs for Claude?", "may notes ba kayo about Python?", "anything for web dev?") → don't just say yes, list the actual matching items' ids so they can jump straight to them.
+- Visitor describes themselves as a beginner in a field, or asks a related educational/career question ("I'm a BSIT beginner", "papasok akong freshman sa IT", "what should I study for CS?") → include the id(s) of the single most directly relevant study guide/level for that (e.g. an IT/BSIT beginner → the BSIT Advanced Study Guide's id; a CS beginner → the BSCS Advanced Study Guide's id; a total-beginner-in-language-X question → that language's Beginner level id), following Section 5's recommendation rules.
+- Reply is general, off-catalog, declines/redirects, or you aren't confident which item(s) it refers to → empty list.
 
 Catalog (id :: title (category)):
 ${PRODUCT_ID_REFERENCE}`;
@@ -117,7 +126,7 @@ const jsonResponse = (statusCode: number, body: Record<string, unknown>, extraHe
 
 const errorResponse = (statusCode: number, error: string) => jsonResponse(statusCode, { error });
 
-const replyResponse = (reply: string, productId: string | null = null) => jsonResponse(200, { reply, productId });
+const replyResponse = (reply: string, productIds: string[] = []) => jsonResponse(200, { reply, productIds });
 
 const tooManyMessagesResponse = (retryAfterSeconds: number) =>
   jsonResponse(
@@ -153,7 +162,7 @@ const cleanupDuplicateCache = (now: number): void => {
 
 interface GeminiChatResult {
   reply: string;
-  productId: string | null;
+  productIds: string[];
 }
 
 const callGemini = async (userMessage: string): Promise<GeminiChatResult> => {
@@ -176,22 +185,24 @@ const callGemini = async (userMessage: string): Promise<GeminiChatResult> => {
       ],
       generationConfig: {
         // A little more headroom than the reply cap alone, to cover the
-        // JSON wrapper (`{"reply":"...","productId":"..."}`) without
-        // truncating the actual reply content.
-        maxOutputTokens: 400,
+        // JSON wrapper (`{"reply":"...","productIds":["...", ...]}`, up to
+        // MAX_RECOMMENDED_PRODUCTS entries) without truncating the actual
+        // reply content.
+        maxOutputTokens: 450,
         temperature: 0.3,
         responseMimeType: 'application/json',
-        // Constrains "productId" to either exactly one real catalog id or
-        // JSON null - the model structurally can't return an id we don't
-        // recognize, on top of the explicit re-check below.
+        // Constrains "productIds" to a list (at most MAX_RECOMMENDED_PRODUCTS
+        // long) drawn only from real catalog ids - the model structurally
+        // can't return an id we don't recognize, on top of the explicit
+        // re-check below.
         responseSchema: {
           type: 'OBJECT',
           properties: {
             reply: { type: 'STRING' },
-            productId: {
-              type: 'STRING',
-              enum: Array.from(VALID_PRODUCT_IDS),
-              nullable: true
+            productIds: {
+              type: 'ARRAY',
+              items: { type: 'STRING', enum: Array.from(VALID_PRODUCT_IDS) },
+              maxItems: MAX_RECOMMENDED_PRODUCTS
             }
           },
           required: ['reply']
@@ -216,7 +227,7 @@ const callGemini = async (userMessage: string): Promise<GeminiChatResult> => {
     throw new Error('Gemini returned no text');
   }
 
-  let parsed: { reply?: unknown; productId?: unknown };
+  let parsed: { reply?: unknown; productIds?: unknown };
   try {
     parsed = JSON.parse(text);
   } catch {
@@ -224,14 +235,20 @@ const callGemini = async (userMessage: string): Promise<GeminiChatResult> => {
     // structured output isn't a 100% guarantee) - fall back to treating
     // the raw text as the reply itself rather than erroring the whole
     // request out over a missing product match.
-    return { reply: text.trim(), productId: null };
+    return { reply: text.trim(), productIds: [] };
   }
 
   const reply = typeof parsed.reply === 'string' ? parsed.reply.trim() : text.trim();
-  const rawProductId = typeof parsed.productId === 'string' ? parsed.productId : null;
-  const productId = rawProductId && VALID_PRODUCT_IDS.has(rawProductId) ? rawProductId : null;
+  // Belt-and-suspenders re-validation even though the schema enum + maxItems
+  // already constrain this - re-checked here (membership + a hard cap +
+  // de-duped) in case the model's structured-output guarantee ever slips,
+  // same reasoning as the old single-id check this replaced.
+  const rawProductIds = Array.isArray(parsed.productIds) ? parsed.productIds : [];
+  const productIds = Array.from(
+    new Set(rawProductIds.filter((id): id is string => typeof id === 'string' && VALID_PRODUCT_IDS.has(id)))
+  ).slice(0, MAX_RECOMMENDED_PRODUCTS);
 
-  return { reply, productId };
+  return { reply, productIds };
 };
 
 export const handler: Handler = async (event) => {
@@ -307,7 +324,7 @@ export const handler: Handler = async (event) => {
   const cacheKey = `${sessionId}::${normalizedMessage}`;
   const cached = duplicateCache.get(cacheKey);
   if (cached && cached.expiresAt > now) {
-    return replyResponse(cached.reply, cached.productId);
+    return replyResponse(cached.reply, cached.productIds);
   }
 
   try {
@@ -326,11 +343,11 @@ export const handler: Handler = async (event) => {
 
     const geminiResult = await callGemini(trimmedMessage);
     const reply = sanitizeModelReply(geminiResult.reply);
-    const productId = geminiResult.productId;
+    const productIds = geminiResult.productIds;
 
-    duplicateCache.set(cacheKey, { reply, productId, expiresAt: now + DUPLICATE_CACHE_TTL_MS });
+    duplicateCache.set(cacheKey, { reply, productIds, expiresAt: now + DUPLICATE_CACHE_TTL_MS });
 
-    return replyResponse(reply, productId);
+    return replyResponse(reply, productIds);
   } catch (err) {
     // Never leak internals to the client (the friendly fallback below is
     // all it ever sees) - but swallowing the real error entirely left

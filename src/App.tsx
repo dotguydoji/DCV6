@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useScrollReveal } from './lib/useScrollReveal';
 import { useGlobalScrollTilt } from './lib/useScrollTilt';
 import { scheduleScrollUnlessUserIntervenes } from './lib/scrollGuard';
+import { startAuthSessionKeepAlive } from './lib/googleIdentity';
 
 interface FlyingItem {
   id: string;
@@ -172,6 +173,13 @@ const App: React.FC = () => {
   useEffect(() => {
     activeCategoryRef.current = activeCategory;
   }, [activeCategory]);
+
+  // App is the single always-mounted root for every route (see the
+  // pathname-based branches below) - running this here, unconditionally,
+  // is what makes the background session renewal apply everywhere (mid-read
+  // in the PDF viewer, browsing My Library, etc.), not just on whichever
+  // page happens to render a sign-in button.
+  useEffect(() => startAuthSessionKeepAlive(), []);
 
   useEffect(() => {
     const handleAdminRecordingToggle = (event: KeyboardEvent) => {

@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify';
 import {
   Book, FileText, Bold, Italic, Underline, Strikethrough, Highlighter,
   Eraser, Type, Download, FilePlus,
-  AlertTriangle, Palette,
+  AlertTriangle,
   Minus, Table as TableIcon, PaintBucket,
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, XCircle, Trash2,
   Code, Code2, Link as LinkIcon,
@@ -115,6 +115,15 @@ const PURIFY_CONFIG = {
 
 const sanitize = (html: string) => DOMPurify.sanitize(html, PURIFY_CONFIG);
 
+// The editor's own "blank" markup takes a couple of different exact shapes
+// depending on how it got there (storage's seed/new-page template is plain
+// '<div><br></div>', while typing-then-deleting-everything re-normalizes to
+// a version with an inline font-size style - see handleInput below) -
+// stripping tags/&nbsp; and checking for leftover visible text covers all
+// of them without caring which one produced the current markup.
+const isNoteContentEmpty = (html: string): boolean =>
+  html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length === 0;
+
 interface NotebookEditorProps {
   content: string;
   onUpdate: (content: string) => void;
@@ -212,6 +221,8 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
   const [formatState, setFormatState] = useState<Record<string, boolean>>({});
 
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
+  const downloadNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showHrMenu, setShowHrMenu] = useState(false);
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -242,8 +253,23 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (downloadNoticeTimeoutRef.current) clearTimeout(downloadNoticeTimeoutRef.current);
+    };
+  }, []);
+
+  const showDownloadNotice = (message: string) => {
+    if (downloadNoticeTimeoutRef.current) clearTimeout(downloadNoticeTimeoutRef.current);
+    setDownloadNotice(message);
+    downloadNoticeTimeoutRef.current = setTimeout(() => setDownloadNotice(null), 5000);
+  };
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) setShowDownloadMenu(false);
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setShowDownloadMenu(false);
+        setDownloadNotice(null);
+      }
       if (hrMenuRef.current && !hrMenuRef.current.contains(event.target as Node)) setShowHrMenu(false);
       if (tableMenuRef.current && !tableMenuRef.current.contains(event.target as Node)) setShowTableMenu(false);
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
@@ -750,7 +776,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     .notebook-checklist-item[data-checked="true"] .notebook-checklist-text { text-decoration: line-through; opacity: 0.6; }
   `;
 
-  const handleDownload = async (type: 'text' | 'image' | 'pdf') => {
+  const handleDownload = async (type: 'text' | 'pdf') => {
     if (!editorRef.current) return;
     setShowDownloadMenu(false);
 
@@ -760,8 +786,27 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
       triggerDownload(blob, 'note.txt');
     } else if (type === 'pdf') {
       const printContent = sanitize(editorRef.current.innerHTML);
-      const printWindow = window.open('', '', 'height=650,width=900');
-      if (printWindow) {
+      let printWindow: Window | null = null;
+      try {
+        printWindow = window.open('', '', 'height=650,width=900');
+      } catch {
+        printWindow = null;
+      }
+
+      // window.open silently returns null when a popup blocker (mobile
+      // browsers and in-app webviews - e.g. Facebook/Instagram's built-in
+      // browser - are especially aggressive about this) steps in, even
+      // though this call is a direct, synchronous result of the click. That
+      // used to fail with zero feedback: the button just did nothing, which
+      // is exactly what "download seems broken" looks like from a visitor's
+      // side. Surfacing it here doesn't change what this export can do -
+      // it's still the same print-to-PDF flow - it just stops failing silently.
+      if (!printWindow) {
+        showDownloadNotice("Couldn't open the PDF preview - your browser may be blocking pop-ups for this site. Please allow pop-ups and try again, or use Text File instead.");
+        return;
+      }
+
+      try {
         printWindow.document.write('<html><head><title>Notebook Export</title>');
         printWindow.document.write(
           `<style>body { font-family: sans-serif; line-height: 1.6; color: #000; background: #fff; padding: 40px; max-width: 800px; margin: 0 auto; } table { width: 100%; border-collapse: collapse; margin: 1em 0; border: 1px solid #000; } td, th { border: 1px solid #000; padding: 8px; text-align: left; } pre, code { font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 4px; } a { color: #0066cc; text-decoration: underline; } hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; } ${CHECKLIST_EXPORT_CSS}</style>`
@@ -772,43 +817,27 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
+          try {
+            printWindow?.print();
+            printWindow?.close();
+          } catch {
+            // The reader may have already closed the preview tab themselves
+            // before this fired - nothing to recover, just avoid an
+            // unhandled exception over it.
+          }
         }, 250);
+      } catch {
+        printWindow.close();
+        showDownloadNotice('Something went wrong preparing the PDF preview. Please try again.');
       }
-    } else if (type === 'image') {
-      const printContent = sanitize(editorRef.current.innerHTML);
-      const width = editorRef.current.scrollWidth + 60;
-      const height = editorRef.current.scrollHeight + 60;
-      // Rasterizing sanitized HTML through <foreignObject> + an <img> (never
-      // inlined into the live DOM) is safe by construction, independent of
-      // the sanitizer above: browsers never execute scripts/handlers found
-      // inside an image resource, regardless of its content.
-      const styleBlock = `a { color: #38bdf8 !important; text-decoration: underline; } table { border-collapse: collapse; width: 100%; margin: 1em 0; } td, th { border: 1px solid #3a3a3a; padding: 8px; text-align: left; } code, pre { font-family: 'JetBrains Mono', monospace; } * { box-sizing: border-box; } ${CHECKLIST_EXPORT_CSS}`;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="background-color: #121314; color: #f2f2f2; padding: 30px; font-family: sans-serif; font-size: 16px; line-height: 1.5; height: 100%; box-sizing: border-box; overflow: hidden; white-space: pre-wrap;"><style>${styleBlock}</style>${printContent}</div></foreignObject></svg>`;
-
-      const img = new Image();
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = '#121314';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0);
-          const imgUrl = canvas.toDataURL('image/png');
-          const a = document.createElement('a');
-          a.href = imgUrl;
-          a.download = 'note.png';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }
-      };
     }
   };
+
+  // `content` (not editorRef's live DOM) is what re-renders this component,
+  // so deriving it here keeps the placeholder in sync a render after every
+  // keystroke - same tick the toolbar's active-state highlighting already
+  // updates on, no extra effect/state needed.
+  const isEmpty = isNoteContentEmpty(content);
 
   if (readOnly) {
     return (
@@ -955,9 +984,19 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
               <div className="p-2 border-b border-border-hairline bg-surface-secondary"><span className="text-[10px] font-bold uppercase tracking-widest text-text-secondary pl-2">Download As</span></div>
               <div className="p-1">
                 <button onClick={() => handleDownload('text')} className="w-full text-left px-4 py-2.5 hover:bg-surface-secondary rounded-sm text-sm font-medium text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"><FileText className="w-4 h-4" /> Text File (.txt)</button>
-                <button onClick={() => handleDownload('image')} className="w-full text-left px-4 py-2.5 hover:bg-surface-secondary rounded-sm text-sm font-medium text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"><Palette className="w-4 h-4" /> Image (.png)</button>
                 <button onClick={() => handleDownload('pdf')} className="w-full text-left px-4 py-2.5 hover:bg-surface-secondary rounded-sm text-sm font-medium text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"><FilePlus className="w-4 h-4" /> PDF Document</button>
               </div>
+            </div>
+          )}
+          {/* Independent of showDownloadMenu (which closes the instant a
+              download is clicked) so this can still report a failure that
+              only becomes known after the menu's already gone. */}
+          {downloadNotice && (
+            <div
+              role="alert"
+              className="absolute top-full right-0 mt-2 w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-50 p-3 text-xs text-text-secondary leading-relaxed"
+            >
+              {downloadNotice}
             </div>
           )}
         </div>
@@ -975,10 +1014,26 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           onKeyUp={handleEditorKeyUp}
           onContextMenu={handleContextMenu}
           onClick={handleEditorClick}
-          className={`notebook-editor-content flex-grow min-w-0 outline-none overflow-y-auto overflow-x-auto text-text-primary leading-relaxed max-w-none font-normal break-words whitespace-pre-wrap ${compact ? 'py-4 px-4' : 'py-6 px-6 md:py-8 md:px-8'}`}
+          className={`notebook-editor-content flex-grow min-w-0 outline-none overflow-y-auto overflow-x-auto text-text-primary leading-relaxed max-w-none font-normal break-words whitespace-pre-wrap ${compact ? 'py-4 px-4 overscroll-y-contain' : 'py-6 px-6 md:py-8 md:px-8'}`}
           spellCheck={false}
           style={{ wordBreak: 'break-word' }}
         />
+        {isEmpty && (
+          // Mirrors the editable div's own padding/line-height so it lines up
+          // exactly where typed text would start. contentEditable has no
+          // native `placeholder` attribute (that's textarea-only), and the
+          // editor's "blank" markup isn't DOM-:empty (it's a div wrapping a
+          // <br>), so a CSS-only ::before placeholder trick doesn't apply
+          // here - this overlay is the equivalent for a contentEditable
+          // surface. pointer-events-none lets a click pass straight through
+          // to focus the real editor underneath.
+          <span
+            aria-hidden="true"
+            className={`absolute top-0 left-0 pointer-events-none select-none text-text-secondary leading-relaxed ${compact ? 'py-4 px-4' : 'py-6 px-6 md:py-8 md:px-8'}`}
+          >
+            Write your notes here.
+          </span>
+        )}
         {contextMenu && createPortal(
           <div ref={contextMenuRef} className="fixed w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-[100] p-3" style={{ top: contextMenu.y, left: contextMenu.x }} onMouseDown={(e) => e.stopPropagation()}>
             {renderTableMenuContent()}
