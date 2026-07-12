@@ -179,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
       <nav className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all [overflow-anchor:none]">
         <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-6 laptop:gap-8">
 
-          <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default sm:pr-6 laptop:pr-8 sm:border-r sm:border-border-hairline">
+          <div className="flex items-center gap-4 laptop:gap-5 shrink-0 cursor-default lg:pr-6 laptop:pr-8 lg:border-r lg:border-border-hairline">
             <img
               src="/favicon.svg"
               alt="DC Notes Logo"
@@ -194,7 +194,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           </div>
 
 
-          <div className="hidden sm:flex items-center justify-end flex-grow gap-4 h-full">
+          <div className="hidden lg:flex items-center justify-end flex-grow gap-4 h-full">
             <div ref={searchRef} className="relative w-full max-w-md laptop:max-w-lg">
               <div
                 className={`flex items-center bg-surface border rounded-sm transition-all duration-300 ${
@@ -274,7 +274,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
             <ThemeToggle />
           </div>
 
-          <div className="flex sm:hidden items-center gap-4">
+          <div className="flex lg:hidden items-center gap-4">
             <InstallAppButton variant="icon" {...installPrompt} />
             <ThemeToggle />
             <button
@@ -305,7 +305,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         </div>
 
         {isSearchVisible && (
-          <div className="fixed top-20 left-0 right-0 bg-surface border-b border-border-hairline p-6 sm:hidden z-[60] shadow-lg">
+          <div className="fixed top-20 left-0 right-0 bg-surface border-b border-border-hairline p-6 lg:hidden z-[60] shadow-lg">
             <div className="relative" ref={searchRef}>
               <div className="flex items-stretch bg-surface border border-border-strong rounded-sm focus-within:border-text-primary transition-all overflow-hidden">
                 <div className="flex items-center justify-center w-14 shrink-0 bg-surface-secondary text-text-primary border-r border-border-hairline">

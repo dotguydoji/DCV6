@@ -35,7 +35,7 @@ const MenuItem: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className="flex items-center gap-3 w-full px-4 py-3 text-left text-sm font-bold text-white hover:bg-white/5 transition-colors"
+    className="flex items-center gap-3 w-full px-4 py-3 text-left text-sm font-medium text-text-primary hover:bg-surface transition-colors"
   >
     {icon}
     {label}
@@ -55,16 +55,16 @@ export const PdfMoreMenu: React.FC<PdfMoreMenuProps> = ({
   onShowShortcuts,
   onExit
 }) => (
-  <div className="absolute right-4 top-16 z-30 w-60 bg-[#242829] border border-white/10 rounded-sm shadow-2xl overflow-hidden">
-    <MenuItem icon={<ScanLine size={16} className="text-brand-muted" />} label="Fit Width" onClick={onFitWidth} />
-    <MenuItem icon={<Scan size={16} className="text-brand-muted" />} label="Fit Page" onClick={onFitPage} />
-    <MenuItem icon={<RotateCw size={16} className="text-brand-muted" />} label="Rotate Page" onClick={onRotate} />
+  <div className="absolute right-4 top-16 z-30 w-60 bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl overflow-hidden">
+    <MenuItem icon={<ScanLine size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Fit Width" onClick={onFitWidth} />
+    <MenuItem icon={<Scan size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Fit Page" onClick={onFitPage} />
+    <MenuItem icon={<RotateCw size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Rotate Page" onClick={onRotate} />
     <MenuItem
       icon={
         isFullscreen ? (
-          <Minimize size={16} className="text-brand-muted" />
+          <Minimize size={16} strokeWidth={1.5} className="text-text-secondary" />
         ) : (
-          <Expand size={16} className="text-brand-muted" />
+          <Expand size={16} strokeWidth={1.5} className="text-text-secondary" />
         )
       }
       label={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
@@ -73,23 +73,23 @@ export const PdfMoreMenu: React.FC<PdfMoreMenuProps> = ({
     <MenuItem
       icon={
         scrollMode === 'continuous' ? (
-          <Columns2 size={16} className="text-brand-muted" />
+          <Columns2 size={16} strokeWidth={1.5} className="text-text-secondary" />
         ) : (
-          <Rows3 size={16} className="text-brand-muted" />
+          <Rows3 size={16} strokeWidth={1.5} className="text-text-secondary" />
         )
       }
       label={scrollMode === 'continuous' ? 'Single Page View' : 'Continuous Scroll'}
       onClick={onToggleScrollMode}
     />
-    <div className="border-t border-white/10" />
-    <MenuItem icon={<Info size={16} className="text-brand-muted" />} label="Book Information" onClick={onShowBookInfo} />
+    <div className="border-t border-border-hairline" />
+    <MenuItem icon={<Info size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Book Information" onClick={onShowBookInfo} />
     <MenuItem
-      icon={<MessageCircleWarning size={16} className="text-brand-muted" />}
+      icon={<MessageCircleWarning size={16} strokeWidth={1.5} className="text-text-secondary" />}
       label="Report a Problem"
       onClick={onReportProblem}
     />
-    <MenuItem icon={<Keyboard size={16} className="text-brand-muted" />} label="Keyboard Shortcuts" onClick={onShowShortcuts} />
-    <div className="border-t border-white/10" />
-    <MenuItem icon={<LogOut size={16} className="text-brand-muted" />} label="Exit Reader" onClick={onExit} />
+    <MenuItem icon={<Keyboard size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Keyboard Shortcuts" onClick={onShowShortcuts} />
+    <div className="border-t border-border-hairline" />
+    <MenuItem icon={<LogOut size={16} strokeWidth={1.5} className="text-text-secondary" />} label="Exit Reader" onClick={onExit} />
   </div>
 );

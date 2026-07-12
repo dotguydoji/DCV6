@@ -15,35 +15,35 @@ export const PdfBookmarksPanel: React.FC<PdfBookmarksPanelProps> = ({
   onRemove,
   onClose
 }) => (
-  <div className="absolute right-4 top-16 z-30 w-64 max-h-[60vh] overflow-y-auto bg-[#242829] border border-white/10 rounded-sm shadow-2xl">
-    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 bg-[#242829]">
-      <span className="text-sm font-bold">Bookmarks</span>
-      <button type="button" onClick={onClose} aria-label="Close bookmarks" className="text-brand-muted hover:text-white">
-        <X size={16} />
+  <div className="absolute right-4 top-16 z-30 w-64 max-h-[60vh] overflow-y-auto bg-surface-secondary border border-border-hairline rounded-sm shadow-2xl">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border-hairline sticky top-0 bg-surface-secondary">
+      <span className="text-sm font-medium text-text-primary">Bookmarks</span>
+      <button type="button" onClick={onClose} aria-label="Close bookmarks" className="text-text-secondary hover:text-text-primary">
+        <X size={16} strokeWidth={1.5} />
       </button>
     </div>
 
     {bookmarks.length === 0 ? (
-      <p className="px-4 py-6 text-sm text-brand-muted text-center">No bookmarks yet.</p>
+      <p className="px-4 py-6 text-sm text-text-secondary text-center">No bookmarks yet.</p>
     ) : (
       <ul>
         {bookmarks.map((bookmark) => (
-          <li key={bookmark.id} className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 last:border-0">
+          <li key={bookmark.id} className="flex items-center justify-between px-4 py-2.5 border-b border-border-hairline last:border-0">
             <button
               type="button"
               onClick={() => onSelectPage(bookmark.page)}
-              className="flex items-center gap-2 text-sm font-bold text-white hover:text-brand-yellow transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-text-primary hover:text-text-secondary transition-colors"
             >
-              <BookmarkIcon size={14} className="text-brand-yellow" fill="currentColor" />
+              <BookmarkIcon size={14} strokeWidth={1.5} className="text-text-primary" fill="currentColor" />
               Page {bookmark.page}
             </button>
             <button
               type="button"
               onClick={() => onRemove(bookmark.id)}
               aria-label={`Remove bookmark for page ${bookmark.page}`}
-              className="text-brand-muted hover:text-red-400"
+              className="text-text-secondary hover:text-red-400"
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} strokeWidth={1.5} />
             </button>
           </li>
         ))}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Lock, ShieldAlert } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { PdfViewer, RefreshUrlResult } from './PdfViewer';
+import { ThemeToggle } from './ThemeToggle';
 import { Product } from '../types';
 import { clearCachedIdToken, getCachedIdToken, getIdTokenEmail, setCachedIdToken } from '../lib/googleIdentity';
 import { recordOpened } from '../lib/libraryPreferences';
@@ -160,11 +161,18 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1a1d1e] text-white px-6">
-        <div className="text-center">
-          <ShieldAlert size={40} className="mx-auto text-brand-yellow mb-4" />
-          <p className="text-lg font-bold">This PDF link doesn't match any product.</p>
-          <a href="/" className="text-brand-yellow underline mt-3 inline-block">
+      <div className="min-h-screen flex items-center justify-center font-sans relative px-6">
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] ambient-glow opacity-40"></div>
+          <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
+        </div>
+        <div className="absolute top-6 right-6 z-10">
+          <ThemeToggle />
+        </div>
+        <div className="relative z-10 text-center">
+          <ShieldAlert size={40} strokeWidth={1.5} className="mx-auto text-text-primary mb-4" />
+          <p className="f-body text-text-primary font-medium">This PDF link doesn't match any product.</p>
+          <a href="/" className="text-text-primary underline underline-offset-4 mt-3 inline-block f-body">
             Back to Doji's Library
           </a>
         </div>
@@ -181,15 +189,22 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1a1d1e] text-white px-6">
-      <div className="max-w-md w-full text-center">
-        <Lock size={40} className="mx-auto text-brand-yellow mb-5" />
-        <h1 className="text-2xl font-bold mb-2">{product.title}</h1>
-        <p className="text-brand-muted mb-8">
+    <div className="min-h-screen flex items-center justify-center font-sans relative px-6">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] ambient-glow opacity-40"></div>
+        <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
+      </div>
+      <div className="absolute top-6 right-6 z-10">
+        <ThemeToggle />
+      </div>
+      <div className="relative z-10 max-w-md w-full text-center">
+        <Lock size={40} strokeWidth={1.5} className="mx-auto text-text-primary mb-5" />
+        <h1 className="f-heading text-text-primary mb-2">{product.title}</h1>
+        <p className="text-text-secondary f-body mb-8">
           Sign in with the Gmail you used to purchase this item to view it.
         </p>
 
-        {state.status === 'restoring' && <p className="text-brand-muted">Checking your session…</p>}
+        {state.status === 'restoring' && <p className="text-text-secondary f-body">Checking your session…</p>}
 
         {state.status === 'signed-out' && (
           <div className="flex justify-center">
@@ -197,17 +212,17 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
           </div>
         )}
 
-        {state.status === 'checking' && <p className="text-brand-muted">Checking your access…</p>}
+        {state.status === 'checking' && <p className="text-text-secondary f-body">Checking your access…</p>}
 
         {state.status === 'denied' && (
           <div>
-            <p className="text-red-400 font-bold mb-4">
+            <p className="text-red-400 font-medium f-body mb-4">
               This Gmail account doesn't have access to this item.
             </p>
             <button
               type="button"
               onClick={() => setState({ status: 'signed-out' })}
-              className="text-brand-yellow underline"
+              className="text-text-primary underline underline-offset-4 f-body"
             >
               Try a different Gmail account
             </button>
@@ -216,13 +231,13 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
 
         {state.status === 'rate-limited' && (
           <div>
-            <p className="text-red-400 font-bold mb-4">
+            <p className="text-red-400 font-medium f-body mb-4">
               Too many attempts in a short time. Please wait a moment and try again.
             </p>
             <button
               type="button"
               onClick={() => handleSignIn(state.idToken)}
-              className="text-brand-yellow underline"
+              className="text-text-primary underline underline-offset-4 f-body"
             >
               Try again
             </button>
@@ -231,12 +246,12 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
 
         {state.status === 'error' && (
           <div>
-            <p className="text-red-400 font-bold mb-4">{state.message}</p>
+            <p className="text-red-400 font-medium f-body mb-4">{state.message}</p>
             {state.idToken && (
               <button
                 type="button"
                 onClick={() => handleSignIn(state.idToken!)}
-                className="text-brand-yellow underline"
+                className="text-text-primary underline underline-offset-4 f-body"
               >
                 Try again
               </button>
@@ -244,7 +259,7 @@ export const PdfGatePage: React.FC<PdfGatePageProps> = ({ product, productId }) 
           </div>
         )}
 
-        <a href="/" className="block text-brand-muted underline mt-8 text-sm">
+        <a href="/" className="block text-text-secondary underline underline-offset-4 mt-8 f-small">
           Back to Doji's Library
         </a>
       </div>

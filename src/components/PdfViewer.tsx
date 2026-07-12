@@ -22,6 +22,7 @@ import {
   ZoomOut
 } from 'lucide-react';
 import { Product } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 import { useVisualViewportHeight } from '../lib/useVisualViewportHeight';
 import {
   addBookmark,
@@ -575,42 +576,43 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   return (
     <div
       ref={rootRef}
-      className={`flex flex-col bg-[#1a1d1e] text-white ${viewportHeight === null ? 'h-full' : ''}`}
+      className={`flex flex-col bg-surface text-text-primary font-sans ${viewportHeight === null ? 'h-full' : ''}`}
       style={viewportHeight !== null ? { height: viewportHeight } : undefined}
     >
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-white/10 bg-[#1a1d1e]">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-border-hairline bg-surface">
         <div className="flex items-center gap-3 min-w-0">
           <button
             type="button"
             onClick={handleExit}
             aria-label="Back to My Library"
-            className="flex items-center justify-center w-9 h-9 shrink-0 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
+            className="flex items-center justify-center w-9 h-9 shrink-0 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} strokeWidth={1.5} />
           </button>
-          <h1 className="text-base sm:text-lg font-bold truncate">{title}</h1>
+          <h1 className="text-base sm:text-lg font-medium truncate text-text-primary">{title}</h1>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <ThemeToggle className="hidden sm:flex" />
           <button
             type="button"
             onClick={() => setIsThumbnailPanelOpen((prev) => !prev)}
             aria-label="Page thumbnails"
             className={`hidden sm:flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
               isThumbnailPanelOpen
-                ? 'border-brand-yellow text-brand-yellow'
-                : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow'
+                ? 'border-border-strong text-text-primary'
+                : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
             }`}
           >
-            <LayoutGrid size={18} />
+            <LayoutGrid size={18} strokeWidth={1.5} />
           </button>
           <button
             type="button"
             onClick={() => setIsSearchOpen((prev) => !prev)}
             aria-label="Search in document"
-            className="flex items-center justify-center w-10 h-10 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
           >
-            <Search size={18} />
+            <Search size={18} strokeWidth={1.5} />
           </button>
           <div className="relative">
             <button
@@ -620,18 +622,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
               aria-pressed={currentIsBookmarked}
               className={`flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
                 currentIsBookmarked
-                  ? 'border-brand-yellow text-brand-yellow'
-                  : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow'
+                  ? 'border-border-strong text-text-primary'
+                  : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
               }`}
             >
-              <BookmarkIcon size={18} fill={currentIsBookmarked ? 'currentColor' : 'none'} />
+              <BookmarkIcon size={18} strokeWidth={1.5} fill={currentIsBookmarked ? 'currentColor' : 'none'} />
             </button>
           </div>
           <button
             type="button"
             onClick={() => setIsBookmarksPanelOpen((prev) => !prev)}
             aria-label="View bookmarks"
-            className="hidden sm:flex items-center justify-center px-2 h-10 rounded-sm border border-white/10 text-xs font-bold text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
+            className="hidden sm:flex items-center justify-center px-2 h-10 rounded-sm border border-border-hairline text-xs font-medium text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
           >
             {bookmarks.length}
           </button>
@@ -642,11 +644,11 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
               aria-label="More options"
               className={`flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
                 isMoreMenuOpen
-                  ? 'border-brand-yellow text-brand-yellow'
-                  : 'border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow'
+                  ? 'border-border-strong text-text-primary'
+                  : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
               }`}
             >
-              <MoreVertical size={18} />
+              <MoreVertical size={18} strokeWidth={1.5} />
             </button>
             {isMoreMenuOpen && (
               <PdfMoreMenu
@@ -688,32 +690,32 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       </div>
 
       {isSearchOpen && (
-        <div className="border-b border-white/10 bg-[#242829] px-4 sm:px-5 py-4 shrink-0">
+        <div className="border-b border-border-hairline bg-surface-secondary px-4 sm:px-5 py-4 shrink-0">
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-3">
             <input
               type="text"
               value={searchQuery}
               onChange={(event) => handleSearchInputChange(event.target.value)}
               placeholder="Search inside this PDF..."
-              className="flex-1 bg-[#1a1d1e] border border-white/10 rounded-sm px-4 py-2.5 text-white placeholder:text-brand-muted focus:border-brand-yellow outline-none"
+              className="flex-1 bg-surface border border-border-hairline rounded-sm px-4 py-2.5 text-text-primary placeholder:text-text-secondary focus:border-border-strong outline-none"
             />
             <button
               type="button"
               onClick={() => dispatchFind(searchQuery, true, true)}
               aria-label="Previous match"
               disabled={!matchCount}
-              className="flex items-center justify-center w-10 h-10 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} strokeWidth={1.5} />
             </button>
             <button
               type="button"
               onClick={() => dispatchFind(searchQuery, true, false)}
               aria-label="Next match"
               disabled={!matchCount}
-              className="flex items-center justify-center w-10 h-10 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="flex items-center justify-center w-10 h-10 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={18} strokeWidth={1.5} />
             </button>
             <button
               type="button"
@@ -726,14 +728,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
                 dispatchFind('', false);
               }}
               aria-label="Close search"
-              className="p-2.5 text-brand-gray hover:text-white"
+              className="p-2.5 text-text-secondary hover:text-text-primary"
             >
-              <X size={18} />
+              <X size={18} strokeWidth={1.5} />
             </button>
           </form>
 
           {searchQuery.trim() && (
-            <p className="mt-2 text-sm text-brand-muted">
+            <p className="mt-2 text-sm text-text-secondary">
               {matchCount === null
                 ? ''
                 : matchCount === 0
@@ -759,11 +761,11 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
               positioned - this wrapper just gives it a sized box to fill. */}
           <div
             ref={containerRef}
-            className={`pdfViewerContainer absolute inset-0 overflow-auto bg-[#1a1d1e] transition-[filter] duration-500 ${
+            className={`pdfViewerContainer absolute inset-0 overflow-auto bg-surface-secondary transition-[filter] duration-500 ${
               showLoadingOverlay ? 'blur-md pointer-events-none' : ''
             }`}
           >
-            {isLoading && <p className="text-brand-muted text-center mt-20">Loading your PDF…</p>}
+            {isLoading && <p className="text-text-secondary text-center mt-20">Loading your PDF…</p>}
             {loadError && <p className="text-red-400 text-center mt-20">{loadError}</p>}
             <div ref={viewerRef} className="pdfViewer" />
           </div>
@@ -774,18 +776,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-t border-white/10 bg-[#1a1d1e] shrink-0">
+      <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-t border-border-hairline bg-surface shrink-0">
         <button
           type="button"
           onClick={() => goToPage(pageNumber - 1)}
           disabled={pageNumber <= 1}
           aria-label="Previous page"
-          className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={18} strokeWidth={1.5} />
         </button>
 
-        <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm font-bold text-brand-muted">
+        <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm font-medium text-text-secondary">
           <span>Page</span>
           <input
             type="text"
@@ -794,10 +796,10 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             onChange={(event) => setPageInputValue(event.target.value.replace(/[^0-9]/g, ''))}
             onBlur={handlePageInputSubmit}
             aria-label="Jump to page"
-            className="w-12 bg-[#242829] border border-white/10 rounded-sm px-1.5 py-1 text-center text-white outline-none focus:border-brand-yellow"
+            className="w-12 bg-surface-secondary border border-border-hairline rounded-sm px-1.5 py-1 text-center text-text-primary outline-none focus:border-border-strong"
           />
           <span>of {pageCount || '…'}</span>
-          <span className="hidden sm:inline text-brand-yellow ml-1">· {readingPercent}%</span>
+          <span className="hidden sm:inline text-text-primary ml-1">· {readingPercent}%</span>
         </form>
 
         <button
@@ -805,40 +807,41 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           onClick={() => goToPage(pageNumber + 1)}
           disabled={pageNumber >= pageCount}
           aria-label="Next page"
-          className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow disabled:opacity-30 disabled:pointer-events-none transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={18} strokeWidth={1.5} />
         </button>
 
-        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-white/10">
+        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border-hairline">
           <button
             type="button"
             onClick={handleZoomOut}
             aria-label="Zoom out"
-            className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
           >
-            <ZoomOut size={16} />
+            <ZoomOut size={16} strokeWidth={1.5} />
           </button>
           <button
             type="button"
             onClick={handleZoomIn}
             aria-label="Zoom in"
-            className="flex items-center justify-center w-9 h-9 rounded-sm border border-white/10 text-brand-gray hover:text-brand-yellow hover:border-brand-yellow transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
           >
-            <ZoomIn size={16} />
+            <ZoomIn size={16} strokeWidth={1.5} />
           </button>
+          <ThemeToggle className="sm:hidden" />
         </div>
       </div>
 
-      <div className="px-5 py-3 bg-brand-yellow/10 border-t border-brand-yellow/20 text-center shrink-0">
-        <p className="text-xs text-brand-yellow font-bold uppercase tracking-[0.2em]">
+      <div className="px-5 py-3 bg-surface-secondary border-t border-border-hairline text-center shrink-0">
+        <p className="f-small text-text-secondary">
           For your personal use only, please do not share or redistribute.
         </p>
       </div>
 
       {showBookInfo && (
         <PdfInfoModal title="Book Information" onClose={() => setShowBookInfo(false)}>
-          <p className="text-white font-bold mb-2">{product.title}</p>
+          <p className="text-text-primary font-medium mb-2">{product.title}</p>
           <p className="mb-3">{product.description}</p>
           <p>Category: {product.category}</p>
           {product.level && <p>Level: {product.level}</p>}

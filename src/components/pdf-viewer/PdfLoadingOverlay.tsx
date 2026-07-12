@@ -30,7 +30,7 @@ export const PdfLoadingOverlay: React.FC<PdfLoadingOverlayProps> = ({ percent })
   const fillTop = BOTTOM_Y - (clamped / 100) * FILL_RANGE;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-[#1a1d1e]">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-surface">
       <svg viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} className="w-40 h-40 sm:w-48 sm:h-48" role="img" aria-label={`Loading PDF, ${Math.round(clamped)}%`}>
         <defs>
           <clipPath id="liquid-loader-clip">
@@ -43,24 +43,24 @@ export const PdfLoadingOverlay: React.FC<PdfLoadingOverlayProps> = ({ percent })
           cy={CENTER}
           r={RADIUS}
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          stroke="var(--border-hairline)"
           strokeWidth={3}
         />
 
         <g clipPath="url(#liquid-loader-clip)">
-          <rect x={-10} y={fillTop + 6} width={VIEWBOX_SIZE + 20} height={FILL_RANGE + 20} fill="#e6cc9f" style={{ transition: 'y 0.4s ease-out' }} />
+          <rect x={-10} y={fillTop + 6} width={VIEWBOX_SIZE + 20} height={FILL_RANGE + 20} fill="var(--text-primary)" style={{ transition: 'y 0.4s ease-out' }} />
 
           <g style={{ transform: `translateY(${fillTop}px)`, transition: 'transform 0.4s ease-out' }}>
             <g className="liquid-wave-back" style={{ opacity: 0.55 }}>
-              <path d={WAVE_PATH} fill="#e6cc9f" />
+              <path d={WAVE_PATH} fill="var(--text-primary)" />
             </g>
             <g className="liquid-wave-front" style={{ opacity: 0.9 }}>
-              <path d={WAVE_PATH} fill="#e6cc9f" />
+              <path d={WAVE_PATH} fill="var(--text-primary)" />
             </g>
           </g>
         </g>
 
-        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={2} />
+        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="var(--border-strong)" strokeWidth={2} />
 
         <text
           x={CENTER}
@@ -68,14 +68,14 @@ export const PdfLoadingOverlay: React.FC<PdfLoadingOverlayProps> = ({ percent })
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={32}
-          fontWeight={700}
-          fill="#ffffff"
-          style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.45)', strokeWidth: 4 }}
+          fontWeight={600}
+          fill="var(--surface)"
+          style={{ paintOrder: 'stroke', stroke: 'var(--text-primary)', strokeWidth: 4 }}
         >
           {Math.round(clamped)}%
         </text>
       </svg>
-      <p className="text-brand-muted text-sm font-bold uppercase tracking-[0.2em]">Loading your PDF…</p>
+      <p className="f-small text-text-secondary">Loading your PDF…</p>
     </div>
   );
 };

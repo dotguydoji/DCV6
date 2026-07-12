@@ -89,16 +89,16 @@ const Thumbnail: React.FC<{
       type="button"
       onClick={() => onSelect(pageNumber)}
       className={`flex flex-col items-center gap-1.5 p-2 rounded-sm border transition-colors w-full ${
-        isActive ? 'border-brand-yellow bg-brand-yellow/10' : 'border-white/10 hover:border-white/30'
+        isActive ? 'border-border-strong bg-surface' : 'border-border-hairline hover:border-border-strong'
       }`}
     >
       <div
-        className="bg-white/5 rounded-sm overflow-hidden flex items-center justify-center"
+        className="bg-surface rounded-sm overflow-hidden flex items-center justify-center"
         style={{ width: THUMBNAIL_WIDTH, minHeight: THUMBNAIL_WIDTH * 1.3 }}
       >
         <canvas ref={canvasRef} className={rendered ? 'block' : 'hidden'} />
       </div>
-      <span className={`text-xs font-bold ${isActive ? 'text-brand-yellow' : 'text-brand-muted'}`}>
+      <span className={`text-xs font-medium ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>
         {pageNumber}
       </span>
     </button>
@@ -114,16 +114,16 @@ export const PdfThumbnailPanel: React.FC<PdfThumbnailPanelProps> = ({
   if (!pdfDocument) return null;
 
   return (
-    <div className="w-[160px] shrink-0 border-r border-white/10 bg-[#1a1d1e] flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-3 border-b border-white/10">
-        <span className="text-xs font-bold uppercase tracking-wide text-brand-muted">Pages</span>
+    <div className="w-[160px] shrink-0 border-r border-border-hairline bg-surface flex flex-col h-full">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-border-hairline">
+        <span className="f-small text-text-secondary">Pages</span>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close page thumbnails"
-          className="text-brand-muted hover:text-white"
+          className="text-text-secondary hover:text-text-primary"
         >
-          <X size={16} />
+          <X size={16} strokeWidth={1.5} />
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5">

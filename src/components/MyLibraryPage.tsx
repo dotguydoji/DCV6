@@ -17,6 +17,7 @@ import {
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { NoPdfAccessDialog } from './NoPdfAccessDialog';
+import { ThemeToggle } from './ThemeToggle';
 import { getProductById } from '../constants';
 import { Product } from '../types';
 import {
@@ -36,6 +37,7 @@ import {
 } from '../lib/libraryPreferences';
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
+import { useGlobalScrollTilt } from '../lib/useScrollTilt';
 
 const LIBRARY_CACHE_TTL_MS = 20 * 60 * 1000;
 
@@ -75,8 +77,6 @@ interface FavoriteHeartProps {
   onToggle: (productId: string) => void;
 }
 
-// Bare icon (no circular background), larger, bright red when active - same
-// on every screen size, not just mobile.
 const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, onToggle }) => (
   <button
     type="button"
@@ -107,57 +107,47 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
   product,
   isFavorited,
   onToggleFavorite,
-  lastOpenedAt,
   readingPercent
 }) => (
   <a
     href={`/view/${encodeURIComponent(product.id)}`}
-    className="group relative flex flex-col bg-[#242829] border border-white/10 rounded-sm overflow-hidden transition-all duration-300 hover:bg-brand-yellow hover:border-brand-yellow hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(0,0,0,0.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-yellow"
+    className="group flex flex-col bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt hover:border-border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-border-strong/20"
   >
-    <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/20">
+    <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-secondary">
       <img
         src={product.thumbnail}
         alt=""
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"
       />
     </div>
-    <div className="p-4">
-      <h3 className="text-lg lg:text-xl text-white truncate mb-1 transition-colors duration-300 group-hover:text-[#1a1d1e]">
+    <div className="p-5 flex flex-col flex-grow">
+      <h3 className="font-poppins font-normal text-lg lg:text-xl text-text-primary mb-1 leading-tight line-clamp-2 min-h-[2lh]">
         {product.title}
       </h3>
-      <p className="text-sm text-brand-muted line-clamp-2 mb-2 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
+      <p className="text-xs normal-case text-text-secondary mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 font-normal">
         {product.description}
       </p>
 
-      {/* Reading progress is always left-aligned in its own half. The
-          language label + heart are always right-aligned as one fixed unit
-          (in that DOM order, pinned via justify-end) so the heart's
-          position never shifts depending on whether a language label is
-          present - previously, with only the heart in this half and
-          justify-between, a single flex child sits at the start, not the
-          end, which is what made it drift around. */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="w-1/2 flex items-center justify-start gap-2">
+      <div className="mt-auto border-t border-border-hairline bg-black rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between gap-3">
+        <div className="w-1/2 min-w-0 flex items-center justify-start gap-2">
           {typeof readingPercent === 'number' && (
             <>
-              <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden transition-colors duration-300 group-hover:bg-[#1a1d1e]/10">
+              <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
                 <div
-                  className="h-full bg-brand-yellow transition-colors duration-300 group-hover:bg-[#1a1d1e]"
+                  className="h-full bg-white transition-all"
                   style={{ width: `${readingPercent}%` }}
                 />
               </div>
-              <span className="text-sm text-brand-muted shrink-0 transition-colors duration-300 group-hover:text-[#1a1d1e]/70">
-                {readingPercent}%
-              </span>
+              <span className="text-xs text-white/70 shrink-0">{readingPercent}%</span>
             </>
           )}
         </div>
         <div className="w-1/2 flex items-center justify-end gap-2">
           {product.language && (
-            <span className="text-sm uppercase tracking-wide text-brand-muted border border-white/10 rounded-sm px-2 py-0.5 transition-colors duration-300 group-hover:text-[#1a1d1e]/70 group-hover:border-[#1a1d1e]/20">
+            <span className="f-small text-white/60 border border-white/15 rounded-sm px-2 py-0.5">
               {product.language === 'en' ? 'English' : 'Tagalog'}
             </span>
           )}
@@ -182,6 +172,8 @@ export const MyLibraryPage: React.FC = () => {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
   const hasTriedCachedToken = useRef(false);
+
+  useGlobalScrollTilt();
 
   // Without this, the page underneath keeps scrolling while the menu sheet
   // is open (visually confusing on mobile especially, since the backdrop
@@ -379,357 +371,370 @@ export const MyLibraryPage: React.FC = () => {
 
   if (state.status === 'ready') {
     return (
-      <div className="min-h-screen bg-[#16181a] text-white">
-        <header className="sticky top-0 z-50 h-24 flex items-center bg-[#1a1d1e] border-b border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
-          <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-4 px-4 lg:px-6">
-            <div className="flex items-center gap-4 min-w-0">
-              {profile?.picture ? (
-                <img
-                  src={profile.picture}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-brand-yellow/60 shrink-0"
-                />
-              ) : (
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand-yellow/10 border-2 border-brand-yellow/40 flex items-center justify-center shrink-0">
-                  <LibraryBig size={26} className="text-brand-yellow" />
+      <div className="min-h-screen font-sans selection:bg-surface-inverted selection:text-text-inverted relative">
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] ambient-glow opacity-40"></div>
+          <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
+        </div>
+
+        <div className="relative z-10">
+          <header className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all">
+            <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                {profile?.picture ? (
+                  <img
+                    src={profile.picture}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-full border border-border-hairline shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 laptop:w-14 laptop:h-14 rounded-full bg-surface-secondary border border-border-hairline flex items-center justify-center shrink-0">
+                    <LibraryBig size={22} className="text-text-primary" strokeWidth={1.5} />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <h1 className="text-base md:text-xl laptop:text-xl xl:text-2xl font-medium text-text-primary uppercase tracking-[0.2em] truncate">
+                    {profile?.name ? `Welcome, ${profile.name}` : 'My Library'}
+                  </h1>
+                  <p className="f-small text-text-secondary truncate">
+                    {ownedProducts.length} {ownedProducts.length === 1 ? 'PDF' : 'PDFs'} owned
+                  </p>
                 </div>
-              )}
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-3xl truncate">
-                  {profile?.name ? `Welcome back, ${profile.name}` : 'My Library'}
-                </h1>
-                <p className="f-body text-brand-muted">
-                  {ownedProducts.length} {ownedProducts.length === 1 ? 'PDF' : 'PDFs'} in your library
-                </p>
+              </div>
+
+              {/* Desktop nav - matches the home page Navbar's own mobile/desktop
+                  split at the `lg` breakpoint, so tablet widths get the
+                  hamburger menu instead of a cramped inline row. */}
+              <div className="hidden lg:flex items-center gap-3 shrink-0">
+                <a
+                  href="/"
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+                >
+                  <ArrowLeftCircle size={18} strokeWidth={1.5} />
+                  Back to Doji's Library
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (ownedProducts.length > 0) {
+                      setIsMessengerDialogOpen(true);
+                    } else {
+                      setIsNoPdfAccessDialogOpen(true);
+                    }
+                  }}
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+                >
+                  <MessageCircle size={18} strokeWidth={1.5} />
+                  Join Group Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-red-400 hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
+                >
+                  <LogOut size={18} strokeWidth={1.5} />
+                  Sign out
+                </button>
+                <ThemeToggle />
+              </div>
+
+              <div className="flex lg:hidden items-center gap-3">
+                <ThemeToggle />
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                  aria-expanded={isMenuOpen}
+                  className={`flex items-center justify-center w-12 h-12 rounded border transition-all duration-300 active:scale-90 shrink-0 ${
+                    isMenuOpen ? 'border-surface-inverted bg-surface-inverted text-text-inverted' : 'border-border-hairline bg-surface-secondary text-text-secondary'
+                  }`}
+                >
+                  {isMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
+                </button>
               </div>
             </div>
+          </header>
 
-            {/* Desktop nav - inline links/buttons, no hamburger. Matches the
-                home page Navbar's own mobile/desktop split at the `sm`
-                breakpoint, so "desktop" here means the exact same widths
-                where the home page already shows its full nav instead of a
-                hamburger. */}
-            <div className="hidden sm:flex items-center gap-3 shrink-0">
+          {/* Full navigation panel, same pattern as the main site's hamburger
+              menu (Navbar.tsx) - a full-width sheet that slides open below the
+              header with a blurred backdrop. Hidden at `lg`+ - the desktop
+              nav above covers the same links inline from that breakpoint up. */}
+          <div
+            className={`lg:hidden fixed left-0 right-0 top-20 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-surface border-b border-border-hairline ${
+              isMenuOpen ? 'max-h-96 opacity-100 shadow-lg' : 'max-h-0 opacity-0 pointer-events-none'
+            }`}
+          >
+            {/* New items go above Sign out, never below it - Sign out stays
+                the permanent last entry in this menu. */}
+            <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col gap-2">
               <a
                 href="/"
-                className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
               >
-                <ArrowLeftCircle size={20} />
+                <ArrowLeftCircle size={20} strokeWidth={1.5} />
                 Back to Doji's Library
               </a>
               <button
                 type="button"
                 onClick={() => {
+                  setIsMenuOpen(false);
                   if (ownedProducts.length > 0) {
                     setIsMessengerDialogOpen(true);
                   } else {
                     setIsNoPdfAccessDialogOpen(true);
                   }
                 }}
-                className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-white hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
               >
-                <MessageCircle size={20} />
-                Join Group Chat
+                <MessageCircle size={20} strokeWidth={1.5} />
+                Join Messenger Group Chat
               </button>
               <button
                 type="button"
-                onClick={handleSignOut}
-                className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-white/10 text-sm laptop:text-base font-bold text-red-400 hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleSignOut();
+                }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-red-400 font-medium hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
               >
-                <LogOut size={20} />
+                <LogOut size={20} strokeWidth={1.5} />
                 Sign out
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={isMenuOpen}
-              className={`sm:hidden flex items-center justify-center w-12 h-12 rounded-lg border transition-all duration-300 active:scale-90 shrink-0 ${
-                isMenuOpen
-                  ? 'border-brand-yellow bg-brand-yellow/15 text-brand-yellow'
-                  : 'border-white/10 text-brand-muted hover:border-brand-yellow/50 hover:text-brand-yellow'
-              }`}
-            >
-              {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
-            </button>
           </div>
-        </header>
 
-        {/* Full navigation panel, same pattern as the main site's hamburger
-            menu (Navbar.tsx) - a full-width sheet that slides open below the
-            header with a blurred backdrop, not a small anchored dropdown.
-            Built as a plain list so more items can be added later without
-            restructuring anything. Mobile-only (sm:hidden) - the desktop nav
-            above covers the same links inline. */}
-        <div
-          className={`sm:hidden fixed left-0 right-0 top-24 z-50 overflow-hidden transition-all duration-500 ease-in-out bg-[#1a1d1e] border-b border-white/10 ${
-            isMenuOpen ? 'max-h-96 opacity-100 shadow-2xl' : 'max-h-0 opacity-0 pointer-events-none'
-          }`}
-        >
-          {/* New items go above Sign out, never below it - Sign out stays
-              the permanent last entry in this menu. */}
-          <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col gap-2">
-            <a
-              href="/"
+          {isMenuOpen && (
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-md"
               onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
-            >
-              <ArrowLeftCircle size={20} />
-              Back to Doji's Library
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                if (ownedProducts.length > 0) {
-                  setIsMessengerDialogOpen(true);
-                } else {
-                  setIsNoPdfAccessDialogOpen(true);
-                }
-              }}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-white font-bold hover:border-brand-yellow/50 hover:text-brand-yellow transition-colors"
-            >
-              <MessageCircle size={20} />
-              Join Messenger Group Chat
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsMenuOpen(false);
-                handleSignOut();
-              }}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-white/10 text-red-400 font-bold hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
-            >
-              <LogOut size={20} />
-              Sign out
-            </button>
-          </div>
-        </div>
+              role="presentation"
+            />
+          )}
 
-        {isMenuOpen && (
-          <div
-            className="sm:hidden fixed inset-0 z-40 bg-[#1a1d1e]/85 backdrop-blur-md animate-in fade-in duration-400"
-            onClick={() => setIsMenuOpen(false)}
-            role="presentation"
-          />
-        )}
+          <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
+          <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
 
-        <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
-        <NoPdfAccessDialog open={isNoPdfAccessDialogOpen} onClose={() => setIsNoPdfAccessDialogOpen(false)} />
-
-        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-10">
-          {ownedProducts.length === 0 ? (
-            <div className="text-center py-20">
-              <FileText size={44} className="mx-auto text-brand-muted mb-4" />
-              <p className="text-2xl mb-2">You don't have any PDFs yet.</p>
-              <p className="f-body text-brand-muted mb-6">
-                Once you purchase a note pack, it will show up here automatically.
-              </p>
-              <a href="/" className="text-brand-yellow underline f-body">
-                Browse Doji's Library
-              </a>
-            </div>
-          ) : (
-            <>
-              {topRecentProducts.length > 0 && (
-                <section className="mb-10">
-                  <h2 className="hidden sm:block f-body uppercase tracking-[0.15em] text-brand-muted mb-3">
-                    Recently Opened
-                  </h2>
-                  {/* Column on mobile (each item full-width); a row of up to
-                      3 on desktop (sm+) since topRecentProducts is already
-                      capped at 3 - a 3-col grid naturally fits all of them
-                      on one row without wrapping. */}
-                  <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                    {topRecentProducts.map((product) => (
-                      <a
-                        key={product.id}
-                        href={`/view/${encodeURIComponent(product.id)}`}
-                        className="group flex items-center gap-4 sm:flex-col sm:items-stretch sm:gap-0 bg-[#242829] border border-white/10 rounded-sm p-4 sm:p-0 hover:border-brand-yellow/60 transition-colors sm:overflow-hidden"
-                      >
-                        <div className="w-24 h-16 sm:w-full sm:h-auto sm:aspect-[16/9] rounded-sm sm:rounded-none overflow-hidden shrink-0 bg-black/20">
-                          <img
-                            src={product.thumbnail}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1 sm:p-4">
-                          <p className="text-lg lg:text-xl truncate">{product.title}</p>
-                          <p className="text-sm text-brand-muted">
-                            {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
-                            {typeof readingPercentById.get(product.id) === 'number' &&
-                              ` · ${readingPercentById.get(product.id)}% read`}
-                          </p>
-                        </div>
-                        {/* Icon only, on mobile - the row layout on desktop
-                            already reads as a card grid without needing a
-                            trailing icon there. */}
-                        <Clock size={20} strokeWidth={1.5} className="text-brand-yellow shrink-0 sm:hidden" />
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              <section>
-                <h2 className="f-body uppercase tracking-[0.15em] text-brand-muted mb-3">All PDFs</h2>
-
-                <div className="flex flex-col gap-3 mb-5">
-                  {/* Search + the 3 filter selects share one row on desktop
-                      (sm+) - search takes the remaining space, selects stay
-                      their natural width. On mobile the search stays a full-
-                      width row of its own, with the selects in their own
-                      compact row below (unchanged from before). */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="relative sm:flex-1">
-                      <Search
-                        size={18}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none"
-                      />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search your library..."
-                        aria-label="Search your library"
-                        className="w-full bg-[#242829] border border-white/10 rounded-sm pl-10 pr-9 py-2.5 f-body text-white placeholder:text-brand-muted outline-none focus:border-brand-yellow/60 transition-colors"
-                      />
-                      {searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => setSearchQuery('')}
-                          aria-label="Clear search"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted hover:text-white"
+          <main className="max-w-[1600px] mx-auto px-4 lg:px-6 py-10 lg:py-14">
+            {ownedProducts.length === 0 ? (
+              <div className="text-center py-20">
+                <FileText size={44} className="mx-auto text-text-secondary mb-4" strokeWidth={1.5} />
+                <p className="f-heading text-text-primary mb-2">You don't have any PDFs yet.</p>
+                <p className="f-body text-text-secondary mb-6">
+                  Once you purchase a note pack, it will show up here automatically.
+                </p>
+                <a href="/" className="f-body text-text-primary underline underline-offset-4">
+                  Browse Doji's Library
+                </a>
+              </div>
+            ) : (
+              <>
+                {topRecentProducts.length > 0 && (
+                  <section className="mb-12">
+                    <h2 className="f-small text-text-secondary mb-4">Recently Opened</h2>
+                    {/* Column on mobile (each item full-width); a row of up to
+                        3 on desktop (sm+) since topRecentProducts is already
+                        capped at 3 - a 3-col grid naturally fits all of them
+                        on one row without wrapping. */}
+                    <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                      {topRecentProducts.map((product) => (
+                        <a
+                          key={product.id}
+                          href={`/view/${encodeURIComponent(product.id)}`}
+                          className="group flex items-center gap-4 sm:flex-col sm:items-stretch sm:gap-0 bg-surface border border-border-hairline rounded-sm p-4 sm:p-0 hover:border-border-strong transition-colors sm:overflow-hidden card-elevated"
                         >
-                          <X size={17} />
-                        </button>
-                      )}
+                          <div className="w-24 h-16 sm:w-full sm:h-auto sm:aspect-[16/9] rounded-sm sm:rounded-none overflow-hidden shrink-0 bg-surface-secondary">
+                            <img
+                              src={product.thumbnail}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1 sm:p-4">
+                            <p className="text-lg lg:text-xl text-text-primary truncate">{product.title}</p>
+                            <p className="text-sm text-text-secondary">
+                              {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
+                              {typeof readingPercentById.get(product.id) === 'number' &&
+                                ` · ${readingPercentById.get(product.id)}% read`}
+                            </p>
+                          </div>
+                          {/* Icon only, on mobile - the row layout on desktop
+                              already reads as a card grid without needing a
+                              trailing icon there. */}
+                          <Clock size={20} strokeWidth={1.5} className="text-text-secondary shrink-0 sm:hidden" />
+                        </a>
+                      ))}
                     </div>
+                  </section>
+                )}
 
-                    {/* On mobile these three sit in one compact row (equal
-                        width via flex-1) instead of each stacking full-width -
-                        on sm+ they revert to their natural width, sitting
-                        next to the search input above instead of below it. */}
-                    <div className="flex gap-2 sm:gap-3">
-                      <div className="relative flex-1 sm:flex-none">
-                        <select
-                          value={sortBy}
-                          onChange={(event) => setSortBy(event.target.value as SortOption)}
-                          aria-label="Sort by"
-                          className="appearance-none w-full sm:w-auto min-w-0 bg-[#242829] border border-white/10 rounded-sm pl-4 pr-9 py-2.5 f-body text-white outline-none focus:border-brand-yellow/60 transition-colors"
-                        >
-                          <option value="recent">Recents</option>
-                          <option value="title-asc">Title A–Z</option>
-                          <option value="title-desc">Title Z–A</option>
-                        </select>
-                        <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
+                <section>
+                  <h2 className="f-small text-text-secondary mb-4">All PDFs</h2>
+
+                  <div className="flex flex-col gap-3 mb-6">
+                    {/* Search + the 3 filter selects share one row on desktop
+                        (sm+) - search takes the remaining space, selects stay
+                        their natural width. On mobile the search stays a full-
+                        width row of its own, with the selects in their own
+                        compact row below (unchanged from before). */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="relative sm:flex-1">
+                        <Search
+                          size={18}
+                          strokeWidth={1.5}
+                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+                        />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(event) => setSearchQuery(event.target.value)}
+                          placeholder="Search your library..."
+                          aria-label="Search your library"
+                          className="w-full bg-surface border border-border-hairline rounded-sm pl-10 pr-9 py-2.5 f-body text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            aria-label="Clear search"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                          >
+                            <X size={17} strokeWidth={1.5} />
+                          </button>
+                        )}
                       </div>
 
-                      {languages.length > 1 && (
+                      {/* On mobile these three sit in one compact row (equal
+                          width via flex-1) instead of each stacking full-width -
+                          on sm+ they revert to their natural width, sitting
+                          next to the search input above instead of below it. */}
+                      <div className="flex gap-2 sm:gap-3">
                         <div className="relative flex-1 sm:flex-none">
                           <select
-                            value={languageFilter}
-                            onChange={(event) => setLanguageFilter(event.target.value)}
-                            aria-label="Filter by language"
-                            className="appearance-none w-full sm:w-auto min-w-0 bg-[#242829] border border-white/10 rounded-sm pl-4 pr-9 py-2.5 f-body text-white outline-none focus:border-brand-yellow/60 transition-colors"
+                            value={sortBy}
+                            onChange={(event) => setSortBy(event.target.value as SortOption)}
+                            aria-label="Sort by"
+                            className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
                           >
-                            <option value={ALL_LANGUAGES}>Languages</option>
-                            {languages.map((language) => (
-                              <option key={language} value={language}>
-                                {language === 'en' ? 'English' : 'Tagalog'}
-                              </option>
-                            ))}
+                            <option value="recent">Recents</option>
+                            <option value="title-asc">Title A–Z</option>
+                            <option value="title-desc">Title Z–A</option>
                           </select>
-                          <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
+                          <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                         </div>
-                      )}
 
-                      {levels.length > 1 && (
-                        <div className="relative flex-1 sm:flex-none">
-                          <select
-                            value={levelFilter}
-                            onChange={(event) => setLevelFilter(event.target.value)}
-                            aria-label="Filter by level"
-                            className="appearance-none w-full sm:w-auto min-w-0 bg-[#242829] border border-white/10 rounded-sm pl-4 pr-9 py-2.5 f-body text-white outline-none focus:border-brand-yellow/60 transition-colors"
-                          >
-                            <option value={ALL_LEVELS}>Levels</option>
-                            {levels.map((level) => (
-                              <option key={level} value={level}>
-                                {formatLevel(level)}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-brand-muted pointer-events-none" />
-                        </div>
-                      )}
+                        {languages.length > 1 && (
+                          <div className="relative flex-1 sm:flex-none">
+                            <select
+                              value={languageFilter}
+                              onChange={(event) => setLanguageFilter(event.target.value)}
+                              aria-label="Filter by language"
+                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                            >
+                              <option value={ALL_LANGUAGES}>Languages</option>
+                              {languages.map((language) => (
+                                <option key={language} value={language}>
+                                  {language === 'en' ? 'English' : 'Tagalog'}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                          </div>
+                        )}
+
+                        {levels.length > 1 && (
+                          <div className="relative flex-1 sm:flex-none">
+                            <select
+                              value={levelFilter}
+                              onChange={(event) => setLevelFilter(event.target.value)}
+                              aria-label="Filter by level"
+                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                            >
+                              <option value={ALL_LEVELS}>Levels</option>
+                              {levels.map((level) => (
+                                <option key={level} value={level}>
+                                  {formatLevel(level)}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                          </div>
+                        )}
+                      </div>
                     </div>
+
+                    {categories.length > 2 && (
+                      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                        {categories.map((category) => (
+                          <button
+                            key={category}
+                            type="button"
+                            onClick={() => setActiveCategory(category)}
+                            className={`shrink-0 px-4 py-2.5 rounded-sm f-small transition-all border ${
+                              activeCategory === category
+                                ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
+                                : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {categories.length > 2 && (
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                      {categories.map((category) => (
-                        <button
-                          key={category}
-                          type="button"
-                          onClick={() => setActiveCategory(category)}
-                          className={`shrink-0 px-3.5 py-2.5 rounded-sm f-body uppercase tracking-wide transition-colors ${
-                            activeCategory === category
-                              ? 'bg-brand-yellow text-[#1a1d1e]'
-                              : 'border border-white/10 text-brand-muted hover:text-white hover:border-white/20'
-                          }`}
-                        >
-                          {category}
-                        </button>
+                  {visibleProducts.length === 0 ? (
+                    <div className="text-center py-16">
+                      <p className="text-text-secondary f-body">No PDFs match your search or filters.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                      {visibleProducts.map((product) => (
+                        <LibraryCard
+                          key={product.id}
+                          product={product}
+                          isFavorited={favoriteIds.has(product.id)}
+                          onToggleFavorite={handleToggleFavorite}
+                          lastOpenedAt={openedAtById.get(product.id)}
+                          readingPercent={readingPercentById.get(product.id)}
+                        />
                       ))}
                     </div>
                   )}
-                </div>
-
-                {visibleProducts.length === 0 ? (
-                  <div className="text-center py-16">
-                    <p className="text-brand-muted f-body">No PDFs match your search or filters.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                    {visibleProducts.map((product) => (
-                      <LibraryCard
-                        key={product.id}
-                        product={product}
-                        isFavorited={favoriteIds.has(product.id)}
-                        onToggleFavorite={handleToggleFavorite}
-                        lastOpenedAt={openedAtById.get(product.id)}
-                        readingPercent={readingPercentById.get(product.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </section>
-            </>
-          )}
+                </section>
+              </>
+            )}
+          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#16181a] text-white px-6">
-      <div className="max-w-md w-full text-center">
-        <LibraryBig size={44} className="mx-auto text-brand-yellow mb-5" />
-        <h1 className="text-3xl font-bold mb-2">My Library</h1>
-        <p className="text-brand-muted f-body mb-8">
+    <div className="min-h-screen flex items-center justify-center font-sans relative px-6">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[10%] left-[-10%] w-[50%] h-[50%] ambient-glow opacity-40"></div>
+        <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
+      </div>
+
+      <div className="absolute top-6 right-6 z-10">
+        <ThemeToggle />
+      </div>
+
+      <div className="relative z-10 max-w-md w-full text-center">
+        <LibraryBig size={44} className="mx-auto text-text-primary mb-5" strokeWidth={1.5} />
+        <h1 className="f-heading text-text-primary mb-2">My Library</h1>
+        <p className="text-text-secondary f-body mb-8">
           Sign in with the Gmail you used to purchase your notes to see everything you own.
         </p>
 
         {state.status === 'restoring' && (
-          <div className="flex items-center justify-center gap-2 text-brand-muted f-body" aria-live="polite">
-            <RefreshCw size={18} className="animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-text-secondary f-body" aria-live="polite">
+            <RefreshCw size={18} className="animate-spin" strokeWidth={1.5} />
             Checking your session…
           </div>
         )}
@@ -741,23 +746,23 @@ export const MyLibraryPage: React.FC = () => {
         )}
 
         {state.status === 'checking' && (
-          <div className="flex items-center justify-center gap-2 text-brand-muted f-body" aria-live="polite">
-            <RefreshCw size={18} className="animate-spin" />
+          <div className="flex items-center justify-center gap-2 text-text-secondary f-body" aria-live="polite">
+            <RefreshCw size={18} className="animate-spin" strokeWidth={1.5} />
             Loading your library…
           </div>
         )}
 
         {state.status === 'rate-limited' && (
           <div>
-            <p className="text-red-400 font-bold f-body mb-4">
+            <p className="text-red-400 font-medium f-body mb-4">
               Too many attempts in a short time. Please wait a moment and try again.
             </p>
             <button
               type="button"
               onClick={() => fetchLibrary(state.idToken)}
-              className="inline-flex items-center gap-2 text-brand-yellow underline f-body"
+              className="inline-flex items-center gap-2 text-text-primary underline underline-offset-4 f-body"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={16} strokeWidth={1.5} />
               Try again
             </button>
           </div>
@@ -765,20 +770,20 @@ export const MyLibraryPage: React.FC = () => {
 
         {state.status === 'error' && (
           <div>
-            <p className="text-red-400 font-bold f-body mb-4">{state.message}</p>
+            <p className="text-red-400 font-medium f-body mb-4">{state.message}</p>
             <button
               type="button"
               onClick={() => fetchLibrary(state.idToken)}
-              className="inline-flex items-center gap-2 text-brand-yellow underline f-body"
+              className="inline-flex items-center gap-2 text-text-primary underline underline-offset-4 f-body"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={16} strokeWidth={1.5} />
               Try again
             </button>
           </div>
         )}
 
-        <a href="/" className="flex items-center justify-center gap-2 text-brand-muted underline mt-8 f-body">
-          <ArrowLeft size={16} />
+        <a href="/" className="flex items-center justify-center gap-2 text-text-secondary underline underline-offset-4 mt-8 f-body">
+          <ArrowLeft size={16} strokeWidth={1.5} />
           Back to Doji's Library
         </a>
       </div>
