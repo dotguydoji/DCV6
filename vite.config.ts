@@ -4,6 +4,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// TEMPORARY one-time sweep switch (see src/sw-killswitch.ts) - flip back to
+// false and redeploy once stuck visitors have had a couple days to reload
+// and pick up the real worker again. Do not leave this true long-term: it
+// ships a worker that deletes all caches and unregisters itself, so the
+// site has zero offline/installed-PWA support while it's on.
+const KILL_SWITCH_MODE = true;
+
 export default defineConfig(() => {
     return {
       server: {
@@ -13,7 +20,23 @@ export default defineConfig(() => {
       plugins: [
         react(),
         tailwindcss(),
-        VitePWA({
+        VitePWA(KILL_SWITCH_MODE ? {
+          strategies: 'injectManifest',
+          srcDir: 'src',
+          // Must build to the exact same URL ("sw.js") the old, already-
+          // broken worker registered - already-stuck clients only ever
+          // re-check that same path for changes on their own; a
+          // differently-named file would be invisible to them.
+          filename: 'sw.ts',
+          injectRegister: false,
+          injectManifest: {
+            globPatterns: []
+          },
+          manifest: false,
+          devOptions: {
+            enabled: false
+          }
+        } : {
           registerType: 'autoUpdate',
           // false, not 'script-defer' - the auto-injected script only ever
           // calls navigator.serviceWorker.register() with no update-detection
