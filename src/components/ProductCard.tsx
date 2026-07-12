@@ -78,12 +78,22 @@ export const ProductCard = memo(
             {product.description}
           </p>
 
-          <div className={`mt-auto border-t border-border-hairline rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between transition-colors duration-300 ${isSelected ? 'bg-white' : 'bg-black'}`}>
+          <div
+            className={`mt-auto border-t border-border-hairline rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between transition-colors duration-300 ${
+              isSelected ? 'bg-black dark:bg-white' : 'bg-white dark:bg-black'
+            }`}
+          >
             {isAvailable ? (
               <>
                 {hideCommerce ? (
                   <div className="w-full flex items-center justify-start">
-                    <span className="flex items-center justify-center w-10 h-10 border border-white/15 text-white/45">
+                    <span
+                      className={`flex items-center justify-center w-10 h-10 border ${
+                        isSelected
+                          ? 'border-white/15 text-white/45 dark:border-black/15 dark:text-black/45'
+                          : 'border-black/15 text-black/45 dark:border-white/15 dark:text-white/45'
+                      }`}
+                    >
                       <Download size={18} strokeWidth={1.5} />
                     </span>
                   </div>
@@ -91,11 +101,19 @@ export const ProductCard = memo(
                   <>
                     <div className="flex flex-col">
                       {typeof product.originalPrice === 'number' && (
-                        <span className={`text-sm font-bold tracking-wide line-through ${isSelected ? 'text-black/60' : 'text-white/60'}`}>
+                        <span
+                          className={`text-sm font-bold tracking-wide line-through ${
+                            isSelected ? 'text-white/60 dark:text-black/60' : 'text-black/60 dark:text-white/60'
+                          }`}
+                        >
                           <span className="text-[0.5em]">P</span> {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className={`f-price font-semibold leading-none ${isSelected ? 'text-black' : 'text-white'}`}>
+                      <span
+                        className={`f-price font-semibold leading-none ${
+                          isSelected ? 'text-white dark:text-black' : 'text-black dark:text-white'
+                        }`}
+                      >
                         <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                       </span>
                     </div>
@@ -106,8 +124,8 @@ export const ProductCard = memo(
                       }}
                       className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
                         isSelected
-                          ? 'text-black border-black bg-black/10'
-                          : 'text-white/70 border-white/20 hover:text-white hover:border-white hover:bg-white/5'
+                          ? 'text-white border-white bg-white/10 dark:text-black dark:border-black dark:bg-black/10'
+                          : 'text-black/70 border-black/20 hover:text-black hover:border-black hover:bg-black/5 dark:text-white/70 dark:border-white/20 dark:hover:text-white dark:hover:border-white dark:hover:bg-white/5'
                       }`}
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
@@ -119,10 +137,10 @@ export const ProductCard = memo(
               </>
             ) : (
               <>
-                <span className="text-sm font-semibold uppercase tracking-[0.2em] text-white">
+                <span className="text-sm font-semibold uppercase tracking-[0.2em] text-black dark:text-white">
                   Coming Soon
                 </span>
-                <span className="text-xs font-medium uppercase tracking-[0.2em] text-white/60">
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-black/60 dark:text-white/60">
                   Not Available
                 </span>
               </>
