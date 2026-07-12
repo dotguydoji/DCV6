@@ -30,7 +30,7 @@ export const AdminCidGate: React.FC<AdminCidGateProps> = ({ onVerified }) => {
         </div>
         <h1 className="text-2xl font-bold mb-2">Enter CID to Continue</h1>
         <p className="text-brand-muted mb-8">
-          For extra protection, please enter the CID every time you open this panel.
+          As an additional confirmation step, please enter the CID every time you open this panel.
         </p>
 
         <form onSubmit={handleSubmit}>

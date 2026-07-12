@@ -34,6 +34,16 @@ vite-dev.err.log
 # inside admin/ again out of habit - it should never be committed either.
 admin/*.md
 
+# Same safety net for the repo root - "Caching Instruction.md" ended up
+# tracked despite the /documentation/ rule above, contradicting the stated
+# intent that every .md file stays local. Root-level only (the leading
+# slash), so this doesn't reach into src/ or other subfolders that may
+# legitimately need a tracked .md later.
+/*.md
+
+# Scratch/local command notes - never meant to be published.
+cmd.txt
+
 # Tooling cache
 .cache/
 .vite/

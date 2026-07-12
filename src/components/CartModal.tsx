@@ -187,7 +187,7 @@ export const CartModal: React.FC<CartModalProps> = ({
         <div className="flex items-center justify-between px-7 py-5 border-b border-border-hairline bg-surface">
           <div className="flex items-center gap-3">
             <ShoppingCart size={28} className="text-text-primary" strokeWidth={1.5} />
-            <h2 id="cart-modal-title" className="text-3xl font-bold text-text-primary">Your Cart</h2>
+            <h2 id="cart-modal-title" className="text-3xl font-light text-text-primary">Your Cart</h2>
             {selectedProducts.length > 0 && (
               <span className="bg-surface-inverted/10 text-text-primary px-2.5 py-1 rounded-sm text-base font-black">
                 {selectedProducts.length} ITEMS

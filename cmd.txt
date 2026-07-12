@@ -1,6 +1,0 @@
-git add .
-git commit -m "glitych white fix"
-git push -u
-
-npm run build
-netlify dev --dir dist

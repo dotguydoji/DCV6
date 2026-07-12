@@ -204,25 +204,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
           <div className="hidden lg:flex items-center justify-end flex-grow gap-4 h-full">
             <div ref={searchRef} className="relative w-full max-w-md laptop:max-w-lg">
               <div
-                className={`flex items-center bg-surface border rounded-sm transition-all duration-300 ${
+                className={`flex items-center h-11 laptop:h-12 bg-surface border rounded-sm transition-all duration-300 ${
                   isSearchFocused
                     ? 'border-border-strong ring-2 ring-border-strong/10'
                     : 'border-border-hairline hover:border-border-strong'
                 }`}
               >
-                <div className="flex items-center justify-center w-10 laptop:w-12 shrink-0 text-text-secondary border-r border-border-hairline">
+                <div className="flex items-center justify-center w-10 laptop:w-12 h-full shrink-0 text-text-secondary border-r border-border-hairline">
                   <Search size={18} strokeWidth={1.5} className="laptop:hidden" />
                   <Search size={20} strokeWidth={1.5} className="hidden laptop:block" />
                 </div>
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search technical notes..."
-                  aria-label="Search technical notes"
+                  placeholder="Search"
+                  aria-label="Search"
                   role="combobox"
                   aria-expanded={isSearchFocused && filteredProducts.length > 0}
                   aria-autocomplete="list"
-                  className="w-full bg-transparent border-none py-2.5 laptop:py-3 px-4 text-text-primary f-body focus:ring-0 placeholder:text-text-secondary appearance-none"
+                  className="w-full h-full bg-transparent border-none px-4 text-text-primary f-body focus:ring-0 placeholder:text-text-secondary appearance-none"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onFocus={() => setIsSearchFocused(true)}
@@ -271,14 +271,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               type="button"
               onClick={handleMessengerClick}
               disabled={isCheckingMessengerAccess}
-              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <MessageCircle size={18} strokeWidth={1.5} />
               Join Group Chat
             </button>
             <a
               href="/my-library"
-              className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
             >
               <LibraryBig size={18} strokeWidth={1.5} />
               {hasCachedSession ? 'My Library' : 'Sign In'}
@@ -325,8 +325,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search technical notes..."
-                  aria-label="Search technical notes"
+                  placeholder="Search"
+                  aria-label="Search"
                   role="combobox"
                   aria-expanded={filteredProducts.length > 0}
                   aria-autocomplete="list"

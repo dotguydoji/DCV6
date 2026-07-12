@@ -88,12 +88,12 @@ export const CourseCard = memo(
         </div>
 
         {/* Body */}
-        <div className="px-4 pt-4 pb-3 flex flex-col flex-grow min-h-0">
-          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-text-primary leading-tight mb-1 transition-colors duration-300">
+        <div className={`px-4 pt-4 pb-3 flex flex-col flex-grow min-h-0 transition-colors duration-300 ${isSelected ? 'bg-surface-inverted' : ''}`}>
+          <h3 className={`font-poppins font-normal text-lg lg:text-2xl leading-tight mb-1 transition-colors duration-300 ${isSelected ? 'text-text-inverted' : 'text-text-primary'}`}>
             {product.title}
           </h3>
 
-          <p className="text-base text-text-secondary leading-relaxed line-clamp-2 tracking-normal normal-case mb-3">
+          <p className={`text-base leading-relaxed line-clamp-2 tracking-normal normal-case mb-3 transition-colors duration-300 ${isSelected ? 'text-text-inverted/70' : 'text-text-secondary'}`}>
             {product.description}
           </p>
 
@@ -123,7 +123,7 @@ export const CourseCard = memo(
         </div>
 
         {/* Price bar */}
-        <div className="px-4 py-2.5 bg-black border-t border-border-hairline flex items-center justify-between shrink-0">
+        <div className={`px-4 py-2.5 border-t border-border-hairline flex items-center justify-between shrink-0 transition-colors duration-300 ${isSelected ? 'bg-white' : 'bg-black'}`}>
           {isAvailable ? (
             hideCommerce ? (
               <div className="w-full flex items-center justify-start">
@@ -133,7 +133,7 @@ export const CourseCard = memo(
               </div>
             ) : (
               <>
-                <span className="f-price text-white font-semibold leading-none">
+                <span className={`f-price font-semibold leading-none ${isSelected ? 'text-black' : 'text-white'}`}>
                   <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                 </span>
                 <button
@@ -142,7 +142,7 @@ export const CourseCard = memo(
                   aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
                   className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
                     isSelected
-                      ? 'text-white border-white bg-white/10'
+                      ? 'text-black border-black bg-black/10'
                       : 'text-white/70 border-white/20 hover:text-white hover:border-white hover:bg-white/5'
                   }`}
                 >

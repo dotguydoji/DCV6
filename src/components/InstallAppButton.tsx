@@ -31,7 +31,7 @@ export const InstallAppButton: React.FC<InstallAppButtonProps> = ({ variant, can
       aria-label={guide.label}
       className={
         variant === 'desktop'
-          ? 'flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors'
+          ? 'flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors'
           : 'flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors'
       }
     >

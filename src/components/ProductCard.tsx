@@ -70,15 +70,15 @@ export const ProductCard = memo(
           <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent opacity-40"></div>
         </div>
 
-        <div className="p-5 laptop:p-5 flex flex-col flex-grow bg-surface">
-          <h3 className="font-poppins font-normal text-lg lg:text-2xl text-text-primary mb-1 leading-tight transition-colors duration-300 line-clamp-2 min-h-[2lh]">
+        <div className={`p-5 laptop:p-5 flex flex-col flex-grow transition-colors duration-300 ${isSelected ? 'bg-surface-inverted' : 'bg-surface'}`}>
+          <h3 className={`font-poppins font-normal text-lg lg:text-2xl mb-1 leading-tight transition-colors duration-300 line-clamp-2 min-h-[2lh] ${isSelected ? 'text-text-inverted' : 'text-text-primary'}`}>
             {product.title}
           </h3>
-          <p className="text-xs normal-case text-text-secondary mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 font-normal">
+          <p className={`text-xs normal-case mb-4 flex-grow tracking-normal leading-relaxed line-clamp-2 font-normal transition-colors duration-300 ${isSelected ? 'text-text-inverted/70' : 'text-text-secondary'}`}>
             {product.description}
           </p>
 
-          <div className="mt-auto border-t border-border-hairline bg-black rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between">
+          <div className={`mt-auto border-t border-border-hairline rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between transition-colors duration-300 ${isSelected ? 'bg-white' : 'bg-black'}`}>
             {isAvailable ? (
               <>
                 {hideCommerce ? (
@@ -91,11 +91,11 @@ export const ProductCard = memo(
                   <>
                     <div className="flex flex-col">
                       {typeof product.originalPrice === 'number' && (
-                        <span className="text-sm font-bold tracking-wide text-white/60 line-through">
+                        <span className={`text-sm font-bold tracking-wide line-through ${isSelected ? 'text-black/60' : 'text-white/60'}`}>
                           <span className="text-[0.5em]">P</span> {product.originalPrice.toLocaleString()}
                         </span>
                       )}
-                      <span className="f-price text-white font-semibold leading-none">
+                      <span className={`f-price font-semibold leading-none ${isSelected ? 'text-black' : 'text-white'}`}>
                         <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
                       </span>
                     </div>
@@ -104,10 +104,10 @@ export const ProductCard = memo(
                         event.stopPropagation();
                         onToggleSelect(product, event);
                       }}
-                      className={`flex items-center justify-center w-11 h-11 border border-white/20 rounded-none transition-all duration-300 ${
+                      className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
                         isSelected
-                          ? 'text-white border-white bg-white/10'
-                          : 'text-white/70 hover:text-white hover:border-white hover:bg-white/5'
+                          ? 'text-black border-black bg-black/10'
+                          : 'text-white/70 border-white/20 hover:text-white hover:border-white hover:bg-white/5'
                       }`}
                       type="button"
                       aria-label={isSelected ? `Remove ${product.title} from cart` : `Add ${product.title} to cart`}
