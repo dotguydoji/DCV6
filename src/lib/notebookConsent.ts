@@ -3,10 +3,16 @@
  * browser's localStorage. Since that's a real (if low-stakes) storage
  * decision the buyer hasn't been asked about anywhere else on the site,
  * this tracks whether they've explicitly agreed to it, separately from the
- * notes themselves.
+ * notes themselves. Namespaced per signed-in account (see accountScope.ts,
+ * same reasoning as notebookStorage.ts) - one buyer's "granted"/"declined"
+ * choice shouldn't be silently applied to a different buyer signing into
+ * the same shared device.
  */
 
-const CONSENT_KEY = 'dcv6-notebook-storage-consent';
+import { claimLegacyKey, getAccountScope } from './accountScope';
+
+const LEGACY_CONSENT_KEY = 'dcv6-notebook-storage-consent';
+const getConsentKey = () => `dcv6-notebook-storage-consent:${getAccountScope()}`;
 
 export type NotebookConsentStatus = 'unknown' | 'granted' | 'declined';
 
@@ -24,7 +30,9 @@ export const isLocalStorageAvailable = (): boolean => {
 
 export const getNotebookConsentStatus = (): NotebookConsentStatus => {
   try {
-    const raw = localStorage.getItem(CONSENT_KEY);
+    const key = getConsentKey();
+    claimLegacyKey(LEGACY_CONSENT_KEY, key);
+    const raw = localStorage.getItem(key);
     return raw === 'granted' || raw === 'declined' ? raw : 'unknown';
   } catch {
     return 'unknown';
@@ -33,7 +41,7 @@ export const getNotebookConsentStatus = (): NotebookConsentStatus => {
 
 export const setNotebookConsentStatus = (status: 'granted' | 'declined'): void => {
   try {
-    localStorage.setItem(CONSENT_KEY, status);
+    localStorage.setItem(getConsentKey(), status);
   } catch {
     // Ignored on purpose - if storage is blocked, isLocalStorageAvailable()
     // already routes the caller to the "unavailable" state instead.

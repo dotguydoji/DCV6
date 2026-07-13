@@ -1,11 +1,17 @@
 /**
  * Notebook feature storage - local-first, same posture as
  * libraryPreferences.ts (bookmarks/favorites): stored only in this
- * browser's localStorage, never sent to any server. Notes are personal
- * scratch content tied to a device, not an account.
+ * browser's localStorage, never sent to any server. Namespaced per
+ * signed-in account (see accountScope.ts) - notes are free-typed text, so
+ * unlike an opaque product id this can be genuinely personal content, and
+ * a second buyer signing into a shared device should never be able to read
+ * or overwrite the first buyer's notes.
  */
 
-const STORAGE_KEY = 'dcv6-notebook-data';
+import { claimLegacyKey, getAccountScope } from './accountScope';
+
+const LEGACY_STORAGE_KEY = 'dcv6-notebook-data';
+const getStorageKey = () => `dcv6-notebook-data:${getAccountScope()}`;
 export const MAX_TITLE_LENGTH = 50;
 
 export interface NotebookPageData {
@@ -73,7 +79,9 @@ const isValidStorage = (value: unknown): value is NotebookStorage =>
  */
 export const hasExistingNotebookData = (): boolean => {
   try {
-    return localStorage.getItem(STORAGE_KEY) !== null;
+    const key = getStorageKey();
+    claimLegacyKey(LEGACY_STORAGE_KEY, key);
+    return localStorage.getItem(key) !== null;
   } catch {
     return false;
   }
@@ -82,7 +90,9 @@ export const hasExistingNotebookData = (): boolean => {
 /** Storage access can throw (Safari Private Browsing, quota limits) - never let that crash the page. */
 export const loadNotebookStorage = (): NotebookStorage => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const key = getStorageKey();
+    claimLegacyKey(LEGACY_STORAGE_KEY, key);
+    const raw = localStorage.getItem(key);
     if (!raw) return createDefaultNotebookStorage();
     const parsed = JSON.parse(raw);
     return isValidStorage(parsed) ? parsed : createDefaultNotebookStorage();
@@ -93,7 +103,7 @@ export const loadNotebookStorage = (): NotebookStorage => {
 
 export const saveNotebookStorage = (data: NotebookStorage): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(getStorageKey(), JSON.stringify(data));
   } catch {
     // Ignored on purpose - e.g. storage full or unavailable. The in-memory
     // state still reflects the buyer's edits for the rest of the session.

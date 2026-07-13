@@ -1,14 +1,17 @@
 /**
  * Buyer library preferences (favorites, recently opened) - stored ONLY in
- * this browser's localStorage, never sent to any server. No personal
- * information is stored here: just product ids and timestamps, never an
- * email, name, or anything tied to a specific Google account. Because of
- * that, it's intentionally NOT namespaced per signed-in account - it's a
- * per-device convenience, not a per-user record.
+ * this browser's localStorage, never sent to any server. Namespaced per
+ * signed-in account (see accountScope.ts) so a second buyer signing into a
+ * shared device never sees or overwrites the first buyer's favorites/
+ * recently-opened list.
  */
 
-const FAVORITES_KEY = 'library-favorites';
-const RECENTLY_OPENED_KEY = 'library-recently-opened';
+import { claimLegacyKey, getAccountScope } from './accountScope';
+
+const LEGACY_FAVORITES_KEY = 'library-favorites';
+const LEGACY_RECENTLY_OPENED_KEY = 'library-recently-opened';
+const getFavoritesKey = () => `library-favorites:${getAccountScope()}`;
+const getRecentlyOpenedKey = () => `library-recently-opened:${getAccountScope()}`;
 const MAX_RECENTLY_OPENED = 10;
 
 export interface RecentlyOpenedEntry {
@@ -51,7 +54,11 @@ const writeJson = (key: string, value: unknown): void => {
   }
 };
 
-export const getFavoriteIds = (): string[] => readJson<string[]>(FAVORITES_KEY, []);
+export const getFavoriteIds = (): string[] => {
+  const key = getFavoritesKey();
+  claimLegacyKey(LEGACY_FAVORITES_KEY, key);
+  return readJson<string[]>(key, []);
+};
 
 export const isFavorite = (productId: string): boolean => getFavoriteIds().includes(productId);
 
@@ -61,16 +68,19 @@ export const toggleFavorite = (productId: string): string[] => {
     ? current.filter((id) => id !== productId)
     : [...current, productId];
 
-  writeJson(FAVORITES_KEY, next);
+  writeJson(getFavoritesKey(), next);
   return next;
 };
 
-export const getRecentlyOpened = (): RecentlyOpenedEntry[] =>
-  readJson<RecentlyOpenedEntry[]>(RECENTLY_OPENED_KEY, []).sort((a, b) => b.openedAt - a.openedAt);
+export const getRecentlyOpened = (): RecentlyOpenedEntry[] => {
+  const key = getRecentlyOpenedKey();
+  claimLegacyKey(LEGACY_RECENTLY_OPENED_KEY, key);
+  return readJson<RecentlyOpenedEntry[]>(key, []).sort((a, b) => b.openedAt - a.openedAt);
+};
 
 /** Called once a buyer is actually authorized to view a PDF - not on every click, just successful opens. */
 export const recordOpened = (productId: string): void => {
   const current = getRecentlyOpened().filter((entry) => entry.productId !== productId);
   const next = [{ productId, openedAt: Date.now() }, ...current].slice(0, MAX_RECENTLY_OPENED);
-  writeJson(RECENTLY_OPENED_KEY, next);
+  writeJson(getRecentlyOpenedKey(), next);
 };

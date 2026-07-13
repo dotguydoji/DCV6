@@ -1,9 +1,12 @@
 /**
  * Per-PDF reading preferences (bookmarks, last page read) - localStorage
- * only, same privacy-conscious pattern as libraryPreferences.ts: only
- * product ids, page numbers, and timestamps are ever stored, never
- * anything identity-linked, and nothing is ever sent to any server.
+ * only, nothing ever sent to any server. Namespaced per signed-in account
+ * (see accountScope.ts) so a second buyer signing into a shared device
+ * never sees or overwrites the first buyer's bookmarks/reading progress/
+ * viewer settings for a PDF.
  */
+
+import { claimLegacyKey, getAccountScope } from './accountScope';
 
 export interface Bookmark {
   id: string;
@@ -27,9 +30,13 @@ export interface ViewerPrefs {
   scaleValue: string;
 }
 
-const BOOKMARKS_KEY_PREFIX = 'pdf-bookmarks:';
-const PROGRESS_KEY_PREFIX = 'pdf-progress:';
-const VIEWER_PREFS_KEY_PREFIX = 'pdf-viewer-prefs:';
+const LEGACY_BOOKMARKS_PREFIX = 'pdf-bookmarks:';
+const LEGACY_PROGRESS_PREFIX = 'pdf-progress:';
+const LEGACY_VIEWER_PREFS_PREFIX = 'pdf-viewer-prefs:';
+
+const bookmarksKey = (productId: string) => `pdf-bookmarks:${getAccountScope()}:${productId}`;
+const progressKey = (productId: string) => `pdf-progress:${getAccountScope()}:${productId}`;
+const viewerPrefsKey = (productId: string) => `pdf-viewer-prefs:${getAccountScope()}:${productId}`;
 
 const DEFAULT_VIEWER_PREFS: ViewerPrefs = { rotation: 0, scrollMode: 'continuous', scaleValue: 'page-width' };
 
@@ -71,33 +78,57 @@ const writeJson = (key: string, value: unknown): void => {
   }
 };
 
-export const getBookmarks = (productId: string): Bookmark[] =>
-  readJson<Bookmark[]>(BOOKMARKS_KEY_PREFIX + productId, []).sort((a, b) => a.page - b.page);
+export const getBookmarks = (productId: string): Bookmark[] => {
+  const key = bookmarksKey(productId);
+  claimLegacyKey(LEGACY_BOOKMARKS_PREFIX + productId, key);
+  return readJson<Bookmark[]>(key, []).sort((a, b) => a.page - b.page);
+};
 
 export const addBookmark = (productId: string, page: number): Bookmark[] => {
   const current = getBookmarks(productId);
   if (current.some((bookmark) => bookmark.page === page)) return current;
 
   const next = [...current, { id: `${page}-${Date.now()}`, page, createdAt: Date.now() }];
-  writeJson(BOOKMARKS_KEY_PREFIX + productId, next);
+  writeJson(bookmarksKey(productId), next);
   return getBookmarks(productId);
 };
 
 export const removeBookmark = (productId: string, id: string): Bookmark[] => {
   const next = getBookmarks(productId).filter((bookmark) => bookmark.id !== id);
-  writeJson(BOOKMARKS_KEY_PREFIX + productId, next);
+  writeJson(bookmarksKey(productId), next);
   return next;
 };
 
 export const isPageBookmarked = (productId: string, page: number): boolean =>
   getBookmarks(productId).some((bookmark) => bookmark.page === page);
 
-export const getReadingProgress = (productId: string): ReadingProgress | null =>
-  readJson<ReadingProgress | null>(PROGRESS_KEY_PREFIX + productId, null);
+// Unlike the array-shaped data above (already guarded by readJson's
+// array-shape check), a corrupted-but-valid-JSON object would otherwise
+// pass straight through into PDF.js/CSS logic (e.g. lastPage: "abc" or
+// rotation: 999) - these two checks catch that instead of trusting the
+// stored shape.
+const isValidReadingProgress = (value: unknown): value is ReadingProgress =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as ReadingProgress).lastPage === 'number' &&
+  typeof (value as ReadingProgress).pageCount === 'number';
+
+const isValidRotation = (value: unknown): value is ViewerPrefs['rotation'] =>
+  value === 0 || value === 90 || value === 180 || value === 270;
+
+const isValidScrollMode = (value: unknown): value is ViewerPrefs['scrollMode'] =>
+  value === 'continuous' || value === 'single';
+
+export const getReadingProgress = (productId: string): ReadingProgress | null => {
+  const key = progressKey(productId);
+  claimLegacyKey(LEGACY_PROGRESS_PREFIX + productId, key);
+  const parsed = readJson<ReadingProgress | null>(key, null);
+  return isValidReadingProgress(parsed) ? parsed : null;
+};
 
 export const saveReadingProgress = (productId: string, lastPage: number, pageCount: number): void => {
   const progress: ReadingProgress = { lastPage, pageCount, updatedAt: Date.now() };
-  writeJson(PROGRESS_KEY_PREFIX + productId, progress);
+  writeJson(progressKey(productId), progress);
 };
 
 // Rotation and scroll-mode were previously session-only (reset every time a
@@ -106,12 +137,20 @@ export const saveReadingProgress = (productId: string, lastPage: number, pageCou
 // too, per product, keeps all viewer preferences behaving the same way.
 // Spread over the defaults (rather than returned as-is) so a prefs object
 // saved before `scaleValue` existed still comes back with a valid value
-// instead of `undefined`.
-export const getViewerPrefs = (productId: string): ViewerPrefs => ({
-  ...DEFAULT_VIEWER_PREFS,
-  ...readJson<Partial<ViewerPrefs>>(VIEWER_PREFS_KEY_PREFIX + productId, DEFAULT_VIEWER_PREFS)
-});
+// instead of `undefined`, and each field is independently shape-checked so
+// a corrupted single field falls back to its own default rather than
+// invalidating the whole object.
+export const getViewerPrefs = (productId: string): ViewerPrefs => {
+  const key = viewerPrefsKey(productId);
+  claimLegacyKey(LEGACY_VIEWER_PREFS_PREFIX + productId, key);
+  const stored = readJson<Partial<ViewerPrefs>>(key, {});
+  return {
+    rotation: isValidRotation(stored.rotation) ? stored.rotation : DEFAULT_VIEWER_PREFS.rotation,
+    scrollMode: isValidScrollMode(stored.scrollMode) ? stored.scrollMode : DEFAULT_VIEWER_PREFS.scrollMode,
+    scaleValue: typeof stored.scaleValue === 'string' ? stored.scaleValue : DEFAULT_VIEWER_PREFS.scaleValue
+  };
+};
 
 export const saveViewerPrefs = (productId: string, prefs: ViewerPrefs): void => {
-  writeJson(VIEWER_PREFS_KEY_PREFIX + productId, prefs);
+  writeJson(viewerPrefsKey(productId), prefs);
 };
