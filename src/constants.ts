@@ -283,7 +283,7 @@ const AI_ITEMS: readonly AIItemMeta[] = [
       en: 'Claude MCP notes focused on connecting Claude with external tools and structured workflows.',
       tl: 'Claude MCP notes na nakatuon sa pag-connect ng Claude sa external tools at structured workflows.'
     },
-    price: { en: 150, tl: 200 }
+    price: { en: 120, tl: 150 }
   },
   {
     itemKey: 'claude-subagents',
