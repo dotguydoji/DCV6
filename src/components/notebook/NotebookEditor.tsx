@@ -877,10 +877,23 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    // iOS Safari doesn't reliably honor `download` - it can instead
+    // navigate to the blob URL like a normal link click. target="_blank"
+    // (+ noopener/noreferrer, standard practice whenever target="_blank"
+    // is used) keeps that navigation in a new tab instead of away from the
+    // notebook, so the reader's in-progress edits here are never at risk
+    // either way this plays out.
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Delayed rather than immediate: on a browser that treats this as a
+    // navigation instead of a same-tick download, revoking the object URL
+    // right away can race that navigation and leave the new tab with
+    // nothing to load. The download/navigation has always started well
+    // within this window in practice.
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
   };
 
   const CHECKLIST_EXPORT_CSS = `

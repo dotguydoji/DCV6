@@ -9,6 +9,13 @@ interface GoogleIdConfiguration {
   callback: (response: GoogleCredentialResponse) => void;
   auto_select?: boolean;
   cancel_on_tap_outside?: boolean;
+  // Browsers with Intelligent Tracking Prevention (Safari on macOS/iOS,
+  // Firefox) block the third-party cookies the plain One Tap flow was
+  // built around - without this, sign-in there can silently misbehave
+  // instead of working. Google's own recommended fix is this flag, which
+  // switches those browsers to their dedicated welcome-page + popup flow
+  // rather than the silent-only flow that assumes third-party cookies work.
+  itp_support?: boolean;
 }
 
 interface GoogleButtonOptions {
@@ -289,6 +296,18 @@ const ensureKeepAliveClientInitialized = (): boolean => {
     },
     auto_select: true,
     cancel_on_tap_outside: false
+    // Deliberately NOT setting itp_support here (unlike GoogleSignInButton's
+    // own client) - that flag's whole purpose is switching Safari/Firefox to
+    // a *visible* welcome-page + popup flow instead of a silent one, since
+    // those browsers block the third-party cookies the silent flow needs.
+    // That's the right tradeoff for an explicit, user-initiated sign-in
+    // click, but this client only ever calls prompt() from an unattended
+    // background timer - showing a surprise sign-in popup while someone is
+    // just reading a PDF would be worse than the current behavior, which is
+    // that this quietly no-ops on those browsers. On Safari/Firefox, a
+    // buyer's session there still gets renewed the same way it always has:
+    // reactively, via GoogleSignInButton's own itp-aware flow, the next
+    // time something actually needs a valid token.
   });
   keepAliveClientInitialized = true;
   return true;

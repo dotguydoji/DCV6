@@ -34,7 +34,15 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ onSignIn
           // a second layer on top of our own cached-token check, for
           // cases like visiting a different product for the first time.
           auto_select: true,
-          cancel_on_tap_outside: false
+          cancel_on_tap_outside: false,
+          // Without this, Safari (macOS/iOS) and Firefox - which block the
+          // third-party cookies the default One Tap flow relies on - can
+          // fail to sign someone in at all instead of falling back to
+          // Google's dedicated welcome-page + popup flow for those
+          // browsers. This is the button/explicit-sign-in client only -
+          // see googleIdentity.ts for why the background keep-alive client
+          // deliberately does NOT set this.
+          itp_support: true
         });
 
         window.google.accounts.id.renderButton(buttonRef.current, {
