@@ -162,7 +162,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Beginner',
     folder: 'programming-languages-beginners',
     fileSuffix: 'beginners',
-    price: { en: 150, tl: 199 },
+    price: { en: 120, tl: 150 },
     available: true
   },
   {
@@ -170,7 +170,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Intermediate',
     folder: 'programming-languages-intermediate',
     fileSuffix: 'intermediate',
-    price: { en: 199, tl: 250 },
+    price: { en: 180, tl: 210 },
     available: true
   },
   {
@@ -178,7 +178,7 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Advanced',
     folder: 'programming-languages-advanced',
     fileSuffix: 'advanced',
-    price: { en: 250, tl: 299 },
+    price: { en: 240, tl: 270 },
     available: true
   },
   {
@@ -202,10 +202,23 @@ const PROGRAMMING_LEVELS: readonly ProgrammingLevelMeta[] = [
     label: 'Packages',
     folder: 'programming-languages-packages',
     fileSuffix: 'package',
-    price: { en: 499, tl: 599 },
+    price: { en: 399, tl: 499 },
     available: true
   }
 ];
+
+// Python was excluded from the price update - it keeps its previous prices
+// (same figures every language used before this change) while every other
+// language moves to PROGRAMMING_LEVELS' new prices above. Only the levels
+// that actually changed need an entry here (Activities didn't change, so
+// it's absent and falls through to the shared price like every other
+// language).
+const PYTHON_LEGACY_PRICES: Partial<Record<ProductLevel, Partial<Record<ProductLanguage, number>>>> = {
+  beginner: { en: 150, tl: 199 },
+  intermediate: { en: 199, tl: 250 },
+  advanced: { en: 250, tl: 299 },
+  package: { en: 499, tl: 599 }
+};
 
 const WEB_DEVELOPMENT_ITEMS: readonly WebDevelopmentMeta[] = [
   {
@@ -417,7 +430,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'n8n Automation notes for building visual workflows, integrating APIs, and automating tasks without code.',
       tl: 'n8n Automation notes para sa pagbuo ng visual workflows, pag-integrate ng APIs, at pag-automate ng tasks nang walang code.'
     },
-    price: { en: 399, tl: 499 }
+    price: { en: 299, tl: 350 }
   },
   {
     itemKey: 'openclo',
@@ -426,7 +439,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Open Claw notes for setting up and running OpenClaw, an open-source personal AI agent that automates tasks across messaging apps, files, and the web.',
       tl: 'Open Claw notes para sa pag-setup at pagpapatakbo ng OpenClaw, isang open-source personal AI agent na nag-a-automate ng tasks sa messaging apps, files, at web.'
     },
-    price: { en: 399, tl: 499 },
+    price: { en: 299, tl: 350 },
   },
   {
     itemKey: 'hermes-agent',
@@ -435,7 +448,7 @@ const AI_AUTOMATION_ITEMS: readonly AIAutomationItemMeta[] = [
       en: 'Hermes Agent notes for building and deploying autonomous AI agents with structured task execution.',
       tl: 'Hermes Agent notes para sa pagbuo at pag-deploy ng autonomous AI agents na may structured task execution.'
     },
-    price: { en: 399, tl: 499 },
+    price: { en: 299, tl: 350 },
   }
 ];
 
@@ -599,7 +612,10 @@ const programmingLanguageProducts = PROGRAMMING_LEVELS.flatMap((level) =>
         itemKey: languageMeta.itemKey,
         title: getProgrammingLanguageTitle(languageMeta.name, level.key),
         description: getProgrammingLanguageDescription(languageMeta.name, level.key, language),
-        price: level.price[language] ?? 0,
+        price:
+          (languageMeta.itemKey === 'python' ? PYTHON_LEGACY_PRICES[level.key]?.[language] : undefined) ??
+          level.price[language] ??
+          0,
         thumbnail: getProgrammingLanguageThumbnail(languageMeta.itemKey, level, language),
         category: PROGRAMMING_LANGUAGES_CATEGORY,
         language,
@@ -723,7 +739,7 @@ export const PRODUCTS: Product[] = [
     description:
       'Preparation notes for incoming freshmen, covering practical reminders and basics to help them get ready before classes begin.',
     thumbnail: `${IMAGE_BASE_URL}/images/advance%20study/freshmen-prep.webp`,
-    price: 199,
+    price: 150,
     mobileUrl: MOBILE_URL,
     desktopUrl: DESKTOP_URL,
     category: PRODUCTIVITY_CATEGORY,
@@ -735,7 +751,7 @@ export const PRODUCTS: Product[] = [
   description:
     'Advanced study guide for BSCS students covering key topics, review materials, and preparation resources for deeper learning.',
   thumbnail: `${IMAGE_BASE_URL}/images/advance%20study/bscs-advance-study.webp`,
-  price: 199,
+  price: 150,
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
   category: PRODUCTIVITY_CATEGORY,
@@ -745,7 +761,7 @@ export const PRODUCTS: Product[] = [
   id: 'ai-claude-notes-en',
   title: 'Claude Notes',
   description: 'First release of Claude Notes with practical guidance for prompts, workflows, and everyday coding support.',
-  price: 350,
+  price: 299,
   thumbnail: getAiThumbnail('claude-code-notes', 'en'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
@@ -757,7 +773,7 @@ export const PRODUCTS: Product[] = [
   id: 'ai-claude-notes-tl',
   title: 'Claude Notes',
   description: 'First release ng Claude Notes na may praktikal na gabay para sa prompts, workflows, at pang-araw-araw na coding support.',
-  price: 399,
+  price: 350,
   thumbnail: getAiThumbnail('claude-code-notes', 'tl'),
   mobileUrl: MOBILE_URL,
   desktopUrl: DESKTOP_URL,
