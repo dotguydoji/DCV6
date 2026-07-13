@@ -506,9 +506,122 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     }
   };
 
+  // Only these are safe to swap the tag of directly - anything else found
+  // while walking up to a top-level block (a <table>, <ul>/<ol> from a
+  // selection that starts inside a list) is left alone rather than risk
+  // corrupting its structure by turning it into a heading.
+  const CONVERTIBLE_BLOCK_TAGS = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE']);
+
+  // insertChecklist's range.insertNode() (above) inserts a checklist row as
+  // a CHILD of whatever top-level div the cursor was in at the time, not as
+  // its own top-level sibling - so a top-level block can itself have the
+  // right tag/no special class of its own while still containing a nested
+  // checklist row (or, defensively, a table) that would be corrupted by
+  // getting swapped into a heading tag along with it.
+  const isConvertibleBlock = (node: Element): boolean =>
+    CONVERTIBLE_BLOCK_TAGS.has(node.tagName) &&
+    !node.classList.contains('notebook-checklist-item') &&
+    !node.querySelector('.notebook-checklist-item, table');
+
+  /** Walks up from any node inside the editor to the top-level block that's a direct child of the editor root. */
+  const getTopLevelBlock = (node: Node | null): HTMLElement | null => {
+    let current = node;
+    while (current) {
+      if (current === editorRef.current) return null;
+      if (current.parentElement === editorRef.current) return current as HTMLElement;
+      current = current.parentNode;
+    }
+    return null;
+  };
+
+  // Built via direct DOM manipulation rather than execCommand('formatBlock')
+  // - browsers (particularly on a selection collapsed inside an otherwise
+  // empty block, e.g. picking a heading before typing anything) are
+  // inconsistent about actually retagging the CURRENT block in place, vs.
+  // only taking effect starting with the next block Enter creates - which
+  // is exactly the "heading only applies from the second line onward" bug
+  // this replaces. Same reasoning as insertChecklist above: Range/DOM APIs
+  // give exact, deterministic control that execCommand doesn't guarantee
+  // here (see MDN's own formatBlock caveats).
   const applyBlockFormat = (tag: string) => {
     restoreRange();
-    execCmd('formatBlock', `<${tag.toLowerCase()}>`);
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      editor.focus();
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    if (!editor.contains(range.commonAncestorContainer)) {
+      editor.focus();
+      return;
+    }
+
+    const startBlock = getTopLevelBlock(range.startContainer);
+    const endBlock = getTopLevelBlock(range.endContainer);
+    if (!startBlock || !endBlock) {
+      editor.focus();
+      return;
+    }
+
+    // A multi-line selection converts each line to its own heading (rather
+    // than merging them into one block, which is what formatBlock tended to
+    // do) - matches how most other editors handle "apply heading" across
+    // several paragraphs.
+    const blocksToConvert: HTMLElement[] = [];
+    let node: Element | null = startBlock;
+    while (node) {
+      if (isConvertibleBlock(node)) {
+        blocksToConvert.push(node as HTMLElement);
+      }
+      if (node === endBlock) break;
+      node = node.nextElementSibling;
+    }
+
+    if (blocksToConvert.length === 0) {
+      editor.focus();
+      return;
+    }
+
+    const anchorNode = range.startContainer;
+    const anchorOffset = range.startOffset;
+    const anchorBlock = getTopLevelBlock(anchorNode);
+
+    let newAnchorBlock: HTMLElement | null = null;
+    blocksToConvert.forEach((block) => {
+      const replacement = document.createElement(tag);
+      while (block.firstChild) {
+        replacement.appendChild(block.firstChild);
+      }
+      if (!replacement.firstChild) {
+        replacement.appendChild(document.createElement('br'));
+      }
+      block.replaceWith(replacement);
+      if (block === anchorBlock) newAnchorBlock = replacement;
+    });
+
+    // anchorNode is either a descendant that moved along with its parent
+    // (still the same node object, just re-parented - the offset within it
+    // is unaffected) or, for a collapsed cursor sitting directly on an
+    // empty block, the block element itself (now detached, replaced by
+    // newAnchorBlock) - reconstruct the range accordingly either way.
+    const finalRange = document.createRange();
+    if (anchorNode === anchorBlock && newAnchorBlock) {
+      const offset = Math.min(anchorOffset, newAnchorBlock.childNodes.length);
+      finalRange.setStart(newAnchorBlock, offset);
+    } else {
+      finalRange.setStart(anchorNode, anchorOffset);
+    }
+    finalRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(finalRange);
+
+    editor.focus();
+    isInternalUpdate.current = true;
+    onUpdate(editor.innerHTML);
+    syncSelectionState();
   };
 
   const insertHr = () => {
