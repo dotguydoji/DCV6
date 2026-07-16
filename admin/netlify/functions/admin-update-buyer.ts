@@ -1,10 +1,9 @@
 import type { Handler } from '@netlify/functions';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './lib/adminAuth';
-import { r2Client, R2_BUCKET_NAME } from './lib/r2Client';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 import { isValidProductId } from './lib/validation';
+import { productFileExists } from './lib/productExists';
 
 // Buyer records are kept for a bounded window rather than indefinitely, to
 // stop the buyers collection from growing forever - each grant refreshes
@@ -13,19 +12,6 @@ import { isValidProductId } from './lib/validation';
 // Removal only means the record is gone; re-adding the same Gmail through
 // this same endpoint restores it exactly as before.
 const RECORD_LIFETIME_MS = 3 * 365 * 24 * 60 * 60 * 1000;
-
-// Only "add" ever needs this check - a well-formed but nonexistent productId
-// used to be silently accepted into a buyer's whitelist (harmless in effect,
-// since get-pdf.ts would just 404 later, but confusing and easy to miss).
-// "remove" of something that was never real is already a no-op either way.
-const productFileExists = async (productId: string): Promise<boolean> => {
-  try {
-    await r2Client.send(new HeadObjectCommand({ Bucket: R2_BUCKET_NAME, Key: `pdfs/${productId}.pdf` }));
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 type UpdateAction = 'add' | 'remove' | 'delete';
 

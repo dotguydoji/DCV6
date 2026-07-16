@@ -19,6 +19,15 @@ export interface AdminFile {
   lastModified: string | null;
 }
 
+// Not a real PDF/file of its own - just a named shortcut for a set of
+// existing productIds, so an admin can grant several PDFs to a buyer in one
+// pick instead of selecting each individually.
+export interface Package {
+  id: string;
+  name: string;
+  productIds: string[];
+}
+
 // Carries the HTTP status alongside the message so callers can tell a real
 // "not authorized" (403) apart from a rate limit (429) or a server error
 // (5xx) - these need different handling, not one generic failure message.
@@ -47,6 +56,7 @@ const call = async <T>(fn: string, idToken: string, body: Record<string, unknown
 
 const BUYERS_CACHE_KEY = 'buyers';
 const FILES_CACHE_KEY = 'files';
+const PACKAGES_CACHE_KEY = 'packages';
 
 export const listBuyers = async (idToken: string): Promise<{ buyers: Buyer[] }> => {
   const cached = getCachedResponse<{ buyers: Buyer[] }>(BUYERS_CACHE_KEY);
@@ -83,6 +93,30 @@ export const getUploadUrl = (idToken: string, productId: string) =>
 export const deleteFile = async (idToken: string, productId: string) => {
   const result = await call<{ ok: true }>('admin-delete-file', idToken, { productId });
   clearCachedResponse(FILES_CACHE_KEY);
+  return result;
+};
+
+export const listPackages = async (idToken: string): Promise<{ packages: Package[] }> => {
+  const cached = getCachedResponse<{ packages: Package[] }>(PACKAGES_CACHE_KEY);
+  if (cached) return cached;
+
+  const result = await call<{ packages: Package[] }>('admin-list-packages', idToken);
+  setCachedResponse(PACKAGES_CACHE_KEY, result, LIST_CACHE_TTL_MS);
+  return result;
+};
+
+export const upsertPackage = async (
+  idToken: string,
+  pkg: { id?: string; name: string; productIds: string[] }
+) => {
+  const result = await call<{ id: string }>('admin-upsert-package', idToken, pkg);
+  clearCachedResponse(PACKAGES_CACHE_KEY);
+  return result;
+};
+
+export const deletePackage = async (idToken: string, id: string) => {
+  const result = await call<{ ok: true }>('admin-delete-package', idToken, { id });
+  clearCachedResponse(PACKAGES_CACHE_KEY);
   return result;
 };
 

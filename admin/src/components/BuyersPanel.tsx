@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Loader2, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
-import { AdminFile, Buyer, updateBuyer } from '../lib/api';
+import { AdminFile, Buyer, Package, updateBuyer } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
 import { GrantSuccessDialog } from './GrantSuccessDialog';
 import { InfoDialog } from './InfoDialog';
@@ -13,17 +13,21 @@ const PAGE_SIZE = 50;
 
 const GRANT_CONFIRMATION_MESSAGE = `Your access is now ready!
 
-Log in to our website https://dojicreates.com using the Gmail address you provided.
-Once logged in, you'll find your purchased PDF in your account.
+Sign in to https://dojicreates.com using your Gmail account. Your purchased PDF will be available in your account.
 
+If your access doesn't appear right away, please clear your browser's site data or wait up to 20 minutes.
+For the best experience, use Google Chrome (not the Messenger browser).
 
-To protect the collective work of our administrators and keep our materials exclusive to legitimate buyers, downloading, printing, and copying have been disabled.
-As a legitimate buyer, you have **lifetime access** to your purchased materials.`;
+To protect our materials, downloading, printing, and copying are disabled.
+
+Your purchase includes lifetime access. Gmail accounts may be cleared from our system every 3 years for maintenance.
+Just message us anytime and we'll restore your access for free.`;
 
 interface BuyersPanelProps {
   idToken: string;
   buyers: Buyer[];
   files: AdminFile[];
+  packages: Package[];
   isLoading: boolean;
   error: string | null;
   onRefresh: () => void;
@@ -33,6 +37,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
   idToken,
   buyers,
   files,
+  packages,
   isLoading,
   error,
   onRefresh
@@ -182,6 +187,30 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
             <label className="block text-sm text-brand-muted mb-1.5">Products</label>
             <ProductAutocomplete products={grantableFiles} value={productIdsInput} onChange={setProductIdsInput} />
           </div>
+          {packages.length > 0 && (
+            <div className="flex-1 min-w-0">
+              <label className="block text-sm text-brand-muted mb-1.5">Or add a package</label>
+              <select
+                value=""
+                onChange={(event) => {
+                  const pkg = packages.find((p) => p.id === event.target.value);
+                  if (pkg) {
+                    setProductIdsInput((current) => Array.from(new Set([...current, ...pkg.productIds])));
+                  }
+                }}
+                className="w-full bg-brand-black border border-brand-border rounded-lg px-3 py-2.5 text-white outline-none focus:border-brand-yellow transition-colors"
+              >
+                <option value="" disabled>
+                  Select a package…
+                </option>
+                {packages.map((pkg) => (
+                  <option key={pkg.id} value={pkg.id}>
+                    {pkg.name} ({pkg.productIds.length} PDFs)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isSubmitting}

@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Clock, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
+import { PackagesPanel } from './components/PackagesPanel';
 import { AdminCidGate } from './components/AdminCidGate';
 import { InstallAppButton } from './components/InstallAppButton';
-import { AdminFile, ApiError, Buyer, listBuyers, listFiles } from './lib/api';
+import { AdminFile, ApiError, Buyer, Package, listBuyers, listFiles, listPackages } from './lib/api';
 import { clearCachedIdToken, getCachedIdToken, setCachedIdToken, signOutOfGoogle } from './lib/googleIdentity';
 import { useInstallPrompt } from './lib/useInstallPrompt';
 
@@ -18,7 +19,7 @@ type AuthState =
   | { status: 'error'; message: string; idToken: string }
   | { status: 'ready'; idToken: string };
 
-type Tab = 'buyers' | 'files' | 'inactive';
+type Tab = 'buyers' | 'files' | 'inactive' | 'packages';
 
 const App: React.FC = () => {
   const installPrompt = useInstallPrompt();
@@ -35,6 +36,23 @@ const App: React.FC = () => {
   const [filesLoading, setFilesLoading] = useState(false);
   const [filesError, setFilesError] = useState<string | null>(null);
   const [canManageFiles, setCanManageFiles] = useState(false);
+
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [packagesLoading, setPackagesLoading] = useState(false);
+  const [packagesError, setPackagesError] = useState<string | null>(null);
+
+  const refreshPackages = useCallback(async (idToken: string) => {
+    setPackagesLoading(true);
+    setPackagesError(null);
+    try {
+      const { packages: result } = await listPackages(idToken);
+      setPackages(result);
+    } catch (err) {
+      setPackagesError(err instanceof Error ? err.message : 'Could not load packages.');
+    } finally {
+      setPackagesLoading(false);
+    }
+  }, []);
 
   const refreshBuyers = useCallback(async (idToken: string) => {
     setBuyersLoading(true);
@@ -67,10 +85,15 @@ const App: React.FC = () => {
     setAuth({ status: 'checking' });
 
     try {
-      const [buyersResult, filesResult] = await Promise.all([listBuyers(idToken), listFiles(idToken)]);
+      const [buyersResult, filesResult, packagesResult] = await Promise.all([
+        listBuyers(idToken),
+        listFiles(idToken),
+        listPackages(idToken)
+      ]);
       setBuyers(buyersResult.buyers);
       setFiles(filesResult.files);
       setCanManageFiles(filesResult.canManageFiles);
+      setPackages(packagesResult.packages);
       setCachedIdToken(idToken);
       setAuth({ status: 'ready', idToken });
     } catch (err) {
@@ -103,6 +126,7 @@ const App: React.FC = () => {
     const navItems: { key: Tab; label: string; icon: typeof FileText }[] = [
       { key: 'buyers', label: 'Buyers', icon: Users },
       { key: 'files', label: 'Files', icon: FileText },
+      { key: 'packages', label: 'Packages', icon: Box },
       { key: 'inactive', label: 'Inactive Accounts', icon: Clock }
     ];
 
@@ -167,7 +191,13 @@ const App: React.FC = () => {
               <p className="font-bold">DC Notes Admin</p>
             </div>
             <h2 className="hidden lg:block text-lg font-bold">
-              {tab === 'files' ? 'Files' : tab === 'buyers' ? 'Buyers' : 'Inactive Accounts'}
+              {tab === 'files'
+                ? 'Files'
+                : tab === 'buyers'
+                  ? 'Buyers'
+                  : tab === 'packages'
+                    ? 'Packages'
+                    : 'Inactive Accounts'}
             </h2>
             <div className="lg:hidden flex items-center gap-3">
               <InstallAppButton {...installPrompt} />
@@ -198,9 +228,19 @@ const App: React.FC = () => {
                 idToken={auth.idToken}
                 buyers={buyers}
                 files={files}
+                packages={packages}
                 isLoading={buyersLoading}
                 error={buyersError}
                 onRefresh={() => refreshBuyers(auth.idToken)}
+              />
+            ) : tab === 'packages' ? (
+              <PackagesPanel
+                idToken={auth.idToken}
+                packages={packages}
+                files={files}
+                isLoading={packagesLoading}
+                error={packagesError}
+                onRefresh={() => refreshPackages(auth.idToken)}
               />
             ) : (
               <InactiveAccountsPanel
