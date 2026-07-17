@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
 import { PackagesPanel } from './components/PackagesPanel';
+import { BackupsPanel } from './components/BackupsPanel';
 import { AdminCidGate } from './components/AdminCidGate';
 import { InstallAppButton } from './components/InstallAppButton';
 import { AdminFile, ApiError, Buyer, Package, listBuyers, listFiles, listPackages } from './lib/api';
@@ -19,7 +20,7 @@ type AuthState =
   | { status: 'error'; message: string; idToken: string }
   | { status: 'ready'; idToken: string };
 
-type Tab = 'buyers' | 'files' | 'inactive' | 'packages';
+type Tab = 'buyers' | 'files' | 'inactive' | 'packages' | 'backups';
 
 const App: React.FC = () => {
   const installPrompt = useInstallPrompt();
@@ -127,6 +128,7 @@ const App: React.FC = () => {
       { key: 'buyers', label: 'Buyers', icon: Users },
       { key: 'files', label: 'Files', icon: FileText },
       { key: 'packages', label: 'Packages', icon: Box },
+      { key: 'backups', label: 'Backups', icon: Archive },
       { key: 'inactive', label: 'Inactive Accounts', icon: Clock }
     ];
 
@@ -197,7 +199,9 @@ const App: React.FC = () => {
                   ? 'Buyers'
                   : tab === 'packages'
                     ? 'Packages'
-                    : 'Inactive Accounts'}
+                    : tab === 'backups'
+                      ? 'Backups'
+                      : 'Inactive Accounts'}
             </h2>
             <div className="lg:hidden flex items-center gap-3">
               <InstallAppButton {...installPrompt} />
@@ -242,6 +246,8 @@ const App: React.FC = () => {
                 error={packagesError}
                 onRefresh={() => refreshPackages(auth.idToken)}
               />
+            ) : tab === 'backups' ? (
+              <BackupsPanel idToken={auth.idToken} />
             ) : (
               <InactiveAccountsPanel
                 idToken={auth.idToken}

@@ -120,6 +120,18 @@ export const deletePackage = async (idToken: string, id: string) => {
   return result;
 };
 
+export interface BackupStatus {
+  lastBackupAt: string | null;
+  count: number | null;
+}
+
+// Status/restore are never cached - this is exactly the data you want
+// freshly re-checked every time, not served stale.
+export const getBackupStatus = (idToken: string) => call<BackupStatus>('admin-backup-status', idToken);
+
+export const restoreLatestBackup = (idToken: string) =>
+  call<{ ok: true; restoredCount: number; backupCreatedAt: string }>('admin-restore-buyers', idToken);
+
 export const backfillExpiry = async (idToken: string) => {
   const result = await call<{ updated: number }>('admin-backfill-expiry', idToken);
   clearCachedResponse(BUYERS_CACHE_KEY);
