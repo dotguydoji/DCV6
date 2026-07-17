@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue, useCallback } from 'react';
-import { Menu, X, Search, LibraryBig, MessageCircle, NotebookPen } from 'lucide-react';
+import { Menu, X, Search, LibraryBig, MessageCircle, NotebookPen, LayoutGrid, ChevronDown, Download } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
 import { getCachedIdToken, getIdTokenEmail } from '../lib/googleIdentity';
@@ -24,6 +24,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   );
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Desktop-only "More" dropdown - groups Install/Join Group Chat/Notebook
+  // under one button so the header has room to grow (more per-page buttons
+  // later) without becoming a wall of pills. Mobile keeps its own hamburger
+  // sheet exactly as-is, so none of this touches that.
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
   const [noPdfAccessMessage, setNoPdfAccessMessage] = useState<string | undefined>(undefined);
@@ -114,6 +121,48 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
       inputRef.current.focus();
     }
   }, [isSearchVisible]);
+
+  // Hover-to-open, with a short close delay (not an instant onMouseLeave)
+  // so moving the cursor from the trigger button down into the dropdown
+  // panel itself doesn't close it partway through - a real click anywhere
+  // else, or Escape, closes it immediately via the effect below instead.
+  const openMoreMenu = useCallback(() => {
+    if (moreMenuCloseTimeoutRef.current) {
+      clearTimeout(moreMenuCloseTimeoutRef.current);
+      moreMenuCloseTimeoutRef.current = null;
+    }
+    setIsMoreMenuOpen(true);
+  }, []);
+
+  const scheduleCloseMoreMenu = useCallback(() => {
+    moreMenuCloseTimeoutRef.current = setTimeout(() => setIsMoreMenuOpen(false), 150);
+  }, []);
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) return;
+
+    const handleClickOutsideMoreMenu = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMoreMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutsideMoreMenu);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideMoreMenu);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMoreMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (moreMenuCloseTimeoutRef.current) clearTimeout(moreMenuCloseTimeoutRef.current);
+    };
+  }, []);
 
   // Only buyers who own at least one PDF can join the Messenger group chat -
   // this isn't a real access-control boundary (get-my-library re-verifies
@@ -296,35 +345,94 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               )}
             </div>
 
-            <InstallAppButton
-              variant="desktop"
-              canInstall={installPrompt.canInstall}
-              guide={installGuide}
-              onOpen={() => setIsInstallModalOpen(true)}
-            />
-            <button
-              type="button"
-              onClick={handleMessengerClick}
-              disabled={isCheckingMessengerAccess}
-              aria-label="Join Group Chat"
-              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            {/* Desktop-only grouping for Install/Join Group Chat/Notebook (and
+                future per-page buttons) - hover opens it, a real click
+                toggles it too (so it still works without a mouse hovering,
+                e.g. keyboard/touch-trackpad focus), and it closes on
+                click-outside, Escape, or picking an item. */}
+            <div
+              ref={moreMenuRef}
+              className="relative shrink-0"
+              onMouseEnter={openMoreMenu}
+              onMouseLeave={scheduleCloseMoreMenu}
             >
-              <MessageCircle size={18} strokeWidth={1.5} />
-              {/* Icon-only from lg up to xl (1280px) - the search bar's own
-                  min-width takes priority over these labels in that range;
-                  text comes back once there's room for both. */}
-              <span className="hidden xl:inline">Join Group Chat</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleNotebookClick}
-              disabled={isCheckingNotebookAccess}
-              aria-label="Notebook"
-              className="flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <NotebookPen size={18} strokeWidth={1.5} />
-              <span className="hidden xl:inline">Notebook</span>
-            </button>
+              <button
+                type="button"
+                // Always opens (never toggles closed) - a mouse click on
+                // this button is preceded by the hover above already
+                // opening it, so a toggle here would immediately re-close
+                // it. Keyboard activation (Tab + Enter/Space, which never
+                // fires the hover handlers) still needs this to open it.
+                // Closing happens via mouse-leave, outside click, or Escape.
+                onClick={openMoreMenu}
+                aria-haspopup="true"
+                aria-expanded={isMoreMenuOpen}
+                aria-label="More"
+                className={`flex items-center gap-2 shrink-0 h-11 laptop:h-12 px-3 xl:px-4 laptop:px-5 rounded-sm border text-sm laptop:text-base font-medium text-text-primary transition-colors ${
+                  isMoreMenuOpen ? 'border-border-strong' : 'border-border-hairline hover:border-border-strong'
+                }`}
+              >
+                <LayoutGrid size={18} strokeWidth={1.5} />
+                {/* Icon-only from lg up to xl (1280px) - the search bar's own
+                    min-width takes priority over these labels in that range;
+                    text comes back once there's room for both. */}
+                <span className="hidden xl:inline">More</span>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`transition-transform duration-200 ${isMoreMenuOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {isMoreMenuOpen && (
+                <div
+                  role="menu"
+                  className="absolute top-full right-0 mt-2 w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-[70] overflow-hidden"
+                >
+                  {installPrompt.canInstall && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        setIsInstallModalOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-surface-secondary transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline"
+                    >
+                      <Download size={18} strokeWidth={1.5} className="text-text-secondary shrink-0" />
+                      {installGuide.label}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleMessengerClick();
+                    }}
+                    disabled={isCheckingMessengerAccess}
+                    className="w-full text-left px-4 py-3 hover:bg-surface-secondary transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <MessageCircle size={18} strokeWidth={1.5} className="text-text-secondary shrink-0" />
+                    Join Group Chat
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleNotebookClick();
+                    }}
+                    disabled={isCheckingNotebookAccess}
+                    className="w-full text-left px-4 py-3 hover:bg-surface-secondary transition-colors text-sm font-medium text-text-primary flex items-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <NotebookPen size={18} strokeWidth={1.5} className="text-text-secondary shrink-0" />
+                    Notebook
+                  </button>
+                </div>
+              )}
+            </div>
+            <ThemeToggle />
             <a
               href="/my-library"
               aria-label={hasCachedSession ? 'My Library' : 'Sign In'}
@@ -333,7 +441,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
               <LibraryBig size={18} strokeWidth={1.5} />
               <span className="hidden xl:inline">{hasCachedSession ? 'My Library' : 'Sign In'}</span>
             </a>
-            <ThemeToggle />
           </div>
 
           <div className="flex lg:hidden items-center gap-4">

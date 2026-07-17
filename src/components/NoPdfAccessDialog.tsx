@@ -54,16 +54,16 @@ export const NoPdfAccessDialog: React.FC<NoPdfAccessDialogProps> = ({
         aria-labelledby="no-pdf-access-title"
         aria-describedby="no-pdf-access-message"
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-sm sm:max-w-md lg:max-w-lg rounded-sm border border-white/10 bg-[#242829] p-6 sm:p-8 lg:p-10 shadow-2xl"
+        className="w-full max-w-sm sm:max-w-md lg:max-w-lg rounded-sm border border-border-hairline bg-surface p-6 sm:p-8 lg:p-10 shadow-2xl"
       >
-        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-brand-yellow/10 border border-brand-yellow/20 flex items-center justify-center mb-4 sm:mb-5">
-          <Lock size={20} className="sm:hidden text-brand-yellow" strokeWidth={1.5} />
-          <Lock size={26} className="hidden sm:block text-brand-yellow" strokeWidth={1.5} />
+        <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-surface-secondary border border-border-hairline flex items-center justify-center mb-4 sm:mb-5">
+          <Lock size={20} className="sm:hidden text-text-primary" strokeWidth={1.5} />
+          <Lock size={26} className="hidden sm:block text-text-primary" strokeWidth={1.5} />
         </div>
-        <h2 id="no-pdf-access-title" className="text-lg sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">
+        <h2 id="no-pdf-access-title" className="text-lg sm:text-2xl lg:text-3xl font-bold text-text-primary mb-2 sm:mb-3">
           PDF Access Required
         </h2>
-        <p id="no-pdf-access-message" className="f-body text-brand-muted mb-6 sm:mb-8">
+        <p id="no-pdf-access-message" className="f-body text-text-secondary mb-6 sm:mb-8">
           {message}
         </p>
         <div className="flex justify-end">
@@ -71,7 +71,7 @@ export const NoPdfAccessDialog: React.FC<NoPdfAccessDialogProps> = ({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-sm f-body font-bold bg-brand-yellow text-[#1a1d1e] hover:brightness-95 transition-[filter]"
+            className="px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-sm f-body font-bold bg-surface-inverted text-text-inverted hover:opacity-90 transition-opacity"
           >
             Got it
           </button>
