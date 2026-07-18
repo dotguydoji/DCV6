@@ -38,7 +38,7 @@ import {
   toggleFavorite
 } from '../lib/libraryPreferences';
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
-import { fetchVideoProductIds } from '../lib/premiumVideos';
+import { fetchProductVideos, fetchVideoProductIds, PremiumVideoSummary } from '../lib/premiumVideos';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 import { useGlobalScrollTilt } from '../lib/useScrollTilt';
 
@@ -104,15 +104,13 @@ interface LibraryCardProps {
   onToggleFavorite: (productId: string) => void;
   lastOpenedAt?: number;
   readingPercent?: number;
-  hasPremiumVideos?: boolean;
 }
 
 const LibraryCard: React.FC<LibraryCardProps> = ({
   product,
   isFavorited,
   onToggleFavorite,
-  readingPercent,
-  hasPremiumVideos
+  readingPercent
 }) => (
   <a
     href={`/view/${encodeURIComponent(product.id)}`}
@@ -128,12 +126,6 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
         decoding="async"
         referrerPolicy="no-referrer"
       />
-      {hasPremiumVideos && (
-        <span className="absolute top-2 left-2 flex items-center gap-1 bg-surface-inverted text-text-inverted text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
-          <PlayCircle className="w-3 h-3" strokeWidth={1.5} />
-          Bonus Videos
-        </span>
-      )}
     </div>
     <div className="p-5 flex flex-col flex-grow">
       <h3 className="font-poppins font-normal text-lg lg:text-xl text-text-primary mb-1 leading-tight line-clamp-2 min-h-[2lh]">
@@ -185,10 +177,12 @@ export const MyLibraryPage: React.FC = () => {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
   const [videoProductIds, setVideoProductIds] = useState<Set<string>>(new Set());
+  const [premiumVideosByProduct, setPremiumVideosByProduct] = useState<Record<string, PremiumVideoSummary[]>>({});
   const hasTriedCachedToken = useRef(false);
 
   // Public, cached 20 min (see premiumVideos.ts) - just enough to know which
-  // owned cards get a "Bonus Videos" badge, no per-product request needed.
+  // owned products have any bonus videos at all, before spending a second,
+  // buyer-gated request finding out their titles.
   useEffect(() => {
     fetchVideoProductIds().then(setVideoProductIds);
   }, []);
@@ -339,6 +333,33 @@ export const MyLibraryPage: React.FC = () => {
   // first, same ordering recentlyOpenedProducts already provides) covers
   // what that shelf used to do without a second, redundant section.
   const topRecentProducts = recentlyOpenedProducts.slice(0, 3);
+
+  // Only fetches titles for products the buyer both owns AND that actually
+  // have videos - never the full catalog. Each fetchProductVideos call
+  // independently re-verifies ownership server-side (get-product-videos.ts),
+  // same as if the buyer had opened each PDF's video panel directly.
+  useEffect(() => {
+    const idToken = getCachedIdToken();
+    const productsWithVideos = ownedProducts.filter((product) => videoProductIds.has(product.id));
+    if (!idToken || productsWithVideos.length === 0) {
+      setPremiumVideosByProduct({});
+      return;
+    }
+
+    let cancelled = false;
+    Promise.all(
+      productsWithVideos.map(async (product) => {
+        const videos = await fetchProductVideos(idToken, product.id);
+        return [product.id, videos] as const;
+      })
+    ).then((entries) => {
+      if (!cancelled) setPremiumVideosByProduct(Object.fromEntries(entries));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ownedProducts, videoProductIds]);
 
   const categories = useMemo(() => {
     const unique = Array.from(new Set(ownedProducts.map((product) => product.category)));
@@ -678,6 +699,39 @@ export const MyLibraryPage: React.FC = () => {
                   </section>
                 )}
 
+                {Object.values(premiumVideosByProduct).some((videos) => videos.length > 0) && (
+                  <section className="mb-12">
+                    <h2 className="f-small text-text-secondary mb-4">Premium Videos</h2>
+                    <div className="flex flex-col gap-3">
+                      {ownedProducts
+                        .filter((product) => (premiumVideosByProduct[product.id]?.length ?? 0) > 0)
+                        .map((product) => (
+                          <div key={product.id} className="bg-surface border border-border-hairline rounded-sm p-4 card-elevated">
+                            <a
+                              href={`/view/${encodeURIComponent(product.id)}`}
+                              className="text-lg text-text-primary hover:underline underline-offset-2"
+                            >
+                              {product.title}
+                            </a>
+                            <ul className="mt-2.5 flex flex-col gap-2">
+                              {premiumVideosByProduct[product.id].map((video) => (
+                                <li key={video.id}>
+                                  <a
+                                    href={`/view/${encodeURIComponent(product.id)}`}
+                                    className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                                  >
+                                    <PlayCircle size={14} strokeWidth={1.5} className="shrink-0" />
+                                    <span className="truncate">{video.title}</span>
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                    </div>
+                  </section>
+                )}
+
                 <section>
                   <h2 className="f-small text-text-secondary mb-4">All PDFs</h2>
 
@@ -807,7 +861,6 @@ export const MyLibraryPage: React.FC = () => {
                           onToggleFavorite={handleToggleFavorite}
                           lastOpenedAt={openedAtById.get(product.id)}
                           readingPercent={readingPercentById.get(product.id)}
-                          hasPremiumVideos={videoProductIds.has(product.id)}
                         />
                       ))}
                     </div>

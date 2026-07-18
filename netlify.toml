@@ -53,7 +53,13 @@
     # (static.cloudflareinsights.com / cloudflareinsights.com) - allowed here
     # on the main site only, deliberately not on admin/netlify.toml, since
     # there's no benefit to page-performance tracking on an owner-only panel.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    # frame-src additionally allows youtube-nocookie.com (only that specific
+    # privacy-enhanced host, not youtube.com generally) for the premium
+    # unlisted-video embed in PdfVideoPanel.tsx - without this the browser
+    # blocks the iframe outright ("Framing ... violates CSP"), regardless of
+    # the iframe's own sandbox attribute, since frame-src governs whether an
+    # origin may be embedded at all.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # index.html points to the current build's hashed asset filenames (the
 # /assets/* files below, which ARE safe to cache forever since their name
