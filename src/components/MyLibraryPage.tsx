@@ -3,7 +3,8 @@ import {
   ArrowLeft,
   ArrowLeftCircle,
   ChevronDown,
-  Clock,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Heart,
   LibraryBig,
@@ -178,7 +179,45 @@ export const MyLibraryPage: React.FC = () => {
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
   const [videoProductIds, setVideoProductIds] = useState<Set<string>>(new Set());
   const [premiumVideosByProduct, setPremiumVideosByProduct] = useState<Record<string, PremiumVideoSummary[]>>({});
+  const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
   const hasTriedCachedToken = useRef(false);
+
+  // Prev/next scroll buttons for the category scroll-spy row, same pattern
+  // as the main page's category tab bar (App.tsx) - only shown once the
+  // tabs actually overflow this (much narrower, since it's one column of a
+  // two-column layout) container's width.
+  const categoryBarRef = useRef<HTMLDivElement>(null);
+  const [categoryBarOverflows, setCategoryBarOverflows] = useState(false);
+
+  useEffect(() => {
+    const container = categoryBarRef.current;
+    if (!container) return;
+
+    const checkOverflow = () => {
+      setCategoryBarOverflows(container.scrollWidth - container.clientWidth > 1);
+    };
+
+    checkOverflow();
+
+    // Catches viewport/container resizing. Doesn't by itself catch the
+    // category *list* changing length while the container's own box size
+    // stays the same (its width comes from the flex layout, not its
+    // content) - the second effect below (keyed on `categories`) covers that.
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(container);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const scrollCategoryBar = useCallback((direction: 'left' | 'right') => {
+    if (categoryBarRef.current) {
+      const scrollAmount = 200;
+      categoryBarRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
 
   // Public, cached 20 min (see premiumVideos.ts) - just enough to know which
   // owned products have any bonus videos at all, before spending a second,
@@ -361,10 +400,35 @@ export const MyLibraryPage: React.FC = () => {
     };
   }, [ownedProducts, videoProductIds]);
 
+  // The Members Only Tutorials column's own search - filters by tutorial
+  // title only (never touches the main library search/filters on the left,
+  // they're deliberately independent per-column controls).
+  const filteredTutorialsByProduct = useMemo(() => {
+    const query = tutorialSearchQuery.trim().toLowerCase();
+    if (!query) return premiumVideosByProduct;
+
+    const filtered: Record<string, PremiumVideoSummary[]> = {};
+    Object.entries(premiumVideosByProduct).forEach(([productId, videos]) => {
+      const matches = videos.filter((video) => video.title.toLowerCase().includes(query));
+      if (matches.length > 0) filtered[productId] = matches;
+    });
+    return filtered;
+  }, [premiumVideosByProduct, tutorialSearchQuery]);
+
   const categories = useMemo(() => {
     const unique = Array.from(new Set(ownedProducts.map((product) => product.category)));
     return [ALL_CATEGORY, ...unique];
   }, [ownedProducts]);
+
+  // Re-checks overflow when the category list itself changes length - the
+  // ResizeObserver above only catches the container's own box resizing
+  // (viewport changes), not its content growing/shrinking while the
+  // container's width (set by the flex layout) stays the same.
+  useEffect(() => {
+    const container = categoryBarRef.current;
+    if (!container) return;
+    setCategoryBarOverflows(container.scrollWidth - container.clientWidth > 1);
+  }, [categories]);
 
   const languages = useMemo(
     () => Array.from(new Set(ownedProducts.map((product) => product.language).filter(Boolean))) as string[],
@@ -467,8 +531,17 @@ export const MyLibraryPage: React.FC = () => {
           <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
         </div>
 
-        <div className="relative z-10">
-          <header className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all">
+        {/* lg+ turns this into a fixed-viewport-height shell (header/main
+            split the full 100vh between them, nothing here causes the page
+            itself to scroll) so the two-column section below can flex to
+            fill whatever's actually left, rather than sitting at a fixed px
+            height that leaves a growing gap of empty space on taller
+            screens. Below `lg` this stays plain block flow (unchanged) -
+            the two columns stack full-width there anyway, where a rigid
+            "fill the screen" shell would fight normal mobile scrolling
+            instead of helping. */}
+        <div className="relative z-10 lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+          <header className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all shrink-0">
             <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 {profile?.picture ? (
@@ -643,9 +716,9 @@ export const MyLibraryPage: React.FC = () => {
             message={noPdfAccessMessage}
           />
 
-          <main className="max-w-[1600px] mx-auto px-4 lg:px-6 py-10 lg:py-14">
+          <main className="max-w-[1600px] mx-auto w-full px-4 lg:px-6 py-10 lg:py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
             {ownedProducts.length === 0 ? (
-              <div className="text-center py-20">
+              <div className="text-center py-20 lg:py-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center">
                 <FileText size={44} className="mx-auto text-text-secondary mb-4" strokeWidth={1.5} />
                 <p className="f-heading text-text-primary mb-2">You don't have any PDFs yet.</p>
                 <p className="f-body text-text-secondary mb-6">
@@ -658,20 +731,23 @@ export const MyLibraryPage: React.FC = () => {
             ) : (
               <>
                 {topRecentProducts.length > 0 && (
-                  <section className="mb-12">
-                    <h2 className="f-small text-text-secondary mb-4">Recently Opened</h2>
-                    {/* Column on mobile (each item full-width); a row of up to
-                        3 on desktop (sm+) since topRecentProducts is already
-                        capped at 3 - a 3-col grid naturally fits all of them
-                        on one row without wrapping. */}
-                    <div className="flex flex-col gap-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                  <section className="mb-4 lg:mb-5">
+                    <h2 className="f-small text-text-secondary mb-3">Recently Opened</h2>
+                    {/* Fixed 3-column row (never a taller stacked list) -
+                        topRecentProducts is already ordered most-recent-first
+                        and capped at 3, so it drops directly into 3 equal
+                        columns with the most recent on the left. Keeping this
+                        section short is deliberate: it leaves enough
+                        viewport height for All PDFs / Members Only Tutorials
+                        below to still show a card or two without scrolling. */}
+                    <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
                       {topRecentProducts.map((product) => (
                         <a
                           key={product.id}
                           href={`/view/${encodeURIComponent(product.id)}`}
-                          className="group flex items-center gap-4 sm:flex-col sm:items-stretch sm:gap-0 bg-surface border border-border-hairline rounded-sm p-4 sm:p-0 hover:border-border-strong transition-colors sm:overflow-hidden card-elevated"
+                          className="group flex items-center gap-2 sm:gap-3 bg-surface border border-border-hairline rounded-sm p-2 sm:p-2.5 hover:border-border-strong transition-colors card-elevated min-w-0"
                         >
-                          <div className="w-24 h-16 sm:w-full sm:h-auto sm:aspect-[16/9] rounded-sm sm:rounded-none overflow-hidden shrink-0 bg-surface-secondary">
+                          <div className="w-11 h-8 sm:w-16 sm:h-11 rounded-sm overflow-hidden shrink-0 bg-surface-secondary">
                             <img
                               src={product.thumbnail}
                               alt=""
@@ -681,68 +757,181 @@ export const MyLibraryPage: React.FC = () => {
                               referrerPolicy="no-referrer"
                             />
                           </div>
-                          <div className="min-w-0 flex-1 sm:p-4">
-                            <p className="text-lg lg:text-xl text-text-primary truncate">{product.title}</p>
-                            <p className="text-sm text-text-secondary">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm text-text-primary truncate">{product.title}</p>
+                            <p className="hidden sm:block text-xs text-text-secondary truncate">
                               {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
-                              {typeof readingPercentById.get(product.id) === 'number' &&
-                                ` · ${readingPercentById.get(product.id)}% read`}
                             </p>
                           </div>
-                          {/* Icon only, on mobile - the row layout on desktop
-                              already reads as a card grid without needing a
-                              trailing icon there. */}
-                          <Clock size={20} strokeWidth={1.5} className="text-text-secondary shrink-0 sm:hidden" />
                         </a>
                       ))}
                     </div>
                   </section>
                 )}
 
-                {Object.values(premiumVideosByProduct).some((videos) => videos.length > 0) && (
-                  <section className="mb-12">
-                    <h2 className="f-small text-text-secondary mb-4">Premium Videos</h2>
-                    <div className="flex flex-col gap-3">
-                      {ownedProducts
-                        .filter((product) => (premiumVideosByProduct[product.id]?.length ?? 0) > 0)
-                        .map((product) => (
-                          <div key={product.id} className="bg-surface border border-border-hairline rounded-sm p-4 card-elevated">
-                            <a
-                              href={`/view/${encodeURIComponent(product.id)}`}
-                              className="text-lg text-text-primary hover:underline underline-offset-2"
+                {/* All PDFs (left) + Members Only Tutorials (right) - equal
+                    fixed height, each managing its own vertical scroll
+                    independently, so neither column's list length affects the
+                    other's height or the page's overall height. */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch lg:flex-1 lg:min-h-0">
+                  <section className="flex flex-col h-[460px] sm:h-[560px] lg:h-full bg-surface border border-border-hairline rounded-sm overflow-hidden">
+                    <div className="p-4 lg:p-5 pb-0 shrink-0">
+                      <h2 className="f-small text-text-secondary mb-4">All PDFs</h2>
+
+                      <div className="flex flex-col gap-3">
+                        <div className="relative">
+                          <Search
+                            size={18}
+                            strokeWidth={1.5}
+                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+                          />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(event) => setSearchQuery(event.target.value)}
+                            placeholder="Search your library..."
+                            aria-label="Search your library"
+                            className="w-full bg-surface border border-border-hairline rounded-sm pl-10 pr-9 py-2.5 f-body text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors"
+                          />
+                          {searchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setSearchQuery('')}
+                              aria-label="Clear search"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
                             >
-                              {product.title}
-                            </a>
-                            <ul className="mt-2.5 flex flex-col gap-2">
-                              {premiumVideosByProduct[product.id].map((video) => (
-                                <li key={video.id}>
-                                  <a
-                                    href={`/view/${encodeURIComponent(product.id)}`}
-                                    className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-                                  >
-                                    <PlayCircle size={14} strokeWidth={1.5} className="shrink-0" />
-                                    <span className="truncate">{video.title}</span>
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
+                              <X size={17} strokeWidth={1.5} />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 sm:gap-3">
+                          <div className="relative flex-1 sm:flex-none">
+                            <select
+                              value={sortBy}
+                              onChange={(event) => setSortBy(event.target.value as SortOption)}
+                              aria-label="Sort by"
+                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                            >
+                              <option value="recent">Recents</option>
+                              <option value="title-asc">Title A–Z</option>
+                              <option value="title-desc">Title Z–A</option>
+                            </select>
+                            <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
                           </div>
-                        ))}
+
+                          {languages.length > 1 && (
+                            <div className="relative flex-1 sm:flex-none">
+                              <select
+                                value={languageFilter}
+                                onChange={(event) => setLanguageFilter(event.target.value)}
+                                aria-label="Filter by language"
+                                className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                              >
+                                <option value={ALL_LANGUAGES}>Languages</option>
+                                {languages.map((language) => (
+                                  <option key={language} value={language}>
+                                    {language === 'en' ? 'English' : 'Tagalog'}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                            </div>
+                          )}
+
+                          {levels.length > 1 && (
+                            <div className="relative flex-1 sm:flex-none">
+                              <select
+                                value={levelFilter}
+                                onChange={(event) => setLevelFilter(event.target.value)}
+                                aria-label="Filter by level"
+                                className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                              >
+                                <option value={ALL_LEVELS}>Levels</option>
+                                {levels.map((level) => (
+                                  <option key={level} value={level}>
+                                    {formatLevel(level)}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                            </div>
+                          )}
+                        </div>
+
+                        {categories.length > 2 && (
+                          <div className="flex items-center gap-2 pb-4">
+                            <div
+                              ref={categoryBarRef}
+                              className="flex items-center gap-2 overflow-x-auto no-scrollbar"
+                            >
+                              {categories.map((category) => (
+                                <button
+                                  key={category}
+                                  type="button"
+                                  onClick={() => setActiveCategory(category)}
+                                  className={`shrink-0 px-4 py-2.5 rounded-sm f-small transition-all border ${
+                                    activeCategory === category
+                                      ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
+                                      : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+                                  }`}
+                                >
+                                  {category}
+                                </button>
+                              ))}
+                            </div>
+
+                            {categoryBarOverflows && (
+                              <div className="flex items-center gap-1.5 shrink-0 pl-2">
+                                <button
+                                  type="button"
+                                  onClick={() => scrollCategoryBar('left')}
+                                  className="flex items-center justify-center w-8 h-8 rounded-sm bg-surface-secondary border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-all active:scale-90"
+                                  aria-label="Scroll categories left"
+                                >
+                                  <ChevronLeft size={16} strokeWidth={1.5} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => scrollCategoryBar('right')}
+                                  className="flex items-center justify-center w-8 h-8 rounded-sm bg-surface-secondary border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-all active:scale-90"
+                                  aria-label="Scroll categories right"
+                                >
+                                  <ChevronRight size={16} strokeWidth={1.5} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5 pt-4 border-t border-border-hairline">
+                      {visibleProducts.length === 0 ? (
+                        <div className="text-center py-16">
+                          <p className="text-text-secondary f-body">No PDFs match your search or filters.</p>
+                        </div>
+                      ) : (
+                        <div ref={libraryGridRef} className="grid grid-cols-2 gap-4">
+                          {visibleProducts.map((product) => (
+                            <LibraryCard
+                              key={product.id}
+                              product={product}
+                              isFavorited={favoriteIds.has(product.id)}
+                              onToggleFavorite={handleToggleFavorite}
+                              lastOpenedAt={openedAtById.get(product.id)}
+                              readingPercent={readingPercentById.get(product.id)}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </section>
-                )}
 
-                <section>
-                  <h2 className="f-small text-text-secondary mb-4">All PDFs</h2>
-
-                  <div className="flex flex-col gap-3 mb-6">
-                    {/* Search + the 3 filter selects share one row on desktop
-                        (sm+) - search takes the remaining space, selects stay
-                        their natural width. On mobile the search stays a full-
-                        width row of its own, with the selects in their own
-                        compact row below (unchanged from before). */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <div className="relative sm:flex-1">
+                  <section className="flex flex-col h-[460px] sm:h-[560px] lg:h-full bg-surface border border-border-hairline rounded-sm overflow-hidden">
+                    <div className="p-4 lg:p-5 pb-4 shrink-0">
+                      <h2 className="f-small text-text-secondary mb-4">Members Only Tutorials</h2>
+                      <div className="relative">
                         <Search
                           size={18}
                           strokeWidth={1.5}
@@ -750,122 +939,66 @@ export const MyLibraryPage: React.FC = () => {
                         />
                         <input
                           type="text"
-                          value={searchQuery}
-                          onChange={(event) => setSearchQuery(event.target.value)}
-                          placeholder="Search your library..."
-                          aria-label="Search your library"
+                          value={tutorialSearchQuery}
+                          onChange={(event) => setTutorialSearchQuery(event.target.value)}
+                          placeholder="Search tutorials..."
+                          aria-label="Search members only tutorials"
                           className="w-full bg-surface border border-border-hairline rounded-sm pl-10 pr-9 py-2.5 f-body text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors"
                         />
-                        {searchQuery && (
+                        {tutorialSearchQuery && (
                           <button
                             type="button"
-                            onClick={() => setSearchQuery('')}
-                            aria-label="Clear search"
+                            onClick={() => setTutorialSearchQuery('')}
+                            aria-label="Clear tutorial search"
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
                           >
                             <X size={17} strokeWidth={1.5} />
                           </button>
                         )}
                       </div>
+                    </div>
 
-                      {/* On mobile these three sit in one compact row (equal
-                          width via flex-1) instead of each stacking full-width -
-                          on sm+ they revert to their natural width, sitting
-                          next to the search input above instead of below it. */}
-                      <div className="flex gap-2 sm:gap-3">
-                        <div className="relative flex-1 sm:flex-none">
-                          <select
-                            value={sortBy}
-                            onChange={(event) => setSortBy(event.target.value as SortOption)}
-                            aria-label="Sort by"
-                            className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
-                          >
-                            <option value="recent">Recents</option>
-                            <option value="title-asc">Title A–Z</option>
-                            <option value="title-desc">Title Z–A</option>
-                          </select>
-                          <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
+                    <div className="flex-1 min-h-0 overflow-y-auto p-4 lg:p-5 pt-4 border-t border-border-hairline">
+                      {Object.values(filteredTutorialsByProduct).every((videos) => videos.length === 0) ? (
+                        <div className="text-center py-16">
+                          <p className="text-text-secondary f-body">
+                            {Object.values(premiumVideosByProduct).some((videos) => videos.length > 0)
+                              ? 'No tutorials match your search.'
+                              : 'No members only tutorials yet.'}
+                          </p>
                         </div>
-
-                        {languages.length > 1 && (
-                          <div className="relative flex-1 sm:flex-none">
-                            <select
-                              value={languageFilter}
-                              onChange={(event) => setLanguageFilter(event.target.value)}
-                              aria-label="Filter by language"
-                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
-                            >
-                              <option value={ALL_LANGUAGES}>Languages</option>
-                              {languages.map((language) => (
-                                <option key={language} value={language}>
-                                  {language === 'en' ? 'English' : 'Tagalog'}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-                          </div>
-                        )}
-
-                        {levels.length > 1 && (
-                          <div className="relative flex-1 sm:flex-none">
-                            <select
-                              value={levelFilter}
-                              onChange={(event) => setLevelFilter(event.target.value)}
-                              aria-label="Filter by level"
-                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
-                            >
-                              <option value={ALL_LEVELS}>Levels</option>
-                              {levels.map((level) => (
-                                <option key={level} value={level}>
-                                  {formatLevel(level)}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown size={16} strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none" />
-                          </div>
-                        )}
-                      </div>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          {ownedProducts
+                            .filter((product) => (filteredTutorialsByProduct[product.id]?.length ?? 0) > 0)
+                            .map((product) => (
+                              <div key={product.id} className="bg-surface-secondary border border-border-hairline rounded-sm p-4">
+                                <a
+                                  href={`/view/${encodeURIComponent(product.id)}`}
+                                  className="text-sm font-medium text-text-primary hover:underline underline-offset-2"
+                                >
+                                  {product.title}
+                                </a>
+                                <ul className="mt-2.5 flex flex-col gap-2">
+                                  {filteredTutorialsByProduct[product.id].map((video) => (
+                                    <li key={video.id}>
+                                      <a
+                                        href={`/view/${encodeURIComponent(product.id)}`}
+                                        className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                                      >
+                                        <PlayCircle size={14} strokeWidth={1.5} className="shrink-0" />
+                                        <span className="truncate">{video.title}</span>
+                                      </a>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </div>
-
-                    {categories.length > 2 && (
-                      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                        {categories.map((category) => (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => setActiveCategory(category)}
-                            className={`shrink-0 px-4 py-2.5 rounded-sm f-small transition-all border ${
-                              activeCategory === category
-                                ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
-                                : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {visibleProducts.length === 0 ? (
-                    <div className="text-center py-16">
-                      <p className="text-text-secondary f-body">No PDFs match your search or filters.</p>
-                    </div>
-                  ) : (
-                    <div ref={libraryGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                      {visibleProducts.map((product) => (
-                        <LibraryCard
-                          key={product.id}
-                          product={product}
-                          isFavorited={favoriteIds.has(product.id)}
-                          onToggleFavorite={handleToggleFavorite}
-                          lastOpenedAt={openedAtById.get(product.id)}
-                          readingPercent={readingPercentById.get(product.id)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
+                  </section>
+                </div>
               </>
             )}
           </main>

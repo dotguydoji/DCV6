@@ -764,6 +764,19 @@
   flex-shrink: 0;
 }
 
+/* Ctrl+S "Notes saved." toast (NotebookEditor.tsx) - shown for exactly
+ * 3000ms (see showSavedToast's setTimeout), matched here so the fade-out
+ * finishes right as the component unmounts it rather than getting cut off. */
+@keyframes notebook-saved-toast-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+.notebook-saved-toast {
+  animation: notebook-saved-toast-fade 3s ease-in-out forwards;
+}
+
 /*
  * Code block base styling + Prism token colors (VS Code Dark+ inspired).
  * Deliberately hand-written here rather than importing one of Prism's own

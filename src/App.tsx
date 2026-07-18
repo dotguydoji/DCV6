@@ -25,12 +25,6 @@ interface FlyingItem {
   thumbnail: string;
 }
 
-const ADMIN_PASSWORD_KEY = 92;
-const ADMIN_PASSWORD_CODES = [104, 100, 108, 106, 105, 108, 24, 31, 28, 29, 24, 17, 21, 18, 15];
-
-const getAdminRecordingPassword = () =>
-  ADMIN_PASSWORD_CODES.map((code) => String.fromCharCode(code ^ ADMIN_PASSWORD_KEY)).join('');
-
 const normalizePathname = (pathname: string) => {
   const trimmed = pathname.replace(/\/+$/, '');
   return trimmed === '' ? '/' : trimmed;
@@ -103,16 +97,12 @@ const App: React.FC = () => {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [cartBounceKey, setCartBounceKey] = useState(0);
   const [isAdminRecordingMode, setIsAdminRecordingMode] = useState(false);
-  const [isAdminPromptOpen, setIsAdminPromptOpen] = useState(false);
-  const [adminPasswordInput, setAdminPasswordInput] = useState('');
-  const [adminPasswordError, setAdminPasswordError] = useState('');
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   const catContainerRef = useRef<HTMLDivElement>(null);
   const catButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [catBarOverflows, setCatBarOverflows] = useState(false);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
-  const adminPasswordInputRef = useRef<HTMLInputElement>(null);
   const footerRevealRef = useScrollReveal<HTMLElement>();
   useGlobalScrollTilt();
 
@@ -188,56 +178,18 @@ const App: React.FC = () => {
       }
 
       event.preventDefault();
-
-      if (isAdminRecordingMode) {
-        setIsAdminRecordingMode(false);
-        setIsAdminPromptOpen(false);
-        setAdminPasswordInput('');
-        setAdminPasswordError('');
-        return;
-      }
-
-      setIsAdminPromptOpen(true);
-      setAdminPasswordInput('');
-      setAdminPasswordError('');
+      setIsAdminRecordingMode((prev) => !prev);
     };
 
     window.addEventListener('keydown', handleAdminRecordingToggle);
     return () => window.removeEventListener('keydown', handleAdminRecordingToggle);
-  }, [isAdminRecordingMode]);
+  }, []);
 
   useEffect(() => {
     if (isAdminRecordingMode) {
       setIsCartOpen(false);
     }
   }, [isAdminRecordingMode]);
-
-  useEffect(() => {
-    if (!isAdminPromptOpen) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      adminPasswordInputRef.current?.focus();
-    }, 10);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isAdminPromptOpen]);
-
-  useEffect(() => {
-    if (!isAdminPromptOpen) {
-      return;
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeAdminPrompt();
-      }
-    };
-
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isAdminPromptOpen]);
 
   // Scoped to admin recording mode only - this used to run unconditionally
   // for every visitor, blocking right-click and DevTools shortcuts sitewide
@@ -275,29 +227,6 @@ const App: React.FC = () => {
       window.removeEventListener('keydown', handleBlockedShortcuts);
     };
   }, [isAdminRecordingMode]);
-
-  const closeAdminPrompt = useCallback(() => {
-    setIsAdminPromptOpen(false);
-    setAdminPasswordInput('');
-    setAdminPasswordError('');
-  }, []);
-
-  const handleAdminPasswordSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-
-      if (adminPasswordInput === getAdminRecordingPassword()) {
-        setIsAdminRecordingMode(true);
-        closeAdminPrompt();
-        return;
-      }
-
-      setAdminPasswordError('Incorrect password.');
-      setAdminPasswordInput('');
-      window.setTimeout(() => adminPasswordInputRef.current?.focus(), 10);
-    },
-    [adminPasswordInput, closeAdminPrompt]
-  );
 
   useEffect(() => {
     const observerOptions = {
@@ -652,11 +581,9 @@ const App: React.FC = () => {
           </button>
         )}
 
-        {!isAdminRecordingMode && (
-          <Suspense fallback={null}>
-            <ChatWidget onProductSelect={handleSearchSelect} />
-          </Suspense>
-        )}
+        <Suspense fallback={null}>
+          <ChatWidget onProductSelect={handleSearchSelect} />
+        </Suspense>
 
         {flyingItems.map(item => {
           const cartRect = cartButtonRef.current?.getBoundingClientRect();
@@ -695,69 +622,6 @@ const App: React.FC = () => {
             hideCommerce={isAdminRecordingMode}
           />
         </Suspense>
-      )}
-
-      {isAdminPromptOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center px-4">
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={closeAdminPrompt}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-modal-title"
-            className="relative w-full max-w-md rounded-lg border border-border-hairline bg-surface-secondary shadow-2xl overflow-hidden"
-          >
-            <div className="border-b border-border-hairline bg-surface px-6 py-4">
-              <h2 id="admin-modal-title" className="text-xl font-black uppercase tracking-[0.18em] text-text-primary">
-                Admin Access
-              </h2>
-              <p className="mt-2 text-base text-text-secondary">
-                Enter the admin password to hide prices and the cart icon.
-              </p>
-            </div>
-
-            <form onSubmit={handleAdminPasswordSubmit} className="px-6 py-5">
-              <label className="block text-sm font-bold uppercase tracking-[0.18em] text-text-secondary mb-2">
-                Password
-              </label>
-              <input
-                ref={adminPasswordInputRef}
-                type="password"
-                value={adminPasswordInput}
-                onChange={(event) => {
-                  setAdminPasswordInput(event.target.value);
-                  if (adminPasswordError) {
-                    setAdminPasswordError('');
-                  }
-                }}
-                className="w-full rounded-sm border border-border-hairline bg-surface px-4 py-3 text-text-primary outline-none transition-all focus:border-border-strong"
-                autoComplete="off"
-              />
-
-              <div className="min-h-6 pt-2 text-base text-red-400">
-                {adminPasswordError}
-              </div>
-
-              <div className="mt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeAdminPrompt}
-                  className="rounded-sm border border-border-hairline bg-transparent px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-sm border border-surface-inverted bg-surface-inverted px-4 py-2 text-base font-bold uppercase tracking-[0.14em] text-text-inverted transition-all hover:opacity-90"
-                >
-                  Unlock
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );

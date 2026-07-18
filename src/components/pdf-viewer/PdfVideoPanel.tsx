@@ -109,14 +109,16 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
     wrapper.style.width = `${clampWidth(drag.startWidth + delta)}px`;
   }, []);
 
-  const handlePointerUp = useCallback(() => {
+  const endDrag = useCallback(() => {
     if (!dragStateRef.current) return;
     dragStateRef.current = null;
     setIsDragging(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
+    document.removeEventListener('pointerup', endDrag);
+    document.removeEventListener('pointercancel', endDrag);
+    window.removeEventListener('blur', endDrag);
 
     const wrapper = wrapperRef.current;
     if (wrapper) {
@@ -133,20 +135,34 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
       setIsDragging(true);
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
+
+      // Without pointer capture, a fast drag that carries the cursor
+      // outside the browser window can mean the mouseup never reaches the
+      // DOM at all - dragStateRef stays set forever and the panel keeps
+      // resizing on every later pointermove, with no way to release it
+      // short of reloading. Capturing the pointer on the handle keeps
+      // events (including pointerup) routed here regardless of where the
+      // cursor physically ends up. pointercancel/window-blur are extra
+      // safety nets for the cases capture itself doesn't cover.
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
       document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('pointerup', endDrag);
+      document.addEventListener('pointercancel', endDrag);
+      window.addEventListener('blur', endDrag);
     },
-    [width, handlePointerMove, handlePointerUp]
+    [width, handlePointerMove, endDrag]
   );
 
   useEffect(() => {
     return () => {
       document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointerup', endDrag);
+      document.removeEventListener('pointercancel', endDrag);
+      window.removeEventListener('blur', endDrag);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [handlePointerMove, handlePointerUp]);
+  }, [handlePointerMove, endDrag]);
 
   const openVideo = useCallback(
     async (video: PremiumVideoSummary) => {
@@ -188,10 +204,10 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
 
   if (!isDesktop) {
     return createPortal(
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div data-keyboard-scope="video" className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
         <div className="bg-surface border border-border-hairline rounded-sm w-full max-w-sm max-h-[80vh] flex flex-col shadow-2xl">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-hairline shrink-0">
-            <span className="f-small text-text-secondary">Premium Videos</span>
+            <span className="f-small text-text-secondary">Members Only Tutorials</span>
             <button type="button" onClick={onClose} aria-label="Close" className="text-text-secondary hover:text-text-primary">
               <X size={16} strokeWidth={1.5} />
             </button>
@@ -248,6 +264,7 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
   return (
     <div
       ref={wrapperRef}
+      data-keyboard-scope="video"
       className="w-full shrink-0 bg-surface flex flex-col z-30 relative border-l border-border-hairline"
       style={{ width, willChange: isDragging ? 'width' : undefined }}
     >
@@ -262,7 +279,7 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
       </div>
 
       <div className="flex items-center justify-between px-3 py-3 border-b border-border-hairline shrink-0">
-        <span className="f-small text-text-secondary">Premium Videos</span>
+        <span className="f-small text-text-secondary">Members Only Tutorials</span>
         <button type="button" onClick={onClose} aria-label="Close video panel" className="text-text-secondary hover:text-text-primary">
           <X size={16} strokeWidth={1.5} />
         </button>
@@ -278,7 +295,7 @@ export const PdfVideoPanel: React.FC<PdfVideoPanelProps> = ({ idToken, productId
             <iframe
               key={embedYoutubeId}
               src={buildEmbedSrc(embedYoutubeId)}
-              title="Premium video"
+              title="Members-only tutorial"
               className="w-full h-full"
               // allow-same-origin here only lets youtube-nocookie.com act as
               // its own origin (its player needs that to function at all) -

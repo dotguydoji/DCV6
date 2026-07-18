@@ -156,7 +156,7 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
     [rafLoop]
   );
 
-  const handlePointerUp = useCallback(() => {
+  const endDrag = useCallback(() => {
     const drag = dragStateRef.current;
     if (!drag) return;
     dragStateRef.current = null;
@@ -164,7 +164,9 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
+    document.removeEventListener('pointerup', endDrag);
+    document.removeEventListener('pointercancel', endDrag);
+    window.removeEventListener('blur', endDrag);
 
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
@@ -203,25 +205,44 @@ export const PdfNotebookPanel: React.FC<PdfNotebookPanelProps> = ({ onClose }) =
       setIsDragging(true);
       document.body.style.cursor = axis === 'width' ? 'col-resize' : 'row-resize';
       document.body.style.userSelect = 'none';
+
+      // Without this, a fast drag that carries the cursor outside the
+      // browser window's client area can mean the OS-level mouseup never
+      // reaches the DOM at all (no target to deliver it to) - the
+      // document listeners below then never fire, dragStateRef stays set
+      // forever, and the panel keeps resizing on every future pointermove
+      // even long after the button was released, requiring a page reload
+      // to escape. Capturing the pointer on the handle itself makes the
+      // browser keep routing events (including pointerup) to this element
+      // regardless of where the cursor physically is. pointercancel and a
+      // window blur listener are extra safety nets for the rarer cases
+      // capture itself doesn't cover (OS-level gesture interruption,
+      // switching windows/apps mid-drag).
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
       document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp);
+      document.addEventListener('pointerup', endDrag);
+      document.addEventListener('pointercancel', endDrag);
+      window.addEventListener('blur', endDrag);
     },
-    [width, height, handlePointerMove, handlePointerUp]
+    [width, height, handlePointerMove, endDrag]
   );
 
   useEffect(() => {
     return () => {
       document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointerup', endDrag);
+      document.removeEventListener('pointercancel', endDrag);
+      window.removeEventListener('blur', endDrag);
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [handlePointerMove, handlePointerUp]);
+  }, [handlePointerMove, endDrag]);
 
   return (
     <div
       ref={wrapperRef}
+      data-keyboard-scope="notebook"
       className={`w-full shrink-0 bg-surface flex flex-col z-30 relative border-border-hairline ${
         isDesktop ? 'border-l' : 'border-t'
       }`}

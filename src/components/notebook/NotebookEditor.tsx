@@ -9,11 +9,31 @@ import {
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight, XCircle, Trash2,
   Code, Code2, Link as LinkIcon,
   List, ListOrdered, ListChecks, Subscript, Superscript,
-  Undo2, Redo2, AlignLeft, AlignCenter, AlignRight, AlignJustify
+  Undo2, Redo2, AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  ZoomIn, ZoomOut
 } from 'lucide-react';
 import { highlightNotebookCode, isKnownNotebookLanguage, NOTEBOOK_CODE_LANGUAGES } from '../../lib/notebookSyntaxHighlight';
 
 const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+
+// Purely a visual zoom on the note content (CSS `zoom`, not a change to
+// any saved font-size) - separate from the PDF viewer's own zoom, and
+// scoped to just the contentEditable surface so the toolbar stays a
+// consistent, always-legible size regardless of zoom level.
+const MIN_ZOOM = 0.6;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.1;
+const DEFAULT_ZOOM = 1;
+
+// A pause this long in typing is treated as "the user finished this
+// thought" - one undo step then covers the whole burst of keystrokes
+// (matches standard editor behavior: undoing continuous typing removes a
+// whole word/sentence at a time, not one character per Ctrl+Z). Discrete
+// actions (a toolbar click, inserting a table/code block, toggling a
+// checklist) instead flush immediately via flushHistoryNow(), each
+// becoming its own atomic undo step regardless of this timer.
+const HISTORY_DEBOUNCE_MS = 400;
+const MAX_HISTORY_ENTRIES = 100;
 
 // A caret positioned exactly at the very end of a text node's data - i.e.
 // right after a trailing '\n' with nothing following it - isn't a reliable
@@ -281,6 +301,28 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
   const [activeCodeBlock, setActiveCodeBlock] = useState<HTMLElement | null>(null);
   const previousCodeBlockRef = useRef<HTMLElement | null>(null);
 
+  const [zoomLevel, setZoomLevel] = useState(DEFAULT_ZOOM);
+
+  // Custom undo/redo history, replacing reliance on the browser's native
+  // execCommand('undo'/'redo') - that native stack doesn't reliably track
+  // changes made via direct DOM manipulation (checklists, code blocks,
+  // tables, font-size/color spans), which is most of what this editor
+  // actually does, so undo would silently miss or corrupt those. Plain
+  // HTML snapshots, most recent at the end; historyIndexRef points at the
+  // entry currently shown. Refs (not state) since every keystroke touches
+  // these and re-rendering on each one would be wasteful - nothing here is
+  // ever rendered directly.
+  const historyStackRef = useRef<string[]>([content]);
+  const historyIndexRef = useRef(0);
+  const historyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set for the duration of applyHistoryEntry's own innerHTML swap so that
+  // swap doesn't get misread as a new user edit and re-enter the history
+  // it's currently replaying.
+  const isApplyingHistoryRef = useRef(false);
+
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const savedToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
   const downloadNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -350,6 +392,18 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
       if (editorRef.current.innerHTML === '' || editorRef.current.innerHTML === '<br>') {
         editorRef.current.innerHTML = '<div><br></div>';
       }
+
+      // An externally-driven content change (a different notebook page was
+      // selected) is a different document entirely - the undo/redo history
+      // must not let the user undo back across a page switch into a
+      // previous page's content.
+      if (historyDebounceRef.current) {
+        clearTimeout(historyDebounceRef.current);
+        historyDebounceRef.current = null;
+      }
+      historyStackRef.current = [editorRef.current.innerHTML];
+      historyIndexRef.current = 0;
+
       const plainText = editorRef.current.innerText.trim();
       setWordCount({
         words: plainText ? plainText.split(/\s+/).length : 0,
@@ -431,6 +485,180 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     if (sel && savedSelection.current) {
       sel.removeAllRanges();
       sel.addRange(savedSelection.current);
+    }
+  };
+
+  // Commits the editor's CURRENT live innerHTML as a new history entry -
+  // no-ops if nothing actually changed since the last entry (e.g. clicking
+  // a toolbar button twice in a row with no edit in between). Any existing
+  // "future" (redo) entries are discarded, matching standard editor
+  // behavior: making a new change after an undo abandons the old redo branch.
+  const commitHistoryEntry = useCallback(() => {
+    if (!editorRef.current || isApplyingHistoryRef.current) return;
+    const html = editorRef.current.innerHTML;
+    const stack = historyStackRef.current;
+    const index = historyIndexRef.current;
+    if (stack[index] === html) return;
+
+    const truncated = stack.slice(0, index + 1);
+    truncated.push(html);
+    if (truncated.length > MAX_HISTORY_ENTRIES) truncated.shift();
+    historyStackRef.current = truncated;
+    historyIndexRef.current = truncated.length - 1;
+  }, []);
+
+  // Continuous typing calls this on every keystroke (via handleInput) -
+  // coalesces a whole burst into one eventual history entry instead of one
+  // per character, by restarting the timer on every call.
+  const scheduleHistoryCommit = useCallback(() => {
+    if (isApplyingHistoryRef.current) return;
+    if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
+    historyDebounceRef.current = setTimeout(() => {
+      historyDebounceRef.current = null;
+      commitHistoryEntry();
+    }, HISTORY_DEBOUNCE_MS);
+  }, [commitHistoryEntry]);
+
+  // Discrete, deliberate actions (a toolbar click, inserting a table/code
+  // block, toggling a checklist box) call this right after making their
+  // change, so that action becomes its own atomic undo step immediately -
+  // it shouldn't have to wait out the typing-debounce, and it shouldn't get
+  // silently merged into whatever the user was typing just before it.
+  const flushHistoryNow = useCallback(() => {
+    if (isApplyingHistoryRef.current) return;
+    if (historyDebounceRef.current) {
+      clearTimeout(historyDebounceRef.current);
+      historyDebounceRef.current = null;
+    }
+    commitHistoryEntry();
+  }, [commitHistoryEntry]);
+
+  // Swaps in a past/future snapshot verbatim. Caret restoration after an
+  // undo/redo is intentionally simple (collapse to the very end) rather
+  // than trying to re-derive exactly where it was - every rich-text editor
+  // that supports jumping across arbitrary structural changes (a table
+  // appearing/disappearing, a heading becoming a paragraph) makes this same
+  // tradeoff, since a precise position genuinely may not exist in the
+  // restored structure.
+  const applyHistoryEntry = useCallback(
+    (html: string) => {
+      if (!editorRef.current) return;
+      isApplyingHistoryRef.current = true;
+
+      editorRef.current.innerHTML = html || '<div><br></div>';
+
+      const range = document.createRange();
+      range.selectNodeContents(editorRef.current);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      editorRef.current.focus();
+
+      isInternalUpdate.current = true;
+      onUpdate(editorRef.current.innerHTML);
+      syncSelectionState();
+
+      const plainText = editorRef.current.innerText.trim();
+      setWordCount({
+        words: plainText ? plainText.split(/\s+/).length : 0,
+        characters: plainText.length
+      });
+
+      isApplyingHistoryRef.current = false;
+    },
+    [onUpdate]
+  );
+
+  const historyUndo = useCallback(() => {
+    const hadPendingEdit = historyDebounceRef.current !== null;
+    if (historyDebounceRef.current) {
+      clearTimeout(historyDebounceRef.current);
+      historyDebounceRef.current = null;
+    }
+
+    const stack = historyStackRef.current;
+    const index = historyIndexRef.current;
+
+    // Mid-typing-burst Ctrl+Z (the debounced commit hasn't fired yet):
+    // revert the in-progress, not-yet-committed edit back to the last real
+    // checkpoint, without consuming a step - the same "escape hatch" you'd
+    // expect from undoing something you're still in the middle of typing.
+    if (hadPendingEdit) {
+      applyHistoryEntry(stack[index]);
+      return;
+    }
+
+    if (index <= 0) return;
+    historyIndexRef.current = index - 1;
+    applyHistoryEntry(stack[index - 1]);
+  }, [applyHistoryEntry]);
+
+  const historyRedo = useCallback(() => {
+    // Flushing first matters if the user typed something new after an
+    // undo but before redoing - that new edit should invalidate the old
+    // redo branch (standard behavior), which committing it here achieves
+    // via commitHistoryEntry's own truncate-then-push.
+    flushHistoryNow();
+    const stack = historyStackRef.current;
+    const index = historyIndexRef.current;
+    if (index >= stack.length - 1) return;
+    historyIndexRef.current = index + 1;
+    applyHistoryEntry(stack[index + 1]);
+  }, [flushHistoryNow, applyHistoryEntry]);
+
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((z) => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) * 100) / 100));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((z) => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) * 100) / 100));
+  }, []);
+
+  const handleSaveShortcut = useCallback(() => {
+    if (editorRef.current) {
+      isInternalUpdate.current = true;
+      onUpdate(editorRef.current.innerHTML);
+    }
+    flushHistoryNow();
+
+    if (savedToastTimeoutRef.current) clearTimeout(savedToastTimeoutRef.current);
+    setShowSavedToast(true);
+    savedToastTimeoutRef.current = setTimeout(() => setShowSavedToast(false), 3000);
+  }, [onUpdate, flushHistoryNow]);
+
+  useEffect(() => {
+    return () => {
+      if (savedToastTimeoutRef.current) clearTimeout(savedToastTimeoutRef.current);
+      if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
+    };
+  }, []);
+
+  // Ctrl/Cmd+S (save + toast), Ctrl/Cmd+Z / Ctrl/Cmd+Y (custom undo/redo,
+  // replacing the browser's native contentEditable undo entirely - see the
+  // history functions above for why), and Ctrl/Cmd+= / +- (zoom). Attached
+  // to the whole panel (not just the contentEditable) so these work
+  // regardless of which control inside the notebook currently has focus,
+  // e.g. right after clicking a color swatch.
+  const handlePanelKeyDown = (e: React.KeyboardEvent) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const key = e.key.toLowerCase();
+
+    if (key === 's') {
+      e.preventDefault();
+      handleSaveShortcut();
+    } else if (key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      historyUndo();
+    } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
+      e.preventDefault();
+      historyRedo();
+    } else if (key === '=' || key === '+') {
+      e.preventDefault();
+      handleZoomIn();
+    } else if (key === '-') {
+      e.preventDefault();
+      handleZoomOut();
     }
   };
 
@@ -532,6 +760,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     isInternalUpdate.current = true;
     onUpdate(editorRef.current.innerHTML);
     syncSelectionState();
+    scheduleHistoryCommit();
 
     const plainText = editorRef.current.innerText.trim();
     setWordCount({
@@ -600,6 +829,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           e.preventDefault();
           insertChecklistItemAfter(checklistNode);
           handleInput();
+          flushHistoryNow();
           return;
         }
 
@@ -640,6 +870,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
             selection.removeAllRanges();
             selection.addRange(newRange);
             handleInput();
+            flushHistoryNow();
             return;
           }
 
@@ -710,6 +941,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
         const isChecked = item.getAttribute('data-checked') === 'true';
         item.setAttribute('data-checked', isChecked ? 'false' : 'true');
         handleInput();
+        flushHistoryNow();
       }
     }
   };
@@ -755,6 +987,21 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     if (editorRef.current) {
       editorRef.current.focus();
       handleInput();
+      // Every execCmd call is a deliberate, discrete action (bold, a list
+      // toggle, inserting a link/table/inline-code) - each becomes its own
+      // atomic undo step immediately rather than waiting out or merging
+      // into the typing-debounce window.
+      flushHistoryNow();
+      // Refreshes savedSelection.current to the post-command selection.
+      // Without this, chaining two toolbar actions back-to-back (e.g. Bold
+      // then Highlight on the same selected text) silently loses the
+      // second one: execCommand('bold') rewraps the selected text in a new
+      // <b> element, which can leave the OLD Range object saveRange
+      // captured earlier (before Bold ran) pointing at a node that's no
+      // longer part of the live selection in the way restoreRange expects -
+      // so the next action's restoreRange() re-applies a stale, effectively
+      // empty selection and has nothing left to act on.
+      saveRange();
     }
   };
 
@@ -874,6 +1121,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     isInternalUpdate.current = true;
     onUpdate(editor.innerHTML);
     syncSelectionState();
+    flushHistoryNow();
   };
 
   const insertHr = () => {
@@ -927,6 +1175,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
 
     editorRef.current.focus();
     handleInput();
+    flushHistoryNow();
   };
 
   const escapeHtml = (value: string) =>
@@ -995,6 +1244,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
       }
     }
     handleInput();
+    flushHistoryNow();
   };
 
   const insertTable = () => {
@@ -1048,6 +1298,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     setActiveCodeBlock(block);
     editorRef.current.focus();
     handleInput();
+    flushHistoryNow();
   };
 
   const setCodeBlockLanguage = (language: string) => {
@@ -1055,6 +1306,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     const safeLanguage = isKnownNotebookLanguage(language) ? language : 'plaintext';
     activeCodeBlock.setAttribute('data-language', safeLanguage);
     highlightCodeBlockNode(activeCodeBlock);
+    flushHistoryNow();
   };
 
   const applyFontFamily = (family: string) => {
@@ -1070,6 +1322,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
       document.execCommand('styleWithCSS', false, 'false');
     }
     handleInput();
+    flushHistoryNow();
   };
 
   type TableAction =
@@ -1143,6 +1396,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     }
 
     handleInput();
+    flushHistoryNow();
     setShowTableMenu(false);
     setContextMenu(null);
   };
@@ -1313,15 +1567,23 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
   );
 
   return (
-    <div className="flex flex-col h-full bg-surface rounded-sm overflow-hidden border border-border-hairline shadow-lg">
+    <div
+      data-keyboard-scope="notebook"
+      onKeyDown={handlePanelKeyDown}
+      className="flex flex-col h-full bg-surface rounded-sm overflow-hidden border border-border-hairline shadow-lg"
+    >
       {/* Single horizontally-swipeable row below `sm` (mobile) so the tools
           never eat into the text area's vertical space - wraps into normal
           multi-row layout from `sm` up, where there's room to spare.
           notebook-toolbar (index.css) makes every child shrink-0 so items
           overflow into the scrollable row instead of squishing. */}
       <div className="notebook-toolbar flex flex-nowrap sm:flex-wrap gap-1 p-2 border-b border-border-hairline bg-surface-secondary items-center sticky top-0 z-10 shrink-0 overflow-x-auto sm:overflow-x-visible no-scrollbar">
-        <ToolbarButton onClick={() => execCmd('undo')} title="Undo"><Undo2 className="w-4 h-4" /></ToolbarButton>
-        <ToolbarButton onClick={() => execCmd('redo')} title="Redo"><Redo2 className="w-4 h-4" /></ToolbarButton>
+        <ToolbarButton onClick={historyUndo} title="Undo (Ctrl+Z)"><Undo2 className="w-4 h-4" /></ToolbarButton>
+        <ToolbarButton onClick={historyRedo} title="Redo (Ctrl+Y)"><Redo2 className="w-4 h-4" /></ToolbarButton>
+        <div className="w-px h-6 bg-border-hairline mx-1"></div>
+        <ToolbarButton onClick={handleZoomOut} title="Zoom Out (Ctrl+-)"><ZoomOut className="w-4 h-4" /></ToolbarButton>
+        <span className="text-xs font-bold text-text-secondary w-10 text-center select-none">{Math.round(zoomLevel * 100)}%</span>
+        <ToolbarButton onClick={handleZoomIn} title="Zoom In (Ctrl+=)"><ZoomIn className="w-4 h-4" /></ToolbarButton>
         <div className="w-px h-6 bg-border-hairline mx-1"></div>
 
         <select
@@ -1455,7 +1717,11 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           onClick={handleEditorClick}
           className={`notebook-editor-content flex-grow min-w-0 outline-none overflow-y-auto overflow-x-auto text-text-primary leading-relaxed max-w-none font-normal break-words whitespace-pre-wrap ${compact ? 'py-4 px-4 overscroll-y-contain' : 'py-6 px-6 md:py-8 md:px-8'}`}
           spellCheck={false}
-          style={{ wordBreak: 'break-word' }}
+          // `zoom` (not transform: scale) - it participates in normal layout,
+          // so overflow/scroll on this same element keep working correctly
+          // at any zoom level, and it only affects this content, never the
+          // toolbar above it.
+          style={{ wordBreak: 'break-word', zoom: zoomLevel }}
         />
         {isEmpty && (
           // Mirrors the editable div's own padding/line-height so it lines up
@@ -1477,6 +1743,17 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           <div className="absolute bottom-2 right-3 pointer-events-none select-none text-[10px] font-bold uppercase tracking-widest text-text-secondary/70 bg-surface/80 px-2 py-1 rounded-sm">
             {wordCount.words} {wordCount.words === 1 ? 'word' : 'words'} · {wordCount.characters} {wordCount.characters === 1 ? 'char' : 'chars'}
           </div>
+        )}
+        {showSavedToast && createPortal(
+          <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
+            <div
+              role="status"
+              className="notebook-saved-toast bg-surface-inverted text-text-inverted text-sm font-bold px-5 py-3 rounded-sm shadow-2xl"
+            >
+              Notes saved.
+            </div>
+          </div>,
+          document.body
         )}
         {contextMenu && createPortal(
           <div ref={contextMenuRef} className="fixed w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-[100] p-3" style={{ top: contextMenu.y, left: contextMenu.x }} onMouseDown={(e) => e.stopPropagation()}>

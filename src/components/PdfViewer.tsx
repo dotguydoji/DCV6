@@ -712,7 +712,26 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      // The old check only excluded <input>/<textarea> - the notebook's
+      // editing surface is a contentEditable <div>, which isn't either, so
+      // arrow keys/zoom keys used to reach the PDF's own page-nav/zoom
+      // handling *at the same time* as the notebook's own editing (e.g.
+      // moving the text cursor with arrow keys also flipped PDF pages).
+      // isContentEditable is true for the div itself and everything inside
+      // it. closest('[data-keyboard-scope]') catches every other isolated
+      // panel (video panel buttons/selects, anything inside the notebook
+      // panel that isn't part of the contentEditable itself, like its
+      // toolbar) - each such panel owns its own keyboard handling and the
+      // PDF viewer's global shortcuts must never fire while focus is
+      // inside one.
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        target.closest('[data-keyboard-scope]')
+      ) {
+        return;
+      }
 
       if (event.key === 'ArrowRight') goToPage(pageNumber + 1);
       else if (event.key === 'ArrowLeft') goToPage(pageNumber - 1);
@@ -815,7 +834,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             <button
               type="button"
               onClick={() => setIsVideoPanelOpen((prev) => !prev)}
-              aria-label="Toggle premium videos"
+              aria-label="Toggle members only tutorials"
               className={`flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
                 isVideoPanelOpen
                   ? 'border-border-strong text-text-primary'
@@ -936,8 +955,13 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
 
       {/* flex-col on mobile stacks the notebook below the PDF (a proper
           split, not an overlay) instead of side-by-side - flex-row from
-          `sm` up puts it back on the right as a side panel. The bottom
-          toolbar (page nav/zoom) below this row is unaffected either way. */}
+          `sm` up puts it back on the right as a side panel. The page-nav
+          toolbar and footer notice now live inside the PDF column's own
+          flex-col wrapper (below) rather than as siblings of this whole
+          row - they used to sit outside it entirely, so they stretched
+          across the full viewer width even when the video/notebook panels
+          were open next to a narrower PDF column, instead of tracking just
+          the PDF column's own width. */}
       <div className="flex-1 relative overflow-hidden flex flex-col sm:flex-row min-h-0">
         {isThumbnailPanelOpen && (
           <PdfThumbnailPanel
@@ -948,23 +972,88 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           />
         )}
 
-        <div className="flex-1 relative overflow-hidden">
-          {/* PDF.js's PDFViewer requires this exact container to be absolutely
-              positioned - this wrapper just gives it a sized box to fill. */}
-          <div
-            ref={containerRef}
-            className={`pdfViewerContainer absolute inset-0 overflow-auto bg-surface-secondary transition-[filter] duration-500 ${
-              showLoadingOverlay ? 'blur-md pointer-events-none' : ''
-            }`}
-          >
-            {isLoading && <p className="text-text-secondary text-center mt-20">Loading your PDF…</p>}
-            {loadError && <p className="text-red-400 text-center mt-20">{loadError}</p>}
-            <div ref={viewerRef} className="pdfViewer" />
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="flex-1 relative overflow-hidden">
+            {/* PDF.js's PDFViewer requires this exact container to be absolutely
+                positioned - this wrapper just gives it a sized box to fill. */}
+            <div
+              ref={containerRef}
+              className={`pdfViewerContainer absolute inset-0 overflow-auto bg-surface-secondary transition-[filter] duration-500 ${
+                showLoadingOverlay ? 'blur-md pointer-events-none' : ''
+              }`}
+            >
+              {isLoading && <p className="text-text-secondary text-center mt-20">Loading your PDF…</p>}
+              {loadError && <p className="text-red-400 text-center mt-20">{loadError}</p>}
+              <div ref={viewerRef} className="pdfViewer" />
+            </div>
+
+            {showLoadingOverlay && (
+              <PdfLoadingOverlay percent={isLoading ? loadProgress : Math.max(loadProgress, 95)} />
+            )}
           </div>
 
-          {showLoadingOverlay && (
-            <PdfLoadingOverlay percent={isLoading ? loadProgress : Math.max(loadProgress, 95)} />
-          )}
+          <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-t border-border-hairline bg-surface shrink-0">
+            <button
+              type="button"
+              onClick={() => goToPage(pageNumber - 1)}
+              disabled={pageNumber <= 1}
+              aria-label="Previous page"
+              className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronLeft size={18} strokeWidth={1.5} />
+            </button>
+
+            <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm font-medium text-text-secondary">
+              <span>Page</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={pageInputValue}
+                onChange={(event) => setPageInputValue(event.target.value.replace(/[^0-9]/g, ''))}
+                onBlur={handlePageInputSubmit}
+                aria-label="Jump to page"
+                className="w-12 bg-surface-secondary border border-border-hairline rounded-sm px-1.5 py-1 text-center text-text-primary outline-none focus:border-border-strong"
+              />
+              <span>of {pageCount || '…'}</span>
+              <span className="hidden sm:inline text-text-primary ml-1">· {readingPercent}%</span>
+            </form>
+
+            <button
+              type="button"
+              onClick={() => goToPage(pageNumber + 1)}
+              disabled={pageNumber >= pageCount}
+              aria-label="Next page"
+              className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
+            >
+              <ChevronRight size={18} strokeWidth={1.5} />
+            </button>
+
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border-hairline">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                aria-label="Zoom out"
+                className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
+              >
+                <ZoomOut size={16} strokeWidth={1.5} />
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                aria-label="Zoom in"
+                className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
+              >
+                <ZoomIn size={16} strokeWidth={1.5} />
+              </button>
+              <ThemeToggle className="sm:hidden" />
+            </div>
+          </div>
+
+          <div className="px-5 py-3 bg-surface-secondary border-t border-border-hairline text-center shrink-0">
+            <p className="f-small text-text-secondary">
+              For your personal use only, please do not share or redistribute.
+            </p>
+          </div>
         </div>
 
         {isVideoPanelOpen && (() => {
@@ -982,69 +1071,6 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         {isNotebookPanelOpen && (
           <PdfNotebookPanel onClose={() => setIsNotebookPanelOpen(false)} />
         )}
-      </div>
-
-      <div className="flex items-center justify-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-t border-border-hairline bg-surface shrink-0">
-        <button
-          type="button"
-          onClick={() => goToPage(pageNumber - 1)}
-          disabled={pageNumber <= 1}
-          aria-label="Previous page"
-          className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
-        >
-          <ChevronLeft size={18} strokeWidth={1.5} />
-        </button>
-
-        <form onSubmit={handlePageInputSubmit} className="flex items-center gap-1.5 text-sm font-medium text-text-secondary">
-          <span>Page</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={pageInputValue}
-            onChange={(event) => setPageInputValue(event.target.value.replace(/[^0-9]/g, ''))}
-            onBlur={handlePageInputSubmit}
-            aria-label="Jump to page"
-            className="w-12 bg-surface-secondary border border-border-hairline rounded-sm px-1.5 py-1 text-center text-text-primary outline-none focus:border-border-strong"
-          />
-          <span>of {pageCount || '…'}</span>
-          <span className="hidden sm:inline text-text-primary ml-1">· {readingPercent}%</span>
-        </form>
-
-        <button
-          type="button"
-          onClick={() => goToPage(pageNumber + 1)}
-          disabled={pageNumber >= pageCount}
-          aria-label="Next page"
-          className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong disabled:opacity-30 disabled:pointer-events-none transition-colors"
-        >
-          <ChevronRight size={18} strokeWidth={1.5} />
-        </button>
-
-        <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border-hairline">
-          <button
-            type="button"
-            onClick={handleZoomOut}
-            aria-label="Zoom out"
-            className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
-          >
-            <ZoomOut size={16} strokeWidth={1.5} />
-          </button>
-          <button
-            type="button"
-            onClick={handleZoomIn}
-            aria-label="Zoom in"
-            className="flex items-center justify-center w-9 h-9 rounded-sm border border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors"
-          >
-            <ZoomIn size={16} strokeWidth={1.5} />
-          </button>
-          <ThemeToggle className="sm:hidden" />
-        </div>
-      </div>
-
-      <div className="px-5 py-3 bg-surface-secondary border-t border-border-hairline text-center shrink-0">
-        <p className="f-small text-text-secondary">
-          For your personal use only, please do not share or redistribute.
-        </p>
       </div>
 
       {showBookInfo && (
