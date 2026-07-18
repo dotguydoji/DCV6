@@ -11,8 +11,37 @@ import {
   List, ListOrdered, ListChecks, Subscript, Superscript,
   Undo2, Redo2, AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
+import { highlightNotebookCode, isKnownNotebookLanguage, NOTEBOOK_CODE_LANGUAGES } from '../../lib/notebookSyntaxHighlight';
 
 const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72];
+
+// A caret positioned exactly at the very end of a text node's data - i.e.
+// right after a trailing '\n' with nothing following it - isn't a reliable
+// typing anchor in Chrome: the Selection API reports it correctly, but the
+// very next keystroke can land one position early (before the '\n')
+// instead of after it. Inserting this invisible marker right after every
+// newline gives the caret a real character to sit in front of instead of
+// dangling at the node's absolute end, without affecting anything visible.
+// Stripped out again wherever code-block text is actually read (lastLineBlank/
+// isAtEnd checks, Prism highlighting) - it's purely a transient typing aid.
+const CODE_CARET_ANCHOR = '​';
+const stripCodeCaretAnchor = (text: string) => text.split(CODE_CARET_ANCHOR).join('');
+
+// Single names only, deliberately - no comma-separated fallback stacks
+// (e.g. "Arial, Helvetica, sans-serif"). The sanitizer's style-value
+// allowlist (SAFE_SIMPLE_CSS_VALUE below) rejects commas on purpose, since
+// that's one of the characters a more complex CSS value smuggling attempt
+// would need - these are picked from universally-preinstalled OS fonts so
+// a missing fallback is a non-issue in practice.
+const NOTEBOOK_FONTS: { value: string; label: string }[] = [
+  { value: '', label: 'Default' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Verdana', label: 'Verdana' },
+  { value: 'Courier New', label: 'Courier New' },
+  { value: 'Times New Roman', label: 'Times New Roman' },
+  { value: 'Trebuchet MS', label: 'Trebuchet MS' }
+];
 
 const BLOCK_FORMATS: { value: string; label: string }[] = [
   { value: 'DIV', label: 'Paragraph' },
@@ -94,6 +123,15 @@ DOMPurify.addHook('uponSanitizeAttribute', (_node: Element, data: any) => {
   if (data.attrName === 'data-checked' && data.attrValue !== 'true' && data.attrValue !== 'false') {
     data.attrValue = 'false';
   }
+
+  // Our own code only ever writes one of NOTEBOOK_CODE_LANGUAGES' values
+  // here - clamping to that same allowlist means a tampered/hand-edited
+  // value can't smuggle anything through as a "language" (it's only ever
+  // used to look up a Prism grammar by exact key, so there's no real
+  // injection vector either way, but this keeps stored data self-consistent).
+  if (data.attrName === 'data-language' && !isKnownNotebookLanguage(data.attrValue)) {
+    data.attrValue = 'plaintext';
+  }
 });
 
 const PURIFY_CONFIG = {
@@ -106,7 +144,7 @@ const PURIFY_CONFIG = {
   ],
   ALLOWED_ATTR: [
     'href', 'target', 'rel', 'style', 'class', 'colspan', 'rowspan', 'align', 'size',
-    'data-checked', 'contenteditable'
+    'data-checked', 'contenteditable', 'data-language'
   ],
   FORBID_TAGS: ['style', 'script', 'iframe', 'img', 'video', 'audio', 'object', 'embed', 'form', 'input'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
@@ -121,8 +159,21 @@ const sanitize = (html: string) => DOMPurify.sanitize(html, PURIFY_CONFIG);
 // a version with an inline font-size style - see handleInput below) -
 // stripping tags/&nbsp; and checking for leftover visible text covers all
 // of them without caring which one produced the current markup.
-const isNoteContentEmpty = (html: string): boolean =>
-  html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length === 0;
+//
+// A code block, heading, ruler, table, or checklist item can all exist
+// with zero visible text (an empty code block, an <h1><br></h1> right
+// after picking "Heading 1" before typing anything) - text-only emptiness
+// checking would then wrongly still call the page "empty" and show the
+// placeholder overlapping the inserted element. Any of these structural
+// tags/classes being present means the user has already inserted
+// something, regardless of whether they've typed a visible character yet.
+const NON_EMPTY_ELEMENT_PATTERN =
+  /<(h[1-6]|hr|table|ul|ol)[\s>]|class="[^"]*\b(notebook-code-block|notebook-checklist-item)\b/i;
+
+const isNoteContentEmpty = (html: string): boolean => {
+  if (NON_EMPTY_ELEMENT_PATTERN.test(html)) return false;
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim().length === 0;
+};
 
 interface NotebookEditorProps {
   content: string;
@@ -217,8 +268,18 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
   const [foreColor, setForeColor] = useState('#c98a3a');
   const [backColor, setBackColor] = useState('#FFFFFF');
   const [fontSize, setFontSize] = useState('16');
+  const [fontFamily, setFontFamily] = useState('');
   const [blockFormat, setBlockFormat] = useState('DIV');
   const [formatState, setFormatState] = useState<Record<string, boolean>>({});
+  const [wordCount, setWordCount] = useState({ words: 0, characters: 0 });
+
+  // The code block the caret is currently inside, if any - drives the
+  // contextual language picker in the toolbar. previousCodeBlockRef tracks
+  // the same thing across renders so syncSelectionState can tell "the
+  // caret just left a code block" apart from "still typing inside it" and
+  // trigger re-highlighting only at that transition, not on every keystroke.
+  const [activeCodeBlock, setActiveCodeBlock] = useState<HTMLElement | null>(null);
+  const previousCodeBlockRef = useRef<HTMLElement | null>(null);
 
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
@@ -289,6 +350,11 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
       if (editorRef.current.innerHTML === '' || editorRef.current.innerHTML === '<br>') {
         editorRef.current.innerHTML = '<div><br></div>';
       }
+      const plainText = editorRef.current.innerText.trim();
+      setWordCount({
+        words: plainText ? plainText.split(/\s+/).length : 0,
+        characters: plainText.length
+      });
     }
     isInternalUpdate.current = false;
   }, [content]);
@@ -303,12 +369,84 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     }
   };
 
+  // Records the caret as a path of child-node indices from the editor root
+  // down to the exact text node/offset it's in - cheap to re-walk after an
+  // innerHTML replacement as long as the DOM shape is still roughly the
+  // same (true for an attribute-only sanitize pass, which is the only
+  // caller of this), unlike a live Range/Selection object which goes stale
+  // the instant its nodes are replaced.
+  const getCaretPath = (root: HTMLElement): { path: number[]; offset: number } | null => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+    const range = selection.getRangeAt(0);
+    if (!root.contains(range.startContainer)) return null;
+
+    const path: number[] = [];
+    let node: Node | null = range.startContainer;
+    while (node && node !== root) {
+      const parent: Node | null = node.parentNode;
+      if (!parent) return null;
+      const idx = Array.prototype.indexOf.call(parent.childNodes, node);
+      if (idx === -1) return null;
+      path.unshift(idx);
+      node = parent;
+    }
+    return { path, offset: range.startOffset };
+  };
+
+  const restoreCaretFromPath = (root: HTMLElement, { path, offset }: { path: number[]; offset: number }) => {
+    let node: Node = root;
+    for (const idx of path) {
+      const child: Node | undefined = node.childNodes[idx];
+      if (!child) break;
+      node = child;
+    }
+    const maxOffset = node.nodeType === Node.TEXT_NODE ? (node.textContent?.length ?? 0) : node.childNodes.length;
+    const clampedOffset = Math.min(Math.max(offset, 0), maxOffset);
+    try {
+      const range = document.createRange();
+      range.setStart(node, clampedOffset);
+      range.collapse(true);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    } catch {
+      // Shape diverged too much to trust the path (e.g. a disallowed node
+      // was actually removed, not just stripped of an attribute) - leaving
+      // the caret wherever the browser already put it beats throwing.
+    }
+  };
+
   const restoreRange = () => {
+    // document.execCommand silently no-ops on a selection whose text lives
+    // inside the editor if document.activeElement isn't the editor itself
+    // - true even though window.getSelection() still reports the old
+    // Range intact. Every toolbar control that isn't the contentEditable
+    // div (a <select>, a color <input>) steals focus the instant it's
+    // interacted with, which is exactly when this function's callers need
+    // execCommand to actually do something - so focus has to be restored
+    // first, before the saved Range is reapplied.
+    editorRef.current?.focus();
     const sel = window.getSelection();
     if (sel && savedSelection.current) {
       sel.removeAllRanges();
       sel.addRange(savedSelection.current);
     }
+  };
+
+  // Re-tokenizes a code block's current plain text and swaps it in as the
+  // block's new innerHTML - always re-extracted fresh from block.textContent
+  // rather than incrementally patched, so it doesn't matter how stale the
+  // colors got while the reader was actively typing (see the call site in
+  // syncSelectionState below: this only runs once, at the moment the caret
+  // actually leaves the block, never on every keystroke inside it).
+  const highlightCodeBlockNode = (block: HTMLElement) => {
+    const language = block.getAttribute('data-language') || 'plaintext';
+    const code = stripCodeCaretAnchor(block.textContent ?? '');
+    const html = highlightNotebookCode(code, language);
+    if (block.innerHTML === html) return;
+    block.innerHTML = html;
+    handleInput();
   };
 
   const syncSelectionState = () => {
@@ -318,8 +456,12 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
 
     let tableFound: HTMLTableElement | null = null;
     let cellFound: HTMLTableCellElement | null = null;
+    let codeBlockFound: HTMLElement | null = null;
 
     while (node && node !== editorRef.current) {
+      if (node instanceof HTMLElement && node.classList.contains('notebook-code-block')) {
+        codeBlockFound = node;
+      }
       if (node.nodeName === 'TD' || node.nodeName === 'TH') cellFound = node as HTMLTableCellElement;
       if (node.nodeName === 'TABLE') {
         tableFound = node as HTMLTableElement;
@@ -329,6 +471,17 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     }
     setActiveTable(tableFound);
     setActiveCell(cellFound);
+
+    // Only fires at the moment the caret actually moves OUT of a code
+    // block (to somewhere else, or to a different code block) - typing
+    // continuously inside the same block never re-triggers this, since
+    // previousCodeBlockRef.current already equals codeBlockFound in that
+    // steady-state case.
+    if (previousCodeBlockRef.current && previousCodeBlockRef.current !== codeBlockFound) {
+      highlightCodeBlockNode(previousCodeBlockRef.current);
+    }
+    previousCodeBlockRef.current = codeBlockFound;
+    setActiveCodeBlock(codeBlockFound);
 
     try {
       const value = document.queryCommandValue('formatBlock');
@@ -353,7 +506,17 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     const currentHTML = editorRef.current.innerHTML;
     const sanitized = sanitize(currentHTML);
     if (currentHTML !== sanitized) {
+      // Whenever DOMPurify actually changes something (routinely true right
+      // after a code block/heading/etc, since the browser's own
+      // execCommand/formatBlock output often carries an attribute the
+      // allowlist strips), wholesale-replacing innerHTML detaches the live
+      // Selection from the DOM - the browser then drops the caret back to
+      // the very start of the editor on the next keystroke. Capturing a
+      // childNode-index path beforehand and re-walking it after the swap
+      // keeps the caret where the user actually was.
+      const caretPath = getCaretPath(editorRef.current);
       editorRef.current.innerHTML = sanitized;
+      if (caretPath) restoreCaretFromPath(editorRef.current, caretPath);
     }
     if (editorRef.current.innerHTML === '' || editorRef.current.innerHTML === '<br>') {
       editorRef.current.innerHTML = `<div style="font-size: ${fontSize}px"><br></div>`;
@@ -369,6 +532,12 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
     isInternalUpdate.current = true;
     onUpdate(editorRef.current.innerHTML);
     syncSelectionState();
+
+    const plainText = editorRef.current.innerText.trim();
+    setWordCount({
+      words: plainText ? plainText.split(/\s+/).length : 0,
+      characters: plainText.length
+    });
   };
 
   // Security: force plain text on paste (blocks XSS payloads and huge image data URIs).
@@ -420,7 +589,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
             checklistNode = curr;
             break;
           }
-          if (curr instanceof HTMLElement && curr.style.fontFamily.includes('JetBrains Mono')) {
+          if (curr instanceof HTMLElement && curr.classList.contains('notebook-code-block')) {
             codeBlockNode = curr;
             break;
           }
@@ -436,20 +605,93 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
 
         if (codeBlockNode) {
           e.preventDefault();
-          const newDiv = document.createElement('div');
-          newDiv.innerHTML = '<br>';
+          const range = selection.getRangeAt(0);
 
-          if (codeBlockNode.nextSibling) {
-            codeBlockNode.parentNode?.insertBefore(newDiv, codeBlockNode.nextSibling);
-          } else {
-            codeBlockNode.parentNode?.appendChild(newDiv);
+          // Double-Enter on an already-blank final line exits the block
+          // (matches common code-editor UX) - otherwise Enter inserts a
+          // literal '\n' character, never a <br>. The block's own
+          // white-space: pre-wrap renders '\n' as a real line break, and
+          // keeping the content as plain text (no <br> elements mixed in)
+          // is what lets highlightCodeBlockNode's block.textContent
+          // round-trip exactly when it re-tokenizes the block later.
+          const tailRange = document.createRange();
+          tailRange.setStart(range.endContainer, range.endOffset);
+          tailRange.setEndAfter(codeBlockNode.lastChild ?? codeBlockNode);
+          const isAtEnd = range.collapsed && stripCodeCaretAnchor(tailRange.toString()).length === 0;
+          const fullText = stripCodeCaretAnchor(codeBlockNode.textContent ?? '');
+          const lastLineBlank = fullText.length === 0 || fullText.endsWith('\n');
+
+          if (isAtEnd && lastLineBlank) {
+            highlightCodeBlockNode(codeBlockNode);
+            previousCodeBlockRef.current = null;
+            setActiveCodeBlock(null);
+
+            const newDiv = document.createElement('div');
+            newDiv.innerHTML = '<br>';
+            if (codeBlockNode.nextSibling) {
+              codeBlockNode.parentNode?.insertBefore(newDiv, codeBlockNode.nextSibling);
+            } else {
+              codeBlockNode.parentNode?.appendChild(newDiv);
+            }
+
+            const newRange = document.createRange();
+            newRange.setStart(newDiv, 0);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+            handleInput();
+            return;
           }
 
-          const newRange = document.createRange();
-          newRange.setStart(newDiv, 0);
-          newRange.collapse(true);
+          // Deliberately NOT execCommand('insertText', ..., '\n') -
+          // Chromium's insertText treats an embedded newline as an implicit
+          // paragraph break and splits the code block into multiple
+          // separate <div class="notebook-code-block"> elements (one per
+          // line), which silently destroys the "one block, one language"
+          // model.
+          //
+          // Also deliberately NOT Range.insertNode() with a fresh text
+          // node - when the caret sits mid-text (the common case: end of a
+          // line), insertNode() splits that text node and leaves an empty
+          // remainder right after the inserted node. The Selection API
+          // reports a caret placed inside that empty node as correct, but
+          // Chrome's native typing doesn't reliably treat a zero-length
+          // text node as a real anchor - the very next keystroke can land
+          // back at the start of the block's first text node instead,
+          // silently corrupting every multi-line code block. Splicing the
+          // newline directly into the existing text node's data (or
+          // appending a fresh, non-empty one only when the block is still
+          // completely empty) never creates that empty-node trap.
+          // The CODE_CARET_ANCHOR right after '\n' is what actually fixes
+          // the browser quirk above - without it, the caret would sit at
+          // the text node's absolute end (right after '\n', nothing
+          // following), which is the exact position Chrome mishandles.
+          // With the anchor there, the caret sits *between* two real
+          // characters instead, which Chrome always anchors reliably.
+          range.deleteContents();
+          const container = range.startContainer;
+          let anchorNode: Text;
+          let anchorOffset: number;
+
+          if (container.nodeType === Node.TEXT_NODE) {
+            const textNode = container as Text;
+            textNode.insertData(range.startOffset, '\n' + CODE_CARET_ANCHOR);
+            anchorNode = textNode;
+            anchorOffset = range.startOffset + 1;
+          } else {
+            const textNode = document.createTextNode('\n' + CODE_CARET_ANCHOR);
+            const referenceNode = container.childNodes[range.startOffset] ?? null;
+            container.insertBefore(textNode, referenceNode);
+            anchorNode = textNode;
+            anchorOffset = 1;
+          }
+
+          const caretRange = document.createRange();
+          caretRange.setStart(anchorNode, anchorOffset);
+          caretRange.collapse(true);
           selection.removeAllRanges();
-          selection.addRange(newRange);
+          selection.addRange(caretRange);
+          handleInput();
           return;
         }
       }
@@ -469,6 +711,16 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
         item.setAttribute('data-checked', isChecked ? 'false' : 'true');
         handleInput();
       }
+    }
+  };
+
+  // Focus can leave the editor entirely (clicking a toolbar button, the
+  // language/font selects, or switching pages) without the caret ever
+  // "moving" through syncSelectionState first, which would otherwise leave
+  // a code block's last edit un-highlighted until the user clicks back in.
+  const handleEditorBlur = () => {
+    if (previousCodeBlockRef.current) {
+      highlightCodeBlockNode(previousCodeBlockRef.current);
     }
   };
 
@@ -762,24 +1014,62 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
 
   const insertCodeBlock = () => {
     restoreRange();
-    const id = 'code-' + Date.now();
-    const html = `<div id="${id}" style="background-color: #1a1a1a; color: #f2f2f2; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; padding: 12px; border-radius: 4px; border: 1px solid #3a3a3a; white-space: pre-wrap; margin: 8px 0; tab-size: 4; width: fit-content; min-width: 100px; max-width: 100%; display: block;"></div><div><br></div>`;
-    execCmd('insertHTML', html);
-    setTimeout(() => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.removeAttribute('id');
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(true);
-        const sel = window.getSelection();
-        if (sel) {
-          sel.removeAllRanges();
-          sel.addRange(range);
-        }
-        handleInput();
-      }
-    }, 0);
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || !editorRef.current) return;
+    const range = selection.getRangeAt(0);
+    if (!editorRef.current.contains(range.commonAncestorContainer)) return;
+    range.deleteContents();
+
+    // Built and inserted as real DOM nodes (not an HTML string via
+    // execCommand('insertHTML')) so we keep a direct JS reference to the
+    // new block - going through execCmd's handleInput()->sanitize() call
+    // strips any temporary id attribute (id isn't in ALLOWED_ATTR) before
+    // a setTimeout-based id lookup would ever get a chance to run,
+    // silently losing focus placement on every insert.
+    const block = document.createElement('div');
+    block.className = 'notebook-code-block';
+    block.setAttribute('data-language', 'javascript');
+
+    const spacer = document.createElement('div');
+    spacer.innerHTML = '<br>';
+
+    const fragment = document.createDocumentFragment();
+    fragment.appendChild(block);
+    fragment.appendChild(spacer);
+    range.insertNode(fragment);
+
+    const newRange = document.createRange();
+    newRange.selectNodeContents(block);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+
+    previousCodeBlockRef.current = block;
+    setActiveCodeBlock(block);
+    editorRef.current.focus();
+    handleInput();
+  };
+
+  const setCodeBlockLanguage = (language: string) => {
+    if (!activeCodeBlock) return;
+    const safeLanguage = isKnownNotebookLanguage(language) ? language : 'plaintext';
+    activeCodeBlock.setAttribute('data-language', safeLanguage);
+    highlightCodeBlockNode(activeCodeBlock);
+  };
+
+  const applyFontFamily = (family: string) => {
+    setFontFamily(family);
+    restoreRange();
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      document.execCommand('styleWithCSS', false, 'true');
+      // 'inherit' clears just the font-family override without touching
+      // bold/italic/color/etc - execCommand('removeFormat') would strip
+      // all formatting from the selection, not only the font.
+      document.execCommand('fontName', false, family || 'inherit');
+      document.execCommand('styleWithCSS', false, 'false');
+    }
+    handleInput();
   };
 
   type TableAction =
@@ -1048,6 +1338,16 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
             <option key={size} value={size}>{size}</option>
           ))}
         </select>
+        <select
+          value={fontFamily}
+          onChange={(e) => applyFontFamily(e.target.value)}
+          title="Font Family"
+          className="bg-surface text-text-secondary text-xs font-bold p-1.5 rounded-sm border border-border-hairline focus:outline-none focus:border-border-strong transition-colors cursor-pointer w-28"
+        >
+          {NOTEBOOK_FONTS.map((font) => (
+            <option key={font.value} value={font.value} style={font.value ? { fontFamily: font.value } : undefined}>{font.label}</option>
+          ))}
+        </select>
         <div className="w-px h-6 bg-border-hairline mx-1"></div>
 
         <ToolbarButton onClick={() => execCmd('bold')} active={formatState.bold} title="Bold"><Bold className="w-4 h-4" /></ToolbarButton>
@@ -1089,6 +1389,18 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           {showTableMenu && (<div className="absolute top-full left-0 mt-2 w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-50 p-3">{renderTableMenuContent()}</div>)}
         </div>
         <ToolbarButton onClick={insertCodeBlock} title="Insert Code Block"><Code className="w-4 h-4" /></ToolbarButton>
+        {activeCodeBlock && (
+          <select
+            value={activeCodeBlock.getAttribute('data-language') || 'plaintext'}
+            onChange={(e) => setCodeBlockLanguage(e.target.value)}
+            title="Code Block Language"
+            className="bg-surface text-text-secondary text-xs font-bold p-1.5 rounded-sm border border-border-hairline focus:outline-none focus:border-border-strong transition-colors cursor-pointer w-32"
+          >
+            {NOTEBOOK_CODE_LANGUAGES.map((lang) => (
+              <option key={lang.value} value={lang.value}>{lang.label}</option>
+            ))}
+          </select>
+        )}
         <div className="w-px h-6 bg-border-hairline mx-1"></div>
 
         <div className="flex items-center bg-surface rounded-sm border border-border-hairline p-0.5">
@@ -1138,6 +1450,7 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           onPaste={handlePaste}
           onMouseUp={handleEditorMouseUp}
           onKeyUp={handleEditorKeyUp}
+          onBlur={handleEditorBlur}
           onContextMenu={handleContextMenu}
           onClick={handleEditorClick}
           className={`notebook-editor-content flex-grow min-w-0 outline-none overflow-y-auto overflow-x-auto text-text-primary leading-relaxed max-w-none font-normal break-words whitespace-pre-wrap ${compact ? 'py-4 px-4 overscroll-y-contain' : 'py-6 px-6 md:py-8 md:px-8'}`}
@@ -1159,6 +1472,11 @@ export const NotebookEditor: React.FC<NotebookEditorProps> = ({
           >
             Write your notes here.
           </span>
+        )}
+        {!compact && (
+          <div className="absolute bottom-2 right-3 pointer-events-none select-none text-[10px] font-bold uppercase tracking-widest text-text-secondary/70 bg-surface/80 px-2 py-1 rounded-sm">
+            {wordCount.words} {wordCount.words === 1 ? 'word' : 'words'} · {wordCount.characters} {wordCount.characters === 1 ? 'char' : 'chars'}
+          </div>
         )}
         {contextMenu && createPortal(
           <div ref={contextMenuRef} className="fixed w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-[100] p-3" style={{ top: contextMenu.y, left: contextMenu.x }} onMouseDown={(e) => e.stopPropagation()}>

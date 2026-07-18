@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowLeftCircle,
@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Menu,
   NotebookPen,
+  PlayCircle,
   RefreshCw,
   Search,
   X
@@ -37,6 +38,7 @@ import {
   toggleFavorite
 } from '../lib/libraryPreferences';
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
+import { fetchVideoProductIds } from '../lib/premiumVideos';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 import { useGlobalScrollTilt } from '../lib/useScrollTilt';
 
@@ -89,7 +91,7 @@ const FavoriteHeart: React.FC<FavoriteHeartProps> = ({ productId, isFavorited, o
     aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
     aria-pressed={isFavorited}
     className={`flex items-center justify-center w-9 h-9 transition-colors ${
-      isFavorited ? 'text-red-500' : 'text-white hover:text-red-400'
+      isFavorited ? 'text-red-500' : 'text-text-secondary hover:text-red-400'
     }`}
   >
     <Heart className="w-6 h-6" strokeWidth={1.5} fill={isFavorited ? 'currentColor' : 'none'} />
@@ -102,16 +104,19 @@ interface LibraryCardProps {
   onToggleFavorite: (productId: string) => void;
   lastOpenedAt?: number;
   readingPercent?: number;
+  hasPremiumVideos?: boolean;
 }
 
 const LibraryCard: React.FC<LibraryCardProps> = ({
   product,
   isFavorited,
   onToggleFavorite,
-  readingPercent
+  readingPercent,
+  hasPremiumVideos
 }) => (
   <a
     href={`/view/${encodeURIComponent(product.id)}`}
+    data-product-id={product.id}
     className="group flex flex-col bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt hover:border-border-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-border-strong/20"
   >
     <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface-secondary">
@@ -123,6 +128,12 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
         decoding="async"
         referrerPolicy="no-referrer"
       />
+      {hasPremiumVideos && (
+        <span className="absolute top-2 left-2 flex items-center gap-1 bg-surface-inverted text-text-inverted text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+          <PlayCircle className="w-3 h-3" strokeWidth={1.5} />
+          Bonus Videos
+        </span>
+      )}
     </div>
     <div className="p-5 flex flex-col flex-grow">
       <h3 className="font-poppins font-normal text-lg lg:text-xl text-text-primary mb-1 leading-tight line-clamp-2 min-h-[2lh]">
@@ -132,23 +143,23 @@ const LibraryCard: React.FC<LibraryCardProps> = ({
         {product.description}
       </p>
 
-      <div className="mt-auto border-t border-border-hairline bg-black rounded-b-sm -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between gap-3">
+      <div className="mt-auto border-t border-border-hairline -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between gap-3">
         <div className="w-1/2 min-w-0 flex items-center justify-start gap-2">
           {typeof readingPercent === 'number' && (
             <>
-              <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
+              <div className="flex-1 h-2 rounded-full bg-surface-secondary overflow-hidden">
                 <div
-                  className="h-full bg-white transition-all"
+                  className="h-full bg-text-primary transition-all"
                   style={{ width: `${readingPercent}%` }}
                 />
               </div>
-              <span className="text-xs text-white/70 shrink-0">{readingPercent}%</span>
+              <span className="text-xs text-text-secondary shrink-0">{readingPercent}%</span>
             </>
           )}
         </div>
         <div className="w-1/2 flex items-center justify-end gap-2">
           {product.language && (
-            <span className="f-small text-white/60 border border-white/15 rounded-sm px-2 py-0.5">
+            <span className="f-small text-text-secondary border border-border-hairline rounded-sm px-2 py-0.5">
               {product.language === 'en' ? 'English' : 'Tagalog'}
             </span>
           )}
@@ -173,7 +184,14 @@ export const MyLibraryPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
+  const [videoProductIds, setVideoProductIds] = useState<Set<string>>(new Set());
   const hasTriedCachedToken = useRef(false);
+
+  // Public, cached 20 min (see premiumVideos.ts) - just enough to know which
+  // owned cards get a "Bonus Videos" badge, no per-product request needed.
+  useEffect(() => {
+    fetchVideoProductIds().then(setVideoProductIds);
+  }, []);
 
   useGlobalScrollTilt();
 
@@ -370,6 +388,55 @@ export const MyLibraryPage: React.FC = () => {
 
     return sorted;
   }, [ownedProducts, activeCategory, languageFilter, levelFilter, searchQuery, sortBy, openedAtById, favoriteIds]);
+
+  // FLIP animation for favorite-triggered reordering: cards jumping straight
+  // to the front read as jarring, but re-animating an actual grid reflow
+  // (height/grid-column changes) is expensive. Instead we let the reorder
+  // happen instantly, then paper over it with a single cheap transform - on
+  // the very next paint, each card is nudged back to its *previous* screen
+  // position with transitions off, then released so it glides to its new
+  // slot. Transform-only (no layout/paint cost) keeps this fine even on
+  // low-spec devices, and cards with no position change (the common case
+  // for any grid larger than one row) are skipped entirely.
+  const libraryGridRef = useRef<HTMLDivElement>(null);
+  const cardPositionsRef = useRef<Map<string, DOMRect>>(new Map());
+
+  useLayoutEffect(() => {
+    const grid = libraryGridRef.current;
+    if (!grid) return;
+
+    const cards = grid.querySelectorAll<HTMLElement>('[data-product-id]');
+    const previousPositions = cardPositionsRef.current;
+    const nextPositions = new Map<string, DOMRect>();
+
+    cards.forEach((card) => {
+      const id = card.dataset.productId;
+      if (!id) return;
+      const newRect = card.getBoundingClientRect();
+      nextPositions.set(id, newRect);
+
+      const prevRect = previousPositions.get(id);
+      if (!prevRect) return;
+
+      const deltaX = prevRect.left - newRect.left;
+      const deltaY = prevRect.top - newRect.top;
+      if (!deltaX && !deltaY) return;
+
+      card.style.transition = 'none';
+      card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      // Forces the browser to apply the transform above before the
+      // transition is re-enabled next frame, otherwise it'd be batched
+      // together with the reset and never actually animate.
+      card.getBoundingClientRect();
+
+      requestAnimationFrame(() => {
+        card.style.transition = 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1)';
+        card.style.transform = '';
+      });
+    });
+
+    cardPositionsRef.current = nextPositions;
+  }, [visibleProducts]);
 
   if (state.status === 'ready') {
     return (
@@ -731,7 +798,7 @@ export const MyLibraryPage: React.FC = () => {
                       <p className="text-text-secondary f-body">No PDFs match your search or filters.</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    <div ref={libraryGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                       {visibleProducts.map((product) => (
                         <LibraryCard
                           key={product.id}
@@ -740,6 +807,7 @@ export const MyLibraryPage: React.FC = () => {
                           onToggleFavorite={handleToggleFavorite}
                           lastOpenedAt={openedAtById.get(product.id)}
                           readingPercent={readingPercentById.get(product.id)}
+                          hasPremiumVideos={videoProductIds.has(product.id)}
                         />
                       ))}
                     </div>

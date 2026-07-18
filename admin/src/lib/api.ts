@@ -28,6 +28,17 @@ export interface Package {
   productIds: string[];
 }
 
+export interface ProductVideo {
+  id: string;
+  title: string;
+  youtubeId: string;
+}
+
+export interface ProductVideoGroup {
+  productId: string;
+  videos: ProductVideo[];
+}
+
 // Carries the HTTP status alongside the message so callers can tell a real
 // "not authorized" (403) apart from a rate limit (429) or a server error
 // (5xx) - these need different handling, not one generic failure message.
@@ -117,6 +128,33 @@ export const upsertPackage = async (
 export const deletePackage = async (idToken: string, id: string) => {
   const result = await call<{ ok: true }>('admin-delete-package', idToken, { id });
   clearCachedResponse(PACKAGES_CACHE_KEY);
+  return result;
+};
+
+const PRODUCT_VIDEOS_CACHE_KEY = 'product-videos';
+
+export const listProductVideos = async (idToken: string): Promise<{ productVideos: ProductVideoGroup[] }> => {
+  const cached = getCachedResponse<{ productVideos: ProductVideoGroup[] }>(PRODUCT_VIDEOS_CACHE_KEY);
+  if (cached) return cached;
+
+  const result = await call<{ productVideos: ProductVideoGroup[] }>('admin-list-product-videos', idToken);
+  setCachedResponse(PRODUCT_VIDEOS_CACHE_KEY, result, LIST_CACHE_TTL_MS);
+  return result;
+};
+
+export const upsertProductVideo = async (
+  idToken: string,
+  productId: string,
+  video: { id?: string; title: string; youtubeUrl: string }
+) => {
+  const result = await call<{ ok: true }>('admin-upsert-product-video', idToken, { productId, video });
+  clearCachedResponse(PRODUCT_VIDEOS_CACHE_KEY);
+  return result;
+};
+
+export const deleteProductVideo = async (idToken: string, productId: string, videoId: string) => {
+  const result = await call<{ ok: true }>('admin-delete-product-video', idToken, { productId, videoId });
+  clearCachedResponse(PRODUCT_VIDEOS_CACHE_KEY);
   return result;
 };
 

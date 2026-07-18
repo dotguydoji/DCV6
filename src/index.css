@@ -387,6 +387,56 @@
   animation: cartBounce 0.5s ease-in-out;
 }
 
+/*
+ * Search input - a plain underlined field + per-letter floating label,
+ * reproducing https://uiverse.io/liyaxu123's form-control component as
+ * directly as possible (same structure/timing), just recolored from the
+ * original's white/lightblue to this site's text-primary/text-secondary
+ * tokens. The input keeps a single-space placeholder (see Navbar.tsx)
+ * purely so :placeholder-shown can tell "empty" from "has text" -
+ * :focus and :not(:placeholder-shown) together cover the same "float the
+ * label" cases the original's :focus/:valid did, without needing a
+ * validated form field or any new React state.
+ */
+.search-form-control {
+  position: relative;
+  width: 100%;
+}
+.search-input {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 2px solid var(--text-secondary);
+  display: block;
+  width: 100%;
+  padding: 7px 0;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.search-input:focus,
+.search-input:not(:placeholder-shown) {
+  outline: 0;
+  border-bottom-color: var(--text-primary);
+}
+.search-label {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  pointer-events: none;
+}
+.search-label span {
+  display: inline-block;
+  min-width: 5px;
+  color: var(--text-secondary);
+  transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), font-size 0.3s ease, opacity 0.3s ease;
+}
+.search-input:focus + .search-label span,
+.search-input:not(:placeholder-shown) + .search-label span {
+  color: var(--text-primary);
+  opacity: 0.55;
+  font-size: 0.8em;
+  transform: translateY(-20px);
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -574,24 +624,50 @@
 }
 
 /*
- * PDF loading overlay's liquid-fill effect - two overlapping wave layers
- * scrolling at different speeds/directions for a natural (not mechanical)
- * water motion. Purely cosmetic, self-contained here so PdfLoadingOverlay
- * doesn't need any inline <style>/JS-driven animation loop.
+ * PDF loading overlay's spinner - a rotating wireframe cube (originally from
+ * https://uiverse.io/faxriddin20/light-vampirebat-74, adapted to this site's
+ * theme tokens instead of the original's hardcoded "lime" so it flips
+ * correctly with dark/light mode). Purely cosmetic, self-contained here so
+ * PdfLoadingOverlay doesn't need any inline <style>/JS-driven animation loop.
  */
-@keyframes liquid-wave-front {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+.pdf-cube-spinner {
+  /* Driven by a custom property (rather than the original's hardcoded
+     70.4px) so the responsive breakpoints below can resize the whole cube
+     with one number - the face depth (translateZ) is derived from it via
+     calc() rather than being its own separately-tuned value, so the cube
+     keeps its correct proportions at every size instead of coming out
+     flattened/stretched. 96px on mobile, up from the original 70.4px
+     (too small per feedback); 132px from `sm:` (640px) up, matching this
+     site's usual mobile/desktop step for a centered loading indicator. */
+  --cube-size: 96px;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  animation: pdf-cube-spinner-spin 1.6s infinite ease;
+  transform-style: preserve-3d;
 }
-@keyframes liquid-wave-back {
-  from { transform: translateX(-50%); }
-  to { transform: translateX(0); }
+@media (min-width: 640px) {
+  .pdf-cube-spinner {
+    --cube-size: 132px;
+  }
 }
-.liquid-wave-front {
-  animation: liquid-wave-front 3.2s linear infinite;
+.pdf-cube-spinner > div {
+  background-color: transparent;
+  height: 100%;
+  position: absolute;
+  width: 100%;
+  border: 3.5px solid var(--border-strong);
 }
-.liquid-wave-back {
-  animation: liquid-wave-back 4.6s linear infinite;
+.pdf-cube-spinner div:nth-of-type(1) { transform: translateZ(calc(var(--cube-size) / -2)) rotateY(180deg); }
+.pdf-cube-spinner div:nth-of-type(2) { transform: rotateY(-270deg) translateX(50%); transform-origin: top right; }
+.pdf-cube-spinner div:nth-of-type(3) { transform: rotateY(270deg) translateX(-50%); transform-origin: center left; }
+.pdf-cube-spinner div:nth-of-type(4) { transform: rotateX(90deg) translateY(-50%); transform-origin: top center; }
+.pdf-cube-spinner div:nth-of-type(5) { transform: rotateX(-90deg) translateY(50%); transform-origin: bottom center; }
+.pdf-cube-spinner div:nth-of-type(6) { transform: translateZ(calc(var(--cube-size) / 2)); }
+
+@keyframes pdf-cube-spinner-spin {
+  0% { transform: rotate(45deg) rotateX(-25deg) rotateY(25deg); }
+  50% { transform: rotate(45deg) rotateX(-385deg) rotateY(25deg); }
+  100% { transform: rotate(45deg) rotateX(-385deg) rotateY(385deg); }
 }
 
 /*
@@ -686,4 +762,83 @@
  */
 .notebook-toolbar > * {
   flex-shrink: 0;
+}
+
+/*
+ * Code block base styling + Prism token colors (VS Code Dark+ inspired).
+ * Deliberately hand-written here rather than importing one of Prism's own
+ * theme stylesheets - those target bare `code[class*="language-"]` /
+ * `pre[class*="language-"]` selectors, which would also repaint the
+ * notebook's plain inline <code> spans (insertInlineCode) that never get
+ * Prism's token markup. Scoping every rule under .notebook-code-block
+ * keeps this feature fully self-contained.
+ */
+.notebook-code-block {
+  background-color: #1a1a1a;
+  color: #f2f2f2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+  white-space: pre-wrap;
+  margin: 8px 0;
+  tab-size: 4;
+  max-width: 100%;
+  display: block;
+  outline: none;
+}
+.notebook-code-block .token.comment,
+.notebook-code-block .token.prolog,
+.notebook-code-block .token.doctype,
+.notebook-code-block .token.cdata {
+  color: #6a9955;
+  font-style: italic;
+}
+.notebook-code-block .token.punctuation {
+  color: #d4d4d4;
+}
+.notebook-code-block .token.property,
+.notebook-code-block .token.tag,
+.notebook-code-block .token.boolean,
+.notebook-code-block .token.number,
+.notebook-code-block .token.constant,
+.notebook-code-block .token.symbol,
+.notebook-code-block .token.deleted {
+  color: #b5cea8;
+}
+.notebook-code-block .token.selector,
+.notebook-code-block .token.attr-name,
+.notebook-code-block .token.string,
+.notebook-code-block .token.char,
+.notebook-code-block .token.builtin,
+.notebook-code-block .token.inserted {
+  color: #ce9178;
+}
+.notebook-code-block .token.operator,
+.notebook-code-block .token.entity,
+.notebook-code-block .token.url {
+  color: #d4d4d4;
+}
+.notebook-code-block .token.atrule,
+.notebook-code-block .token.attr-value,
+.notebook-code-block .token.keyword {
+  color: #569cd6;
+}
+.notebook-code-block .token.function,
+.notebook-code-block .token.class-name {
+  color: #dcdcaa;
+}
+.notebook-code-block .token.regex,
+.notebook-code-block .token.important,
+.notebook-code-block .token.variable {
+  color: #d16969;
+}
+.notebook-code-block .token.important,
+.notebook-code-block .token.bold {
+  font-weight: bold;
+}
+.notebook-code-block .token.italic {
+  font-style: italic;
 }

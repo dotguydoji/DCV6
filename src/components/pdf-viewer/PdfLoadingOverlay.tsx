@@ -4,78 +4,31 @@ interface PdfLoadingOverlayProps {
   percent: number;
 }
 
-const VIEWBOX_SIZE = 200;
-const CENTER = 100;
-const RADIUS = 88;
-const BOTTOM_Y = CENTER + RADIUS;
-const TOP_Y = CENTER - RADIUS;
-const FILL_RANGE = BOTTOM_Y - TOP_Y;
-
-// A single repeating wave tile (400 wide = 4 wavelengths of 100), reused for
-// both wave layers - only their vertical position, opacity, and horizontal
-// animation speed/direction differ (see the liquid-wave-front/back CSS
-// keyframes in index.css), which is what gives the layered water look.
-const WAVE_PATH =
-  'M-100,0 C-75,14 -25,-14 0,0 C25,14 75,-14 100,0 C125,14 175,-14 200,0 ' +
-  'C225,14 275,-14 300,0 C325,14 375,-14 400,0 L400,40 L-100,40 Z';
-
 /**
- * Purely presentational - takes a percent (0-100) and draws a circular
- * "liquid fill" gauge. Has no knowledge of PDF.js, loading tasks, or
- * anything else - PdfViewer.tsx is entirely responsible for computing what
- * percent to pass in, so this component can't affect loading behavior at all.
+ * Purely presentational - shows a rotating wireframe-cube spinner (from
+ * https://uiverse.io/faxriddin20/light-vampirebat-74, recolored via
+ * var(--border-strong) instead of the original's hardcoded "lime" so it
+ * follows this site's dark/light theme automatically - see the
+ * .pdf-cube-spinner rules in index.css). No visible percent text - `percent`
+ * is still taken and clamped only to keep the aria-label announcing real
+ * progress for screen readers. Has no knowledge of PDF.js, loading tasks,
+ * or anything else - PdfViewer.tsx is entirely responsible for computing
+ * what percent to pass in, so this component can't affect loading behavior
+ * at all.
  */
 export const PdfLoadingOverlay: React.FC<PdfLoadingOverlayProps> = ({ percent }) => {
   const clamped = Math.max(0, Math.min(100, percent));
-  const fillTop = BOTTOM_Y - (clamped / 100) * FILL_RANGE;
 
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-surface">
-      <svg viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} className="w-40 h-40 sm:w-48 sm:h-48" role="img" aria-label={`Loading PDF, ${Math.round(clamped)}%`}>
-        <defs>
-          <clipPath id="liquid-loader-clip">
-            <circle cx={CENTER} cy={CENTER} r={RADIUS} />
-          </clipPath>
-        </defs>
-
-        <circle
-          cx={CENTER}
-          cy={CENTER}
-          r={RADIUS}
-          fill="none"
-          stroke="var(--border-hairline)"
-          strokeWidth={3}
-        />
-
-        <g clipPath="url(#liquid-loader-clip)">
-          <rect x={-10} y={fillTop + 6} width={VIEWBOX_SIZE + 20} height={FILL_RANGE + 20} fill="var(--text-primary)" style={{ transition: 'y 0.4s ease-out' }} />
-
-          <g style={{ transform: `translateY(${fillTop}px)`, transition: 'transform 0.4s ease-out' }}>
-            <g className="liquid-wave-back" style={{ opacity: 0.55 }}>
-              <path d={WAVE_PATH} fill="var(--text-primary)" />
-            </g>
-            <g className="liquid-wave-front" style={{ opacity: 0.9 }}>
-              <path d={WAVE_PATH} fill="var(--text-primary)" />
-            </g>
-          </g>
-        </g>
-
-        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="var(--border-strong)" strokeWidth={2} />
-
-        <text
-          x={CENTER}
-          y={CENTER}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={32}
-          fontWeight={600}
-          fill="var(--surface)"
-          style={{ paintOrder: 'stroke', stroke: 'var(--text-primary)', strokeWidth: 4 }}
-        >
-          {Math.round(clamped)}%
-        </text>
-      </svg>
-      <p className="f-small text-text-secondary">Loading your PDF…</p>
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-surface">
+      <div className="pdf-cube-spinner" role="img" aria-label={`Loading PDF, ${Math.round(clamped)}%`}>
+        <div />
+        <div />
+        <div />
+        <div />
+        <div />
+        <div />
+      </div>
     </div>
   );
 };

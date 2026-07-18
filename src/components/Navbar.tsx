@@ -16,6 +16,23 @@ interface NavbarProps {
   onSearchSelect: (product: Product) => void;
 }
 
+// The search input's floating label - adapted from
+// https://uiverse.io/liyaxu123's form-control component (each letter its
+// own span with a staggered transition-delay), recolored to this site's
+// theme tokens and driven by CSS :focus/:placeholder-shown (see
+// .search-label in index.css) instead of the original's :valid, since this
+// isn't a validated form field - it reacts to the exact same "focused or
+// has text" state the input's existing value/focus handling already
+// produces, so none of the search logic itself changes. Built once and
+// reused by both the desktop and mobile search inputs below - they're two
+// separate <label> elements in the tree, so array keys only need to be
+// unique within each one, not globally.
+const SEARCH_LABEL_LETTERS = 'Search'.split('').map((char, index) => (
+  <span key={index} style={{ transitionDelay: `${index * 40}ms` }}>
+    {char}
+  </span>
+));
+
 export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const installPrompt = useInstallPrompt();
   const installGuide = useMemo(
@@ -287,32 +304,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                 labels (see the xl:inline spans below) instead of squeezing this
                 any further. */}
             <div ref={searchRef} className="relative w-full min-w-[220px] max-w-md laptop:max-w-lg">
-              <div
-                className={`flex items-center h-11 laptop:h-12 bg-surface border rounded-sm transition-all duration-300 ${
-                  isSearchFocused
-                    ? 'border-border-strong ring-2 ring-border-strong/10'
-                    : 'border-border-hairline hover:border-border-strong'
-                }`}
-              >
-                <div className="flex items-center justify-center w-10 laptop:w-12 h-full shrink-0 text-text-secondary border-r border-border-hairline">
-                  <Search size={18} strokeWidth={1.5} className="laptop:hidden" />
-                  <Search size={20} strokeWidth={1.5} className="hidden laptop:block" />
-                </div>
+              <div className="search-form-control">
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search"
+                  placeholder=" "
                   aria-label="Search"
                   role="combobox"
                   aria-expanded={isSearchFocused && filteredProducts.length > 0}
                   aria-autocomplete="list"
-                  className="w-full h-full bg-transparent border-none px-4 text-text-primary f-body focus:ring-0 placeholder:text-text-secondary appearance-none"
+                  className="search-input f-body"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onFocus={() => setIsSearchFocused(true)}
                   onKeyDown={handleKeyDown}
                   autoComplete="off"
                 />
+                <label className="search-label" aria-hidden="true">
+                  {SEARCH_LABEL_LETTERS}
+                </label>
               </div>
 
               {isSearchFocused && filteredProducts.length > 0 && (
@@ -475,25 +485,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         {isSearchVisible && (
           <div className="fixed top-20 left-0 right-0 bg-surface border-b border-border-hairline p-6 lg:hidden z-[60] shadow-lg">
             <div className="relative" ref={searchRef}>
-              <div className="flex items-stretch bg-surface border border-border-strong rounded-sm focus-within:border-text-primary transition-all overflow-hidden">
-                <div className="flex items-center justify-center w-14 shrink-0 bg-surface-secondary text-text-primary border-r border-border-hairline">
-                  <Search size={24} strokeWidth={1.5} />
-                </div>
+              <div className="search-form-control">
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search"
+                  placeholder=" "
                   aria-label="Search"
                   role="combobox"
                   aria-expanded={filteredProducts.length > 0}
                   aria-autocomplete="list"
-                  className="w-full bg-transparent border-none py-5 px-6 text-text-primary f-body focus:ring-0 appearance-none"
+                  className="search-input f-body"
                   value={searchQuery}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setIsSearchFocused(true)}
                   autoComplete="off"
                 />
+                <label className="search-label" aria-hidden="true">
+                  {SEARCH_LABEL_LETTERS}
+                </label>
               </div>
 
               {filteredProducts.length > 0 && (

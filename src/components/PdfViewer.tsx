@@ -17,12 +17,15 @@ import {
   LayoutGrid,
   MoreVertical,
   NotebookPen,
+  PlayCircle,
   Search,
   X,
   ZoomIn,
   ZoomOut
 } from 'lucide-react';
 import { Product } from '../types';
+import { getCachedIdToken } from '../lib/googleIdentity';
+import { fetchProductVideos, fetchVideoProductIds, PremiumVideoSummary } from '../lib/premiumVideos';
 import { ThemeToggle } from './ThemeToggle';
 import { useVisualViewportHeight } from '../lib/useVisualViewportHeight';
 import {
@@ -42,6 +45,7 @@ import { PdfMoreMenu } from './pdf-viewer/PdfMoreMenu';
 import { PdfInfoModal } from './pdf-viewer/PdfInfoModal';
 import { PdfLoadingOverlay } from './pdf-viewer/PdfLoadingOverlay';
 import { PdfNotebookPanel } from './pdf-viewer/PdfNotebookPanel';
+import { PdfVideoPanel } from './pdf-viewer/PdfVideoPanel';
 import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfRangeTransport';
 import { useIdleTimeout } from '../lib/useIdleTimeout';
 import { IdleWarningModal } from './IdleWarningModal';
@@ -263,6 +267,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   const [isThumbnailPanelOpen, setIsThumbnailPanelOpen] = useState(false);
   const [isBookmarksPanelOpen, setIsBookmarksPanelOpen] = useState(false);
   const [isNotebookPanelOpen, setIsNotebookPanelOpen] = useState(false);
+  const [isVideoPanelOpen, setIsVideoPanelOpen] = useState(false);
+  const [premiumVideos, setPremiumVideos] = useState<PremiumVideoSummary[]>([]);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -275,6 +281,26 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
   const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => getBookmarks(productId));
   const [showBookInfo, setShowBookInfo] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Membership check first (public, cached 20 min, one request covers every
+  // product) so the vast majority of products with no bonus videos never
+  // trigger the second, per-product/per-buyer titles request at all.
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchVideoProductIds().then((videoProductIds) => {
+      if (cancelled || !videoProductIds.has(productId)) return;
+      const idToken = getCachedIdToken();
+      if (!idToken) return;
+      fetchProductVideos(idToken, productId).then((videos) => {
+        if (!cancelled) setPremiumVideos(videos);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
 
   const viewportHeight = useVisualViewportHeight();
 
@@ -785,6 +811,20 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           >
             <NotebookPen size={18} strokeWidth={1.5} />
           </button>
+          {premiumVideos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsVideoPanelOpen((prev) => !prev)}
+              aria-label="Toggle premium videos"
+              className={`flex items-center justify-center w-10 h-10 rounded-sm border transition-colors ${
+                isVideoPanelOpen
+                  ? 'border-border-strong text-text-primary'
+                  : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+              }`}
+            >
+              <PlayCircle size={18} strokeWidth={1.5} />
+            </button>
+          )}
           <div className="relative" ref={moreMenuRef}>
             <button
               type="button"
@@ -926,6 +966,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             <PdfLoadingOverlay percent={isLoading ? loadProgress : Math.max(loadProgress, 95)} />
           )}
         </div>
+
+        {isVideoPanelOpen && (() => {
+          const idToken = getCachedIdToken();
+          return idToken ? (
+            <PdfVideoPanel
+              idToken={idToken}
+              productId={productId}
+              videos={premiumVideos}
+              onClose={() => setIsVideoPanelOpen(false)}
+            />
+          ) : null;
+        })()}
 
         {isNotebookPanelOpen && (
           <PdfNotebookPanel onClose={() => setIsNotebookPanelOpen(false)} />

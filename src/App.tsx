@@ -432,8 +432,17 @@ const App: React.FC = () => {
       return;
     }
 
-    setOpenCategories(prev => ({ ...prev, [catName]: true }));
-    scrollToCategorySoon(catName, 50);
+    // Replace (not merge) so any other open category auto-closes, matching
+    // toggleCategory's single-open-category-at-a-time behavior.
+    setOpenCategories({ [catName]: true });
+    // Must match toggleCategory's 600ms delay, not be shorter: closing the
+    // previously-open category and expanding this one both animate over
+    // CategorySection's own 500ms max-height/opacity transition
+    // (`duration-500` in CategorySection.tsx). Measuring the target's
+    // position with getBoundingClientRect() before that settles reads a
+    // mid-animation (wrong) layout, overshooting the scroll - the exact
+    // "have to click twice" bug this delay fixes.
+    scrollToCategorySoon(catName, 600);
   }, [openCategories, scrollToCategory, scrollToCategorySoon]);
 
   const handleSearchSelect = useCallback((product: Product) => {
