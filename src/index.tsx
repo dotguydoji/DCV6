@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { InAppBrowserWarning } from './components/InAppBrowserWarning';
 import { ThemeProvider } from './components/ThemeProvider';
 import { THEME_STORAGE_KEY } from './lib/theme';
 import { registerServiceWorker } from './registerServiceWorker';
@@ -60,6 +61,12 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
+        {/* Mounted once here (not inside App.tsx) so it shows on every
+            route App.tsx can render, including its several early `return`s
+            for /view/*, /my-library, /notebook, and 404 - a fixed overlay,
+            so it never affects any page's own height/layout regardless of
+            where it's shown. */}
+        <InAppBrowserWarning />
         <App />
       </ThemeProvider>
     </ErrorBoundary>

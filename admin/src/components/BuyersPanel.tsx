@@ -13,10 +13,13 @@ const PAGE_SIZE = 50;
 
 const GRANT_CONFIRMATION_MESSAGE = `Your access is now ready!
 
-Sign in to https://dojicreates.com using your Gmail account. Your purchased PDF will be available in your account.
+IMPORTANT: Open the link using Chrome, Safari, or your phone's regular browser - NOT inside Messenger, Instagram, or Facebook. Google Sign-In does not work inside those apps' built-in browser and will show an error.
+
+If you're inside Messenger, Instagram, or Facebook right now, tap the ⋯ or ↗ icon (usually top-right) and choose "Open in Chrome" or "Open in Browser" first.
+
+Then sign in to https://dojicreates.com using your Gmail account. Your purchased PDF will be available in your account.
 
 If your access doesn't appear right away, please clear your browser's site data or wait up to 20 minutes.
-For the best experience, use Google Chrome (not the Messenger browser).
 
 To protect our materials, downloading, printing, and copying are disabled.
 
