@@ -435,6 +435,31 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
 
     (async () => {
       const initialUrl = currentUrlRef.current;
+
+      // TEMPORARY DIAGNOSTIC - fetch() has no built-in timeout, so a
+      // silently stalled connection (several real-device reports have
+      // shown this: loading percentage stuck at 0%, no error, no crash)
+      // can hang this probe forever with zero visible sign. Racing it
+      // against a plain timeout turns "hangs forever" into a clear,
+      // on-screen diagnostic distinguishing "no response from the file
+      // host at all" (network/connectivity issue reaching PDF storage on
+      // this device/network) from every other, already-handled failure
+      // mode. Remove once the mobile-only stuck-loading report is
+      // root-caused.
+      const PROBE_TIMEOUT_MS = 10000;
+      const probeResult = await Promise.race([
+        probeContentLength(initialUrl),
+        new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), PROBE_TIMEOUT_MS))
+      ]);
+      if (cancelled) return;
+      if (probeResult === 'timeout') {
+        setLoadError(
+          `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${PROBE_TIMEOUT_MS / 1000}s while checking the file size - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
       // A custom range transport needs the file's total byte length up
       // front - discovered via a single 1-byte Range probe rather than an
       // extra full request. If that probe can't determine it (should be
@@ -442,8 +467,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       // for the per-page lazy loading below to work at all), loading still
       // works via the plain URL - it just means a future URL expiry can't
       // be papered over invisibly and would fall back to a full reload.
-      const length = await probeContentLength(initialUrl);
-      if (cancelled) return;
+      const length = probeResult;
 
       // disableAutoFetch stops PDF.js from silently downloading the rest of
       // the file in the background after the first pages render - for large
@@ -486,8 +510,24 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
       };
 
+      // TEMPORARY DIAGNOSTIC - same reasoning as the probe timeout above,
+      // for the actual document fetch/parse stage: neither resolving nor
+      // rejecting is exactly the silent-hang symptom reported. Cleared the
+      // moment the real promise settles either way. Remove once the
+      // mobile-only stuck-loading report is root-caused.
+      const DOCUMENT_TIMEOUT_MS = 20000;
+      const documentTimeoutId = setTimeout(() => {
+        if (!cancelled) {
+          setLoadError(
+            `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${DOCUMENT_TIMEOUT_MS / 1000}s while fetching the PDF's contents - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
+          );
+          setIsLoading(false);
+        }
+      }, DOCUMENT_TIMEOUT_MS);
+
       loadingTask.promise
         .then((pdfDocument) => {
+          clearTimeout(documentTimeoutId);
           if (cancelled) return;
           pdfViewer.setDocument(pdfDocument);
           linkService.setDocument(pdfDocument, null);
@@ -524,6 +564,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           });
         })
         .catch((err: unknown) => {
+          clearTimeout(documentTimeoutId);
           if (!cancelled) {
             // TEMPORARY DIAGNOSTIC - appends the real rejection reason so it
             // can be read/screenshotted directly off a device with no dev
