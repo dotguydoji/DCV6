@@ -49,33 +49,36 @@ import { PdfVideoPanel } from './pdf-viewer/PdfVideoPanel';
 import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfRangeTransport';
 import { useIdleTimeout } from '../lib/useIdleTimeout';
 import { IdleWarningModal } from './IdleWarningModal';
+import { isIOS } from '../lib/platform';
 
 // A real, dedicated PDF worker (its own separate global scope, its own
 // postMessage-based protocol to the main thread) has turned out to be
-// where a specific class of real-device Safari bugs keeps surfacing -
-// first the worker's own internal Promise.withResolvers use (missing pre-
-// 17.4), then, once that was patched, pdf.js's own automatic "fake
-// worker" fallback (used whenever real worker construction/communication
-// fails) turned out to be broken too because of an unrelated bug in how
-// its wrapper script was written - each fix traded one worker-
-// communication failure for another, confirmed via real device reports
-// each time. Rather than keep chasing bugs in a real Worker this app has
-// no actual need for (nothing here requires PDF parsing to happen off
-// the main thread - it's a nice-to-have for large files, not a
-// requirement), pdf.js's "fake worker" fallback is deliberately forced
-// for every visitor instead of only reached after a failed real worker
+// where a specific class of real-device bugs keeps surfacing - every
+// report and every reproduction has been Safari on iOS/iPadOS
+// specifically (first the worker's own internal Promise.withResolvers
+// use, missing pre-17.4; then, once that was patched, pdf.js's own
+// automatic "fake worker" fallback turned out to be broken too, for an
+// unrelated reason) - Android and Windows/desktop browsers have never
+// shown any of this. Rather than keep chasing bugs in a real Worker this
+// app has no actual need for (nothing here requires PDF parsing to
+// happen off the main thread - it's a nice-to-have for large files, not
+// a requirement), pdf.js's "fake worker" fallback is deliberately forced
+// on iOS specifically instead of only reached after a failed real worker
 // attempt. It's a fully supported, intentional code path in pdf.js
-// itself (this is exactly what already runs automatically today whenever
-// real worker construction fails for any reason) - forcing it removes
+// itself (this is exactly what already runs automatically whenever real
+// worker construction fails for any reason) - forcing it on iOS removes
 // the entire "communicate correctly with a separate thread" failure
-// class in one move, at the cost of PDF parsing happening on the main
-// thread instead of in the background. Nothing else in this app
-// constructs a Worker, so overriding the global constructor is safe.
-window.Worker = class {
-  constructor() {
-    throw new Error('Worker disabled: the PDF viewer always uses pdf.js’s main-thread fallback.');
-  }
-} as unknown as typeof Worker;
+// class for the one platform it's actually been observed on, while every
+// other platform keeps the real, better-performing background Worker.
+// Nothing else in this app constructs a Worker, so overriding the global
+// constructor is safe.
+if (isIOS()) {
+  window.Worker = class {
+    constructor() {
+      throw new Error('Worker disabled: the PDF viewer always uses pdf.js’s main-thread fallback on iOS.');
+    }
+  } as unknown as typeof Worker;
+}
 
 // Dynamically imported directly by pdf.js's fake-worker fallback into the
 // main thread (not a real worker), where src/polyfills.ts's
