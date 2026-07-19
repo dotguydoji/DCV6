@@ -517,9 +517,17 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             }
           });
         })
-        .catch(() => {
+        .catch((err: unknown) => {
           if (!cancelled) {
-            setLoadError('This PDF link has expired. Please go back and open it again.');
+            // TEMPORARY DIAGNOSTIC - appends the real rejection reason so it
+            // can be read/screenshotted directly off a device with no dev
+            // tools, same technique used in ErrorBoundary.tsx. Remove once
+            // the mobile-only "PDF link has expired" report is root-caused.
+            const detail =
+              err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+            setLoadError(
+              `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] ${detail}`
+            );
             setIsLoading(false);
           }
         });
@@ -1009,7 +1017,11 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
               }`}
             >
               {isLoading && <p className="text-text-secondary text-center mt-20">Loading your PDF…</p>}
-              {loadError && <p className="text-red-400 text-center mt-20">{loadError}</p>}
+              {loadError && (
+                <p className="text-red-400 text-center mt-20 mx-auto max-w-lg px-4 whitespace-pre-wrap break-words text-sm">
+                  {loadError}
+                </p>
+              )}
               <div ref={viewerRef} className="pdfViewer" />
             </div>
 
