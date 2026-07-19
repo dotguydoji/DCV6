@@ -68,7 +68,16 @@
     # once they opened a PDF using one of those codecs. This token only
     # permits compiling WebAssembly - it does not enable eval()/Function()
     # or otherwise weaken this policy against script injection.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    # worker-src (and script-src, for pdf.js's own same-thread fallback path
+    # if worker construction ever fails) also allow blob: - PdfViewer.tsx
+    # wraps the real pdf.worker.min.mjs in a small same-origin-created blob
+    # module that installs a Promise.withResolvers polyfill (missing on
+    # pre-17.4 Safari) before importing the real worker script into that
+    # same global scope. blob: here only ever permits content this page's
+    # own script creates via URL.createObjectURL - never a remote or
+    # attacker-supplied script - so this doesn't open up arbitrary script
+    # execution the way a broad host allowance would.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' blob: https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self' blob:; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # index.html points to the current build's hashed asset filenames (the
 # /assets/* files below, which ARE safe to cache forever since their name

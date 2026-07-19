@@ -50,10 +50,36 @@ import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfR
 import { useIdleTimeout } from '../lib/useIdleTimeout';
 import { IdleWarningModal } from './IdleWarningModal';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+const REAL_PDF_WORKER_SRC = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+
+// The dedicated PDF worker runs in its own separate global scope (not the
+// main thread), so src/polyfills.ts's Promise.withResolvers polyfill -
+// installed on the *main thread's* Promise - never reaches it. On pre-17.4
+// Safari, the worker's own internal use of Promise.withResolvers throws
+// silently inside its own async message handlers rather than as a clean,
+// bubbling top-level script error - the main thread never sees an 'error'
+// event to recover from, it just never gets a response for whatever it
+// asked the worker to do, hanging the loading percentage forever instead
+// of crashing. Wrapping the real worker script in a tiny blob module that
+// installs the same polyfill first, then dynamically imports the real
+// script into that same worker global (so the patched Promise is the one
+// the real code sees), fixes this without needing to fork/patch the
+// vendored pdf.worker.min.mjs file itself. Same technique pdf.js's own
+// PDFWorker._createCDNWrapper already uses for cross-origin worker URLs.
+const WORKER_WRAPPER_SOURCE = `
+if (typeof Promise.withResolvers !== 'function') {
+  Promise.withResolvers = function () {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+    return { promise, resolve, reject };
+  };
+}
+await import(${JSON.stringify(REAL_PDF_WORKER_SRC)});
+`;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
+  new Blob([WORKER_WRAPPER_SOURCE], { type: 'text/javascript' })
+);
 
 // 'retry' covers anything transient (network hiccup, our own rate limit, a
 // server error) - worth trying again shortly. 'denied' means the server
