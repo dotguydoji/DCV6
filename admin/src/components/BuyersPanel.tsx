@@ -19,6 +19,8 @@ If you're inside Messenger, Instagram, or Facebook right now, tap the ⋯ or ↗
 
 Then sign in to https://dojicreates.com using your Gmail account. Your purchased PDF will be available in your account.
 
+Note: some iPhones and iPads (especially older ones) can have trouble opening the PDF viewer. If yours doesn't open properly, we recommend using a computer (Windows or Mac) instead, where it works reliably.
+
 If your access doesn't appear right away, please clear your browser's site data or wait up to 20 minutes.
 
 To protect our materials, downloading, printing, and copying are disabled.
