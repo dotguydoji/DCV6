@@ -472,6 +472,24 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       // be papered over invisibly and would fall back to a full reload.
       const length = probeResult;
 
+      // A real device report confirmed this custom range transport's own
+      // fetch() calls (createRefreshableRangeTransport below) never receive
+      // a response at all on iOS Safari specifically - the 1-byte probe
+      // above succeeds, but the actual (larger) content range request just
+      // hangs indefinitely, while the exact same code has been directly
+      // verified working correctly in real WebKit against a local test
+      // server, and the same signed URL loads fine on Android/Windows on
+      // the very same network at the very same time (ruling out the
+      // network/WiFi itself). That combination points at something in how
+      // real iOS Safari's networking handles these specific range requests
+      // against the real R2/CDN path, not this code being broken in
+      // general. Skipping this custom transport on iOS in favor of pdf.js's
+      // own built-in range-fetching (used by countless real-world sites,
+      // far more battle-tested than this hand-rolled implementation) is
+      // the safer bet there. Trade-off: iOS loses the seamless silent
+      // signed-URL refresh this transport exists for (see its own comments)
+      // - an expired URL there surfaces the existing, already-handled "This
+      // PDF link has expired" message instead of refreshing invisibly.
       // disableAutoFetch stops PDF.js from silently downloading the rest of
       // the file in the background after the first pages render - for large
       // (16-50MB) PDFs that background fetch competes for bandwidth with
@@ -479,7 +497,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       // per-page fetching (already supported by R2's CORS setup here) stays
       // fully enabled either way, so pages still load progressively as read.
       const loadingTask =
-        length !== null
+        length !== null && !isIOS()
           ? pdfjsLib.getDocument({
               range: createRefreshableRangeTransport({
                 length,
