@@ -50,38 +50,42 @@ import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfR
 import { useIdleTimeout } from '../lib/useIdleTimeout';
 import { IdleWarningModal } from './IdleWarningModal';
 
-const REAL_PDF_WORKER_SRC = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+// A real, dedicated PDF worker (its own separate global scope, its own
+// postMessage-based protocol to the main thread) has turned out to be
+// where a specific class of real-device Safari bugs keeps surfacing -
+// first the worker's own internal Promise.withResolvers use (missing pre-
+// 17.4), then, once that was patched, pdf.js's own automatic "fake
+// worker" fallback (used whenever real worker construction/communication
+// fails) turned out to be broken too because of an unrelated bug in how
+// its wrapper script was written - each fix traded one worker-
+// communication failure for another, confirmed via real device reports
+// each time. Rather than keep chasing bugs in a real Worker this app has
+// no actual need for (nothing here requires PDF parsing to happen off
+// the main thread - it's a nice-to-have for large files, not a
+// requirement), pdf.js's "fake worker" fallback is deliberately forced
+// for every visitor instead of only reached after a failed real worker
+// attempt. It's a fully supported, intentional code path in pdf.js
+// itself (this is exactly what already runs automatically today whenever
+// real worker construction fails for any reason) - forcing it removes
+// the entire "communicate correctly with a separate thread" failure
+// class in one move, at the cost of PDF parsing happening on the main
+// thread instead of in the background. Nothing else in this app
+// constructs a Worker, so overriding the global constructor is safe.
+window.Worker = class {
+  constructor() {
+    throw new Error('Worker disabled: the PDF viewer always uses pdf.js’s main-thread fallback.');
+  }
+} as unknown as typeof Worker;
 
-// The dedicated PDF worker runs in its own separate global scope (not the
-// main thread), so src/polyfills.ts's Promise.withResolvers polyfill -
-// installed on the *main thread's* Promise - never reaches it. On pre-17.4
-// Safari, the worker's own internal use of Promise.withResolvers throws
-// silently inside its own async message handlers rather than as a clean,
-// bubbling top-level script error - the main thread never sees an 'error'
-// event to recover from, it just never gets a response for whatever it
-// asked the worker to do, hanging the loading percentage forever instead
-// of crashing. Wrapping the real worker script in a tiny blob module that
-// installs the same polyfill first, then dynamically imports the real
-// script into that same worker global (so the patched Promise is the one
-// the real code sees), fixes this without needing to fork/patch the
-// vendored pdf.worker.min.mjs file itself. Same technique pdf.js's own
-// PDFWorker._createCDNWrapper already uses for cross-origin worker URLs.
-const WORKER_WRAPPER_SOURCE = `
-export let WorkerMessageHandler;
-if (typeof Promise.withResolvers !== 'function') {
-  Promise.withResolvers = function () {
-    let resolve, reject;
-    const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
-    return { promise, resolve, reject };
-  };
-}
-const real = await import(${JSON.stringify(REAL_PDF_WORKER_SRC)});
-WorkerMessageHandler = real.WorkerMessageHandler;
-`;
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
-  new Blob([WORKER_WRAPPER_SOURCE], { type: 'text/javascript' })
-);
+// Dynamically imported directly by pdf.js's fake-worker fallback into the
+// main thread (not a real worker), where src/polyfills.ts's
+// Promise.withResolvers polyfill (imported first, in index.tsx) already
+// applies - no wrapper/blob needed here at all now that a real dedicated
+// Worker is never attempted.
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // 'retry' covers anything transient (network hiccup, our own rate limit, a
 // server error) - worth trying again shortly. 'denied' means the server
