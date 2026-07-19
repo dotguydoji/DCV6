@@ -9,7 +9,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // and pick up the real worker again. Do not leave this true long-term: it
 // ships a worker that deletes all caches and unregisters itself, so the
 // site has zero offline/installed-PWA support while it's on.
-const KILL_SWITCH_MODE = true;
+const KILL_SWITCH_MODE = false;
 
 export default defineConfig(() => {
     return {
