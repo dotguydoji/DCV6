@@ -67,6 +67,7 @@ const REAL_PDF_WORKER_SRC = new URL('pdfjs-dist/build/pdf.worker.min.mjs', impor
 // vendored pdf.worker.min.mjs file itself. Same technique pdf.js's own
 // PDFWorker._createCDNWrapper already uses for cross-origin worker URLs.
 const WORKER_WRAPPER_SOURCE = `
+export let WorkerMessageHandler;
 if (typeof Promise.withResolvers !== 'function') {
   Promise.withResolvers = function () {
     let resolve, reject;
@@ -74,7 +75,8 @@ if (typeof Promise.withResolvers !== 'function') {
     return { promise, resolve, reject };
   };
 }
-await import(${JSON.stringify(REAL_PDF_WORKER_SRC)});
+const real = await import(${JSON.stringify(REAL_PDF_WORKER_SRC)});
+WorkerMessageHandler = real.WorkerMessageHandler;
 `;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(
