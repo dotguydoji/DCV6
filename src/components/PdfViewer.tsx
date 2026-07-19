@@ -438,9 +438,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
 
     // Shared by both loading strategies below (iOS's whole-file fetch and
     // everyone else's probe+range/url approach) - handles a constructed
-    // loadingTask identically either way: progress tracking, the "stuck
-    // for too long" watchdog, and wiring up the resolved document once
-    // either strategy successfully hands one over.
+    // loadingTask identically either way: progress tracking and wiring up
+    // the resolved document once either strategy hands one over.
     const attachLoadingTaskHandlers = (loadingTask: ReturnType<typeof pdfjsLib.getDocument>) => {
       if (cancelled) {
         loadingTask.destroy();
@@ -448,46 +447,15 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       }
       loadingTaskRef.current = loadingTask;
 
-      // TEMPORARY DIAGNOSTIC - a plain mutable variable (not React state, so
-      // no stale-closure risk when read from the watchdog below) tracking
-      // the most recent progress figures pdf.js has actually reported,
-      // plus how many times onProgress has fired at all. Distinguishes
-      // "never received a single byte" (genuinely stalled/blocked
-      // connection) from "was climbing, just needed more time" (slow but
-      // working - e.g. large file on a weak connection or slower device,
-      // now that iOS always parses on the main thread) once the watchdog
-      // below fires. Remove once the mobile-only stuck-loading report is
-      // root-caused.
-      let lastProgressSnapshot = 'no onProgress calls received at all';
-      let progressCallCount = 0;
-
       // Additive: purely feeds the loading overlay's percentage - has no
       // effect on how or what actually gets fetched.
       loadingTask.onProgress = (data: { loaded: number; total: number }) => {
         if (cancelled || !data.total) return;
-        progressCallCount += 1;
-        lastProgressSnapshot = `${data.loaded}/${data.total} bytes (call #${progressCallCount})`;
         setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
       };
 
-      // TEMPORARY DIAGNOSTIC - same reasoning as the probe timeout below,
-      // for the actual document fetch/parse stage: neither resolving nor
-      // rejecting is exactly the silent-hang symptom reported. Cleared the
-      // moment the real promise settles either way. Remove once the
-      // mobile-only stuck-loading report is root-caused.
-      const DOCUMENT_TIMEOUT_MS = 20000;
-      const documentTimeoutId = setTimeout(() => {
-        if (!cancelled) {
-          setLoadError(
-            `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${DOCUMENT_TIMEOUT_MS / 1000}s while fetching the PDF's contents - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself. Progress so far: ${lastProgressSnapshot}.`
-          );
-          setIsLoading(false);
-        }
-      }, DOCUMENT_TIMEOUT_MS);
-
       loadingTask.promise
         .then((pdfDocument) => {
-          clearTimeout(documentTimeoutId);
           if (cancelled) return;
           pdfViewer.setDocument(pdfDocument);
           linkService.setDocument(pdfDocument, null);
@@ -523,18 +491,9 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             }
           });
         })
-        .catch((err: unknown) => {
-          clearTimeout(documentTimeoutId);
+        .catch(() => {
           if (!cancelled) {
-            // TEMPORARY DIAGNOSTIC - appends the real rejection reason so it
-            // can be read/screenshotted directly off a device with no dev
-            // tools, same technique used in ErrorBoundary.tsx. Remove once
-            // the mobile-only "PDF link has expired" report is root-caused.
-            const detail =
-              err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-            setLoadError(
-              `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] ${detail}`
-            );
+            setLoadError('This PDF link has expired. Please go back and open it again.');
             setIsLoading(false);
           }
         });
@@ -572,39 +531,12 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
           });
           if (cancelled) return;
           attachLoadingTaskHandlers(pdfjsLib.getDocument({ data: bytes }));
-        } catch (err) {
+        } catch {
           if (!cancelled) {
-            const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-            setLoadError(
-              `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] ${detail}`
-            );
+            setLoadError('This PDF link has expired. Please go back and open it again.');
             setIsLoading(false);
           }
         }
-        return;
-      }
-
-      // TEMPORARY DIAGNOSTIC - fetch() has no built-in timeout, so a
-      // silently stalled connection (several real-device reports have
-      // shown this: loading percentage stuck at 0%, no error, no crash)
-      // can hang this probe forever with zero visible sign. Racing it
-      // against a plain timeout turns "hangs forever" into a clear,
-      // on-screen diagnostic distinguishing "no response from the file
-      // host at all" (network/connectivity issue reaching PDF storage on
-      // this device/network) from every other, already-handled failure
-      // mode. Remove once the mobile-only stuck-loading report is
-      // root-caused.
-      const PROBE_TIMEOUT_MS = 10000;
-      const probeResult = await Promise.race([
-        probeContentLength(initialUrl),
-        new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), PROBE_TIMEOUT_MS))
-      ]);
-      if (cancelled) return;
-      if (probeResult === 'timeout') {
-        setLoadError(
-          `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${PROBE_TIMEOUT_MS / 1000}s while checking the file size - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
-        );
-        setIsLoading(false);
         return;
       }
 
@@ -615,7 +547,8 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       // for the per-page lazy loading below to work at all), loading still
       // works via the plain URL - it just means a future URL expiry can't
       // be papered over invisibly and would fall back to a full reload.
-      const length = probeResult;
+      const length = await probeContentLength(initialUrl);
+      if (cancelled) return;
 
       // disableAutoFetch stops PDF.js from silently downloading the rest of
       // the file in the background after the first pages render - for large
@@ -1132,11 +1065,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
               }`}
             >
               {isLoading && <p className="text-text-secondary text-center mt-20">Loading your PDF…</p>}
-              {loadError && (
-                <p className="text-red-400 text-center mt-20 mx-auto max-w-lg px-4 whitespace-pre-wrap break-words text-sm">
-                  {loadError}
-                </p>
-              )}
+              {loadError && <p className="text-red-400 text-center mt-20">{loadError}</p>}
               <div ref={viewerRef} className="pdfViewer" />
             </div>
 
