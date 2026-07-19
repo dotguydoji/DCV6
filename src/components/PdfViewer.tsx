@@ -506,10 +506,25 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       }
       loadingTaskRef.current = loadingTask;
 
+      // TEMPORARY DIAGNOSTIC - a plain mutable variable (not React state, so
+      // no stale-closure risk when read from the watchdog below) tracking
+      // the most recent progress figures pdf.js has actually reported,
+      // plus how many times onProgress has fired at all. Distinguishes
+      // "never received a single byte" (genuinely stalled/blocked
+      // connection) from "was climbing, just needed more time" (slow but
+      // working - e.g. large file on a weak connection or slower device,
+      // now that iOS always parses on the main thread) once the watchdog
+      // below fires. Remove once the mobile-only stuck-loading report is
+      // root-caused.
+      let lastProgressSnapshot = 'no onProgress calls received at all';
+      let progressCallCount = 0;
+
       // Additive: purely feeds the loading overlay's percentage - has no
       // effect on how or what actually gets fetched.
       loadingTask.onProgress = (data: { loaded: number; total: number }) => {
         if (cancelled || !data.total) return;
+        progressCallCount += 1;
+        lastProgressSnapshot = `${data.loaded}/${data.total} bytes (call #${progressCallCount})`;
         setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
       };
 
@@ -522,7 +537,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
       const documentTimeoutId = setTimeout(() => {
         if (!cancelled) {
           setLoadError(
-            `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${DOCUMENT_TIMEOUT_MS / 1000}s while fetching the PDF's contents - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
+            `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${DOCUMENT_TIMEOUT_MS / 1000}s while fetching the PDF's contents - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself. Progress so far: ${lastProgressSnapshot}.`
           );
           setIsLoading(false);
         }
