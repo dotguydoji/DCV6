@@ -37,6 +37,46 @@ export async function probeContentLength(url: string): Promise<number | null> {
   }
 }
 
+/**
+ * Fetches an entire file with a single plain GET (no Range header at all)
+ * and reports progress as bytes arrive - the fallback for platforms where
+ * Range-request-based partial fetching itself is unreliable (see iOS
+ * handling in PdfViewer.tsx). Reading via the response body's own stream
+ * (rather than just awaiting `.arrayBuffer()`) is what makes a progress
+ * percentage possible here at all, since a plain GET has no per-chunk
+ * callback of its own the way Range-based fetching naturally provides one.
+ */
+export async function fetchEntireFile(
+  url: string,
+  onProgress: (loadedBytes: number, totalBytes: number | null) => void
+): Promise<Uint8Array> {
+  const response = await fetch(url);
+  if (!response.ok || !response.body) {
+    throw new Error(`Fetch failed: ${response.status}`);
+  }
+
+  const totalBytes = Number(response.headers.get('Content-Length')) || null;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let loadedBytes = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loadedBytes += value.byteLength;
+    onProgress(loadedBytes, totalBytes);
+  }
+
+  const result = new Uint8Array(loadedBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result;
+}
+
 interface RefreshableRangeTransportOptions {
   length: number;
   /** Always returns whatever presigned URL is currently valid - this is the one thing a background refresh ever changes. */

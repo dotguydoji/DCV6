@@ -46,7 +46,7 @@ import { PdfInfoModal } from './pdf-viewer/PdfInfoModal';
 import { PdfLoadingOverlay } from './pdf-viewer/PdfLoadingOverlay';
 import { PdfNotebookPanel } from './pdf-viewer/PdfNotebookPanel';
 import { PdfVideoPanel } from './pdf-viewer/PdfVideoPanel';
-import { createRefreshableRangeTransport, probeContentLength } from '../lib/pdfRangeTransport';
+import { createRefreshableRangeTransport, fetchEntireFile, probeContentLength } from '../lib/pdfRangeTransport';
 import { useIdleTimeout } from '../lib/useIdleTimeout';
 import { IdleWarningModal } from './IdleWarningModal';
 import { isIOS } from '../lib/platform';
@@ -436,88 +436,12 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
     setLoadProgress(0);
     setIsFirstPageRendered(false);
 
-    (async () => {
-      const initialUrl = currentUrlRef.current;
-
-      // TEMPORARY DIAGNOSTIC - fetch() has no built-in timeout, so a
-      // silently stalled connection (several real-device reports have
-      // shown this: loading percentage stuck at 0%, no error, no crash)
-      // can hang this probe forever with zero visible sign. Racing it
-      // against a plain timeout turns "hangs forever" into a clear,
-      // on-screen diagnostic distinguishing "no response from the file
-      // host at all" (network/connectivity issue reaching PDF storage on
-      // this device/network) from every other, already-handled failure
-      // mode. Remove once the mobile-only stuck-loading report is
-      // root-caused.
-      const PROBE_TIMEOUT_MS = 10000;
-      const probeResult = await Promise.race([
-        probeContentLength(initialUrl),
-        new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), PROBE_TIMEOUT_MS))
-      ]);
-      if (cancelled) return;
-      if (probeResult === 'timeout') {
-        setLoadError(
-          `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${PROBE_TIMEOUT_MS / 1000}s while checking the file size - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
-        );
-        setIsLoading(false);
-        return;
-      }
-
-      // A custom range transport needs the file's total byte length up
-      // front - discovered via a single 1-byte Range probe rather than an
-      // extra full request. If that probe can't determine it (should be
-      // rare: Range support against this exact host is already required
-      // for the per-page lazy loading below to work at all), loading still
-      // works via the plain URL - it just means a future URL expiry can't
-      // be papered over invisibly and would fall back to a full reload.
-      const length = probeResult;
-
-      // A real device report confirmed this custom range transport's own
-      // fetch() calls (createRefreshableRangeTransport below) never receive
-      // a response at all on iOS Safari specifically - the 1-byte probe
-      // above succeeds, but the actual (larger) content range request just
-      // hangs indefinitely, while the exact same code has been directly
-      // verified working correctly in real WebKit against a local test
-      // server, and the same signed URL loads fine on Android/Windows on
-      // the very same network at the very same time (ruling out the
-      // network/WiFi itself). That combination points at something in how
-      // real iOS Safari's networking handles these specific range requests
-      // against the real R2/CDN path, not this code being broken in
-      // general. Skipping this custom transport on iOS in favor of pdf.js's
-      // own built-in range-fetching (used by countless real-world sites,
-      // far more battle-tested than this hand-rolled implementation) is
-      // the safer bet there. Trade-off: iOS loses the seamless silent
-      // signed-URL refresh this transport exists for (see its own comments)
-      // - an expired URL there surfaces the existing, already-handled "This
-      // PDF link has expired" message instead of refreshing invisibly.
-      // disableAutoFetch stops PDF.js from silently downloading the rest of
-      // the file in the background after the first pages render - for large
-      // (16-50MB) PDFs that background fetch competes for bandwidth with
-      // whatever the buyer is actively trying to view. Range-request-based
-      // per-page fetching (already supported by R2's CORS setup here) stays
-      // fully enabled either way, so pages still load progressively as read.
-      const loadingTask =
-        length !== null && !isIOS()
-          ? pdfjsLib.getDocument({
-              range: createRefreshableRangeTransport({
-                length,
-                getUrl: () => currentUrlRef.current,
-                onRecoverableFailure: () => forceRefreshRef.current(),
-                onFatalFailure: () => {
-                  if (!cancelled) {
-                    setLoadError('Your session needs a refresh. Please reload this page.');
-                  }
-                }
-              }),
-              disableAutoFetch: true,
-              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
-            })
-          : pdfjsLib.getDocument({
-              url: initialUrl,
-              disableAutoFetch: true,
-              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
-            });
-
+    // Shared by both loading strategies below (iOS's whole-file fetch and
+    // everyone else's probe+range/url approach) - handles a constructed
+    // loadingTask identically either way: progress tracking, the "stuck
+    // for too long" watchdog, and wiring up the resolved document once
+    // either strategy successfully hands one over.
+    const attachLoadingTaskHandlers = (loadingTask: ReturnType<typeof pdfjsLib.getDocument>) => {
       if (cancelled) {
         loadingTask.destroy();
         return;
@@ -546,7 +470,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
         setLoadProgress(Math.min(100, Math.round((data.loaded / data.total) * 100)));
       };
 
-      // TEMPORARY DIAGNOSTIC - same reasoning as the probe timeout above,
+      // TEMPORARY DIAGNOSTIC - same reasoning as the probe timeout below,
       // for the actual document fetch/parse stage: neither resolving nor
       // rejecting is exactly the silent-hang symptom reported. Cleared the
       // moment the real promise settles either way. Remove once the
@@ -614,6 +538,114 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ fileUrl, product, onRefres
             setIsLoading(false);
           }
         });
+    };
+
+    (async () => {
+      const initialUrl = currentUrlRef.current;
+
+      if (isIOS()) {
+        // Confirmed via real device testing (iPadOS 16.7.16 - the newest
+        // version that hardware will ever receive, not a "please update"
+        // situation) that Range-request-based partial fetching is
+        // unreliable on iOS Safari against the real R2/CDN path here - not
+        // just this app's own hand-rolled range transport, but pdf.js's
+        // own built-in Range-based fetching too (both were tried in turn;
+        // both failed identically: a response never arrives past the very
+        // first tiny request). The one approach that has actually worked
+        // is a single plain GET with no Range header at all - so iOS skips
+        // Range requests entirely: the whole file is fetched up front
+        // (progress tracked manually below, since a plain GET has no
+        // per-chunk callback of its own) and handed to pdf.js as raw bytes
+        // instead of a URL/range source. Can't be scoped to only old iOS
+        // versions - Safari's default "Request Desktop Website" behavior
+        // on iPad (the default since iPadOS 13) reports a generic
+        // "Macintosh" user-agent that hides the real OS version from
+        // JavaScript entirely, so this applies to all of iOS uniformly.
+        // Trade-off: the first page only appears once the entire file has
+        // downloaded (no more progressive per-page loading, and no
+        // seamless silent signed-URL refresh) on this platform
+        // specifically - an acceptable cost next to not loading at all.
+        try {
+          const bytes = await fetchEntireFile(initialUrl, (loadedBytes, totalBytes) => {
+            if (cancelled || !totalBytes) return;
+            setLoadProgress(Math.min(100, Math.round((loadedBytes / totalBytes) * 100)));
+          });
+          if (cancelled) return;
+          attachLoadingTaskHandlers(pdfjsLib.getDocument({ data: bytes }));
+        } catch (err) {
+          if (!cancelled) {
+            const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+            setLoadError(
+              `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] ${detail}`
+            );
+            setIsLoading(false);
+          }
+        }
+        return;
+      }
+
+      // TEMPORARY DIAGNOSTIC - fetch() has no built-in timeout, so a
+      // silently stalled connection (several real-device reports have
+      // shown this: loading percentage stuck at 0%, no error, no crash)
+      // can hang this probe forever with zero visible sign. Racing it
+      // against a plain timeout turns "hangs forever" into a clear,
+      // on-screen diagnostic distinguishing "no response from the file
+      // host at all" (network/connectivity issue reaching PDF storage on
+      // this device/network) from every other, already-handled failure
+      // mode. Remove once the mobile-only stuck-loading report is
+      // root-caused.
+      const PROBE_TIMEOUT_MS = 10000;
+      const probeResult = await Promise.race([
+        probeContentLength(initialUrl),
+        new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), PROBE_TIMEOUT_MS))
+      ]);
+      if (cancelled) return;
+      if (probeResult === 'timeout') {
+        setLoadError(
+          `This PDF link has expired. Please go back and open it again.\n\n[diagnostic] No response from the file host within ${PROBE_TIMEOUT_MS / 1000}s while checking the file size - looks like a network/connectivity issue reaching PDF storage on this device/network, not a bug in the viewer itself.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // A custom range transport needs the file's total byte length up
+      // front - discovered via a single 1-byte Range probe rather than an
+      // extra full request. If that probe can't determine it (should be
+      // rare: Range support against this exact host is already required
+      // for the per-page lazy loading below to work at all), loading still
+      // works via the plain URL - it just means a future URL expiry can't
+      // be papered over invisibly and would fall back to a full reload.
+      const length = probeResult;
+
+      // disableAutoFetch stops PDF.js from silently downloading the rest of
+      // the file in the background after the first pages render - for large
+      // (16-50MB) PDFs that background fetch competes for bandwidth with
+      // whatever the buyer is actively trying to view. Range-request-based
+      // per-page fetching (already supported by R2's CORS setup here) stays
+      // fully enabled either way, so pages still load progressively as read.
+      const loadingTask =
+        length !== null
+          ? pdfjsLib.getDocument({
+              range: createRefreshableRangeTransport({
+                length,
+                getUrl: () => currentUrlRef.current,
+                onRecoverableFailure: () => forceRefreshRef.current(),
+                onFatalFailure: () => {
+                  if (!cancelled) {
+                    setLoadError('Your session needs a refresh. Please reload this page.');
+                  }
+                }
+              }),
+              disableAutoFetch: true,
+              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
+            })
+          : pdfjsLib.getDocument({
+              url: initialUrl,
+              disableAutoFetch: true,
+              rangeChunkSize: RANGE_CHUNK_SIZE_BYTES
+            });
+
+      attachLoadingTaskHandlers(loadingTask);
     })();
 
     return () => {
