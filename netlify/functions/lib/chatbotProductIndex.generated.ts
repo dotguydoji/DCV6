@@ -427,6 +427,21 @@ export const CHATBOT_PRODUCT_INDEX: ChatbotProductIndexEntry[] = [
     "category": "ADVANCED STUDY"
   },
   {
+    "id": "productivity-subscription",
+    "title": "Productivity Subscription",
+    "category": "Productivity"
+  },
+  {
+    "id": "productivity-typing-speed",
+    "title": "Typing Speed",
+    "category": "Productivity"
+  },
+  {
+    "id": "productivity-notebook",
+    "title": "Notebook",
+    "category": "Productivity"
+  },
+  {
     "id": "ai-claude-notes-en",
     "title": "Claude Notes",
     "category": "Claude Notes"
