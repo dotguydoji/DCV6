@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
-  ArrowLeftCircle,
   Bell,
   ChevronDown,
   ChevronLeft,
@@ -9,6 +8,7 @@ import {
   FileText,
   Heart,
   Keyboard,
+  LayoutGrid,
   LibraryBig,
   LogOut,
   MessageCircle,
@@ -180,6 +180,13 @@ export const MyLibraryPage: React.FC = () => {
   const [state, setState] = useState<ViewState>({ status: 'restoring' });
   const [profile, setProfile] = useState<IdTokenProfile | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Desktop-only "More" dropdown, same pattern as the main site's Navbar.tsx -
+  // groups Join Group Chat/Notebook/Typing Speed/Sign out under one button
+  // so the header doesn't run out of room as more per-page actions get
+  // added. Mobile keeps its own full hamburger sheet unchanged below.
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
   const [isProductivityDialogOpen, setIsProductivityDialogOpen] = useState(false);
@@ -342,6 +349,46 @@ export const MyLibraryPage: React.FC = () => {
     setLanguageFilter(ALL_LANGUAGES);
     setLevelFilter(ALL_LEVELS);
     setState({ status: 'signed-out' });
+  }, []);
+
+  // Hover-to-open with a short close delay, plus click-outside/Escape -
+  // identical behavior to Navbar.tsx's More dropdown.
+  const openMoreMenu = useCallback(() => {
+    if (moreMenuCloseTimeoutRef.current) {
+      clearTimeout(moreMenuCloseTimeoutRef.current);
+      moreMenuCloseTimeoutRef.current = null;
+    }
+    setIsMoreMenuOpen(true);
+  }, []);
+
+  const scheduleCloseMoreMenu = useCallback(() => {
+    moreMenuCloseTimeoutRef.current = setTimeout(() => setIsMoreMenuOpen(false), 150);
+  }, []);
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) return;
+
+    const handleClickOutsideMoreMenu = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMoreMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutsideMoreMenu);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutsideMoreMenu);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMoreMenuOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (moreMenuCloseTimeoutRef.current) clearTimeout(moreMenuCloseTimeoutRef.current);
+    };
   }, []);
 
   const handleToggleFavorite = useCallback((productId: string) => {
@@ -626,50 +673,99 @@ export const MyLibraryPage: React.FC = () => {
               <div className="hidden lg:flex items-center gap-3 shrink-0">
                 <a
                   href="/"
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+                  aria-label="Back to Doji's Library"
+                  className="flex items-center justify-center w-11 h-11 laptop:w-12 laptop:h-12 shrink-0 rounded-sm border border-border-hairline text-text-primary hover:border-border-strong transition-colors"
                 >
-                  <ArrowLeftCircle size={18} strokeWidth={1.5} />
-                  Back to Doji's Library
+                  <ArrowLeft size={20} strokeWidth={1.5} />
                 </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (ownedProducts.length > 0) {
-                      setIsMessengerDialogOpen(true);
-                    } else {
-                      setNoPdfAccessMessage(undefined);
-                      setIsNoPdfAccessDialogOpen(true);
-                    }
-                  }}
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+
+                <div
+                  ref={moreMenuRef}
+                  className="relative shrink-0"
+                  onMouseEnter={openMoreMenu}
+                  onMouseLeave={scheduleCloseMoreMenu}
                 >
-                  <MessageCircle size={18} strokeWidth={1.5} />
-                  Join Group Chat
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNotebookClick}
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-orange-500/30 text-sm laptop:text-base font-medium text-text-primary hover:border-orange-500 transition-colors"
-                >
-                  <NotebookPen size={18} strokeWidth={1.5} className="text-orange-500" />
-                  Notebook
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTypingSpeedClick}
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-orange-500/30 text-sm laptop:text-base font-medium text-text-primary hover:border-orange-500 transition-colors"
-                >
-                  <Keyboard size={18} strokeWidth={1.5} className="text-orange-500" />
-                  Typing Speed
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-red-400 hover:border-red-400/50 hover:bg-red-400/10 transition-colors"
-                >
-                  <LogOut size={18} strokeWidth={1.5} />
-                  Sign out
-                </button>
+                  <button
+                    type="button"
+                    onClick={openMoreMenu}
+                    aria-haspopup="true"
+                    aria-expanded={isMoreMenuOpen}
+                    aria-label="More"
+                    className={`flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border text-sm laptop:text-base font-medium text-text-primary transition-colors ${
+                      isMoreMenuOpen ? 'border-border-strong' : 'border-border-hairline hover:border-border-strong'
+                    }`}
+                  >
+                    <LayoutGrid size={18} strokeWidth={1.5} />
+                    More
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={1.5}
+                      className={`transition-transform duration-200 ${isMoreMenuOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {isMoreMenuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute top-full right-0 mt-2 w-64 bg-surface border border-border-hairline rounded-sm shadow-2xl z-[70] overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          if (ownedProducts.length > 0) {
+                            setIsMessengerDialogOpen(true);
+                          } else {
+                            setNoPdfAccessMessage(undefined);
+                            setIsNoPdfAccessDialogOpen(true);
+                          }
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-surface-secondary transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline"
+                      >
+                        <MessageCircle size={18} strokeWidth={1.5} className="text-text-secondary shrink-0" />
+                        Join Group Chat
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          handleNotebookClick();
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-orange-500/10 transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline"
+                      >
+                        <NotebookPen size={18} strokeWidth={1.5} className="text-orange-500 shrink-0" />
+                        Notebook
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          handleTypingSpeedClick();
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-orange-500/10 transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline"
+                      >
+                        <Keyboard size={18} strokeWidth={1.5} className="text-orange-500 shrink-0" />
+                        Typing Speed
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          handleSignOut();
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-red-400/10 transition-colors text-sm font-medium text-red-400 flex items-center gap-3"
+                      >
+                        <LogOut size={18} strokeWidth={1.5} className="shrink-0" />
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <ThemeToggle />
               </div>
 
@@ -707,7 +803,7 @@ export const MyLibraryPage: React.FC = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
               >
-                <ArrowLeftCircle size={20} strokeWidth={1.5} />
+                <ArrowLeft size={20} strokeWidth={1.5} />
                 Back to Doji's Library
               </a>
               <button
