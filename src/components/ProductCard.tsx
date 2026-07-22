@@ -37,11 +37,29 @@ export const ProductCard = memo(
       event.currentTarget.style.willChange = 'auto';
     }, []);
 
+    // Clicking anywhere on the card now adds/removes it from the cart (not
+    // just the small Plus/Check button) - only when there's actually
+    // something to buy here, so this stays inert for bundled-feature
+    // ("Included"), download-only (hideCommerce), and unavailable
+    // ("Coming Soon") cards, exactly like the button already was.
+    const canAddToCart = isAvailable && !product.isBundledFeature && !hideCommerce;
+    const handleCardClick = useCallback(
+      (event: React.MouseEvent) => {
+        if (!canAddToCart) return;
+        onToggleSelect(product, event);
+      },
+      [canAddToCart, onToggleSelect, product]
+    );
+
     return (
       <div
         ref={cardRef}
+        data-flyable-card
+        onClick={handleCardClick}
         style={{ '--card-scale': isHighlighted ? 1.02 : 1 } as React.CSSProperties}
         className={`group flex-shrink-0 w-[320px] sm:w-[360px] laptop:w-[290px] xl:w-[320px] bg-surface border rounded-sm overflow-hidden flex flex-col will-change-transform card-elevated card-tilt ${
+          canAddToCart ? 'cursor-pointer' : ''
+        } ${
           isHighlighted
             ? 'animate-highlight border-border-strong z-10'
             : isSelected

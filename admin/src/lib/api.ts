@@ -41,6 +41,24 @@ export interface ProductVideoGroup {
   videos: ProductVideo[];
 }
 
+export interface NewReleaseVideo {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailKey: string;
+  youtubeId: string;
+  addedAt: number;
+}
+
+export interface NewReleasePdf {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailKey: string;
+  productId: string;
+  addedAt: number;
+}
+
 // Carries the HTTP status alongside the message so callers can tell a real
 // "not authorized" (403) apart from a rate limit (429) or a server error
 // (5xx) - these need different handling, not one generic failure message.
@@ -175,6 +193,60 @@ export const restoreLatestBackup = (idToken: string) =>
 export const backfillExpiry = async (idToken: string) => {
   const result = await call<{ updated: number }>('admin-backfill-expiry', idToken);
   clearCachedResponse(BUYERS_CACHE_KEY);
+  return result;
+};
+
+const NEW_RELEASES_CACHE_KEY = 'new-releases';
+
+export const listNewReleases = async (
+  idToken: string
+): Promise<{ videos: NewReleaseVideo[]; pdfs: NewReleasePdf[] }> => {
+  const cached = getCachedResponse<{ videos: NewReleaseVideo[]; pdfs: NewReleasePdf[] }>(NEW_RELEASES_CACHE_KEY);
+  if (cached) return cached;
+
+  const result = await call<{ videos: NewReleaseVideo[]; pdfs: NewReleasePdf[] }>('admin-list-new-releases', idToken);
+  setCachedResponse(NEW_RELEASES_CACHE_KEY, result, LIST_CACHE_TTL_MS);
+  return result;
+};
+
+export const getNewReleaseUploadUrl = (idToken: string, fileExtension: string) =>
+  call<{ url: string; key: string }>('admin-get-new-release-upload-url', idToken, { fileExtension });
+
+// This PUT goes straight to R2 (public images bucket), bypassing call() -
+// mirrors uploadFileToR2 below, just against a caller-supplied image
+// Content-Type instead of a fixed application/pdf.
+export const uploadNewReleaseThumbnail = async (uploadUrl: string, file: File): Promise<void> => {
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file
+  });
+
+  if (!response.ok) {
+    throw new ApiError('Thumbnail upload failed', response.status);
+  }
+};
+
+export const upsertNewRelease = async (
+  idToken: string,
+  kind: 'video' | 'pdf',
+  item: {
+    id?: string;
+    title: string;
+    description: string;
+    thumbnailKey: string;
+    youtubeUrl?: string;
+    productId?: string;
+  }
+) => {
+  const result = await call<{ ok: true; id: string }>('admin-upsert-new-release', idToken, { kind, item });
+  clearCachedResponse(NEW_RELEASES_CACHE_KEY);
+  return result;
+};
+
+export const deleteNewRelease = async (idToken: string, kind: 'video' | 'pdf', id: string) => {
+  const result = await call<{ ok: true }>('admin-delete-new-release', idToken, { kind, id });
+  clearCachedResponse(NEW_RELEASES_CACHE_KEY);
   return result;
 };
 

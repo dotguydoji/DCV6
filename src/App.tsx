@@ -23,8 +23,15 @@ interface FlyingItem {
   id: string;
   startX: number;
   startY: number;
+  width: number;
+  height: number;
   thumbnail: string;
 }
+
+// Kept in sync with the .fly-to-cart animation-duration in index.css - the
+// cart bounce is timed to land exactly when the flying thumbnail arrives,
+// and the item is only removed from the DOM once its animation is done.
+const FLY_TO_CART_DURATION_MS = 700;
 
 const normalizePathname = (pathname: string) => {
   const trimmed = pathname.replace(/\/+$/, '');
@@ -142,26 +149,35 @@ const App: React.FC = () => {
     }
 
     if (!selectedProductIds.has(product.id) && event) {
-      const startRect = (event.target as HTMLElement).getBoundingClientRect();
+      // Whichever element the click actually landed on (the card itself, or
+      // the small Plus/Check button nested inside it) - walk up to the
+      // card's own root so the flight always starts from the product
+      // thumbnail, not from whatever tiny element was clicked.
+      const clickedEl = event.target as HTMLElement;
+      const cardEl = clickedEl.closest('[data-flyable-card]') as HTMLElement | null;
+      const thumbnailEl = cardEl?.querySelector('img') ?? null;
+      const startRect = (thumbnailEl ?? cardEl ?? clickedEl).getBoundingClientRect();
       const cartRect = cartButtonRef.current?.getBoundingClientRect();
-      
-      if (cartRect) {
+
+      if (cartRect && startRect.width > 0 && startRect.height > 0) {
         const flyingItem: FlyingItem = {
           id: `${product.id}-${Date.now()}`,
           startX: startRect.left,
           startY: startRect.top,
+          width: startRect.width,
+          height: startRect.height,
           thumbnail: product.thumbnail
         };
-        
+
         setFlyingItems(prev => [...prev, flyingItem]);
 
         setTimeout(() => {
           setCartBounceKey(prev => prev + 1);
-        }, 1000);
+        }, FLY_TO_CART_DURATION_MS);
 
         setTimeout(() => {
           setFlyingItems(prev => prev.filter(item => item.id !== flyingItem.id));
-        }, 1000);
+        }, FLY_TO_CART_DURATION_MS);
       }
     }
     
@@ -395,6 +411,39 @@ const App: React.FC = () => {
     setTimeout(() => setHighlightedProductId(null), 3500);
   }, [jumpToCategory]);
 
+  // Deep link for My Library's New PDF Releases section ("Click Here to
+  // View") - a real cross-page navigation to /?product=<id> (not client-side
+  // routing; this codebase has none, see normalizePathname/pdfProductId
+  // above), so this effect is what picks the id back up once the homepage
+  // has actually loaded and jumps to/highlights that exact card, the same
+  // way clicking a search result already does. Only ever acts on the
+  // homepage itself - a stray ?product= on another route is a no-op.
+  useEffect(() => {
+    if (pdfProductId || isMyLibraryPath || isNotebookPath || isTypingSpeedPath || isNotFound) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get('product');
+    if (!targetId) {
+      return;
+    }
+
+    // Strip the param immediately regardless of whether the id resolved, so
+    // a refresh/back-navigation never re-triggers the highlight, and a
+    // garbage/typo'd id doesn't linger visibly in the address bar.
+    const url = new URL(window.location.href);
+    url.searchParams.delete('product');
+    window.history.replaceState({}, '', url.toString());
+
+    const product = getProductById(targetId);
+    if (!product) {
+      return;
+    }
+
+    handleSearchSelect(product);
+  }, [pdfProductId, isMyLibraryPath, isNotebookPath, isTypingSpeedPath, isNotFound, handleSearchSelect]);
+
   useEffect(() => {
     if (!isNotFound) {
       return;
@@ -616,10 +665,25 @@ const App: React.FC = () => {
         {flyingItems.map(item => {
           const cartRect = cartButtonRef.current?.getBoundingClientRect();
           if (!cartRect) return null;
-          
-          const flyEndX = cartRect.left + cartRect.width / 2 - item.startX;
-          const flyEndY = cartRect.top + cartRect.height / 2 - item.startY;
-          
+
+          // Deltas are measured center-to-center (not corner-to-corner) so
+          // the shrinking thumbnail actually converges on the cart icon's
+          // center, regardless of how large the source thumbnail is.
+          const startCenterX = item.startX + item.width / 2;
+          const startCenterY = item.startY + item.height / 2;
+          const cartCenterX = cartRect.left + cartRect.width / 2;
+          const cartCenterY = cartRect.top + cartRect.height / 2;
+          const flyEndX = cartCenterX - startCenterX;
+          const flyEndY = cartCenterY - startCenterY;
+          // The arc's peak dips above the straight-line path by an amount
+          // proportional to the travel distance, so a short hop (adjacent
+          // card) and a long one (top of the page) both read as a natural
+          // throw rather than either barely lifting or overshooting wildly.
+          const arcLift = Math.min(140, Math.max(40, Math.abs(flyEndY) * 0.35));
+          // Lands at roughly the cart icon's own on-screen size, whatever
+          // the source thumbnail's actual dimensions were.
+          const endScale = Math.min(0.9, Math.max(0.08, (cartRect.width * 0.7) / item.width));
+
           return (
             <img
               key={item.id}
@@ -632,8 +696,12 @@ const App: React.FC = () => {
               style={{
                 left: item.startX,
                 top: item.startY,
+                width: item.width,
+                height: item.height,
                 '--fly-end-x': `${flyEndX}px`,
-                '--fly-end-y': `${flyEndY}px`
+                '--fly-end-y': `${flyEndY}px`,
+                '--fly-arc-lift': `${arcLift}px`,
+                '--fly-end-scale': endScale
               } as React.CSSProperties}
             />
           );

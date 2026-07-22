@@ -35,11 +35,27 @@ export const CourseCard = memo(
       [product, onToggleSelect]
     );
 
+    // Clicking anywhere on the card adds/removes it from the cart, not just
+    // the small Plus/Check button - inert for download-only (hideCommerce)
+    // and unavailable ("Coming Soon") cards, same gate the button already had.
+    const canAddToCart = isAvailable && !hideCommerce;
+    const handleCardClick = useCallback(
+      (e: React.MouseEvent) => {
+        if (!canAddToCart) return;
+        onToggleSelect(product, e);
+      },
+      [canAddToCart, onToggleSelect, product]
+    );
+
     return (
       <div
         ref={cardRef}
+        data-flyable-card
+        onClick={handleCardClick}
         style={{ '--card-scale': isHighlighted ? 1.02 : 1 } as React.CSSProperties}
         className={`group flex-shrink-0 w-[82vw] sm:w-[480px] laptop:w-full flex flex-col bg-surface border rounded-sm overflow-hidden will-change-transform card-elevated card-tilt ${
+          canAddToCart ? 'cursor-pointer' : ''
+        } ${
           isHighlighted
             ? 'animate-highlight border-border-strong z-10'
             : isSelected

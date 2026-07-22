@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Sparkles, Users, Youtube } from 'lucide-react';
+import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Sparkles, Star, Users, Youtube } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
 import { PackagesPanel } from './components/PackagesPanel';
 import { ProductVideosPanel } from './components/ProductVideosPanel';
+import { NewReleasesPanel } from './components/NewReleasesPanel';
 import { ProductivityExpiringPanel } from './components/ProductivityExpiringPanel';
 import { ProductivitySubscribersPanel } from './components/ProductivitySubscribersPanel';
 import { BackupsPanel } from './components/BackupsPanel';
@@ -15,10 +16,13 @@ import {
   AdminFile,
   ApiError,
   Buyer,
+  NewReleasePdf,
+  NewReleaseVideo,
   Package,
   ProductVideoGroup,
   listBuyers,
   listFiles,
+  listNewReleases,
   listPackages,
   listProductVideos
 } from './lib/api';
@@ -39,6 +43,7 @@ type Tab =
   | 'inactive'
   | 'packages'
   | 'videos'
+  | 'new-releases'
   | 'backups'
   | 'productivity-expiring'
   | 'productivity-subscribers';
@@ -67,6 +72,11 @@ const App: React.FC = () => {
   const [productVideosLoading, setProductVideosLoading] = useState(false);
   const [productVideosError, setProductVideosError] = useState<string | null>(null);
 
+  const [newReleaseVideos, setNewReleaseVideos] = useState<NewReleaseVideo[]>([]);
+  const [newReleasePdfs, setNewReleasePdfs] = useState<NewReleasePdf[]>([]);
+  const [newReleasesLoading, setNewReleasesLoading] = useState(false);
+  const [newReleasesError, setNewReleasesError] = useState<string | null>(null);
+
   const refreshPackages = useCallback(async (idToken: string) => {
     setPackagesLoading(true);
     setPackagesError(null);
@@ -90,6 +100,20 @@ const App: React.FC = () => {
       setProductVideosError(err instanceof Error ? err.message : 'Could not load videos.');
     } finally {
       setProductVideosLoading(false);
+    }
+  }, []);
+
+  const refreshNewReleases = useCallback(async (idToken: string) => {
+    setNewReleasesLoading(true);
+    setNewReleasesError(null);
+    try {
+      const { videos, pdfs } = await listNewReleases(idToken);
+      setNewReleaseVideos(videos);
+      setNewReleasePdfs(pdfs);
+    } catch (err) {
+      setNewReleasesError(err instanceof Error ? err.message : 'Could not load New Releases.');
+    } finally {
+      setNewReleasesLoading(false);
     }
   }, []);
 
@@ -124,17 +148,20 @@ const App: React.FC = () => {
     setAuth({ status: 'checking' });
 
     try {
-      const [buyersResult, filesResult, packagesResult, productVideosResult] = await Promise.all([
+      const [buyersResult, filesResult, packagesResult, productVideosResult, newReleasesResult] = await Promise.all([
         listBuyers(idToken),
         listFiles(idToken),
         listPackages(idToken),
-        listProductVideos(idToken)
+        listProductVideos(idToken),
+        listNewReleases(idToken)
       ]);
       setBuyers(buyersResult.buyers);
       setFiles(filesResult.files);
       setCanManageFiles(filesResult.canManageFiles);
       setPackages(packagesResult.packages);
       setProductVideos(productVideosResult.productVideos);
+      setNewReleaseVideos(newReleasesResult.videos);
+      setNewReleasePdfs(newReleasesResult.pdfs);
       setCachedIdToken(idToken);
       setAuth({ status: 'ready', idToken });
     } catch (err) {
@@ -169,6 +196,7 @@ const App: React.FC = () => {
       { key: 'files', label: 'Files', icon: FileText },
       { key: 'packages', label: 'Packages', icon: Box },
       { key: 'videos', label: 'Premium Videos', icon: Youtube },
+      { key: 'new-releases', label: 'New Releases', icon: Star },
       { key: 'productivity-subscribers', label: 'Productivity Subscribers', icon: Sparkles },
       { key: 'productivity-expiring', label: 'Productivity Expiring', icon: AlertTriangle },
       { key: 'backups', label: 'Backups', icon: Archive },
@@ -244,7 +272,9 @@ const App: React.FC = () => {
                     ? 'Packages'
                     : tab === 'videos'
                       ? 'Premium Videos'
-                      : tab === 'productivity-subscribers'
+                      : tab === 'new-releases'
+                        ? 'New Releases'
+                        : tab === 'productivity-subscribers'
                         ? 'Productivity Subscribers'
                         : tab === 'productivity-expiring'
                           ? 'Productivity Expiring'
@@ -303,6 +333,16 @@ const App: React.FC = () => {
                 isLoading={productVideosLoading}
                 error={productVideosError}
                 onRefresh={() => refreshProductVideos(auth.idToken)}
+              />
+            ) : tab === 'new-releases' ? (
+              <NewReleasesPanel
+                idToken={auth.idToken}
+                files={files}
+                videos={newReleaseVideos}
+                pdfs={newReleasePdfs}
+                isLoading={newReleasesLoading}
+                error={newReleasesError}
+                onRefresh={() => refreshNewReleases(auth.idToken)}
               />
             ) : tab === 'productivity-subscribers' ? (
               <ProductivitySubscribersPanel buyers={buyers} isLoading={buyersLoading} error={buyersError} />

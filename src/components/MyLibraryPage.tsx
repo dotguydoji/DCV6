@@ -42,6 +42,7 @@ import {
   toggleFavorite
 } from '../lib/libraryPreferences';
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
+import { fetchNewPdfReleases, fetchNewVideos, NewReleasePdf, NewReleaseVideo } from '../lib/newReleases';
 import { fetchProductVideos, fetchVideoProductIds, PremiumVideoSummary } from '../lib/premiumVideos';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 import { useGlobalScrollTilt } from '../lib/useScrollTilt';
@@ -202,6 +203,8 @@ export const MyLibraryPage: React.FC = () => {
   const [productivitySubscription, setProductivitySubscription] = useState<ProductivitySubscriptionInfo | null>(null);
   const [premiumVideosByProduct, setPremiumVideosByProduct] = useState<Record<string, PremiumVideoSummary[]>>({});
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
+  const [newVideos, setNewVideos] = useState<NewReleaseVideo[]>([]);
+  const [newPdfReleases, setNewPdfReleases] = useState<NewReleasePdf[]>([]);
   const hasTriedCachedToken = useRef(false);
 
   // Prev/next scroll buttons for the category scroll-spy row, same pattern
@@ -246,6 +249,14 @@ export const MyLibraryPage: React.FC = () => {
   // buyer-gated request finding out their titles.
   useEffect(() => {
     fetchVideoProductIds().then(setVideoProductIds);
+  }, []);
+
+  // New Videos Uploaded / New PDF Releases - public, non-buyer-scoped
+  // content (see newReleases.ts), fetched once on mount regardless of
+  // sign-in state and cached client-side until the next 8:15 PM PHT.
+  useEffect(() => {
+    fetchNewVideos().then(setNewVideos);
+    fetchNewPdfReleases().then(setNewPdfReleases);
   }, []);
 
   useGlobalScrollTilt();
@@ -902,6 +913,82 @@ export const MyLibraryPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {newVideos.length > 0 && (
+              <section className="mb-6">
+                <h2 className="f-small text-text-secondary mb-3">New Videos Uploaded</h2>
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                  {newVideos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col"
+                    >
+                      <div className="relative aspect-video w-full overflow-hidden bg-surface-secondary">
+                        <img
+                          src={video.thumbnailUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <PlayCircle size={40} className="text-white drop-shadow" strokeWidth={1.5} />
+                        </div>
+                      </div>
+                      <div className="p-3.5 flex flex-col flex-grow">
+                        <p className="text-sm font-medium text-text-primary line-clamp-1">{video.title}</p>
+                        <p className="text-xs text-text-secondary mt-1 line-clamp-2 flex-grow">{video.description}</p>
+                        <a
+                          href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.youtubeId)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                        >
+                          Click Here to Watch <ChevronRight size={14} strokeWidth={2} />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {newPdfReleases.length > 0 && (
+              <section className="mb-6">
+                <h2 className="f-small text-text-secondary mb-3">New PDF Releases</h2>
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                  {newPdfReleases.map((release) => (
+                    <div
+                      key={release.id}
+                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col"
+                    >
+                      <div className="relative aspect-video w-full overflow-hidden bg-surface-secondary">
+                        <img
+                          src={release.thumbnailUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="p-3.5 flex flex-col flex-grow">
+                        <p className="text-sm font-medium text-text-primary line-clamp-1">{release.title}</p>
+                        <p className="text-xs text-text-secondary mt-1 line-clamp-2 flex-grow">{release.description}</p>
+                        <a
+                          href={`/?product=${encodeURIComponent(release.productId)}`}
+                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                        >
+                          Click Here to View <ChevronRight size={14} strokeWidth={2} />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {ownedProducts.length === 0 ? (
               <div className="text-center py-20 lg:py-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center">
                 <FileText size={44} className="mx-auto text-text-secondary mb-4" strokeWidth={1.5} />

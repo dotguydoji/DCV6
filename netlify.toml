@@ -68,7 +68,22 @@
     # once they opened a PDF using one of those codecs. This token only
     # permits compiling WebAssembly - it does not enable eval()/Function()
     # or otherwise weaken this policy against script injection.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    # script-src also carries one specific sha256 hash - accounts.google.com's
+    # gsi/client library (loaded for Google Sign-In) injects a small inline
+    # <script> of its own into the page for its iframe/postMessage relay once
+    # it runs. That script body is static and Google-controlled (same hash on
+    # every site using it, not attacker-influenceable), so a hash allowlist
+    # entry is the correct CSP fix - unlike 'unsafe-inline', it permits only
+    # this exact script content and nothing else, so it doesn't open the page
+    # up to arbitrary inline script injection.
+    # connect-src additionally allows img.dojicreates.com (the same public
+    # R2 bucket product thumbnails already load from under img-src) - My
+    # Library's New Videos Uploaded / New PDF Releases sections fetch()
+    # their JSON manifests directly from that bucket (see src/lib/
+    # newReleases.ts), deliberately bypassing a Netlify Function entirely
+    # since this content is public and non-buyer-scoped. Only that one exact
+    # origin is added, not a wildcard.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-SxSYPB3Py6VIb6nk38ViSld/+yGlf3u2EGzkz3rkNnw=' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # index.html points to the current build's hashed asset filenames (the
 # /assets/* files below, which ARE safe to cache forever since their name
