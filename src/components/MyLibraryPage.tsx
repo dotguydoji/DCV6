@@ -205,6 +205,10 @@ export const MyLibraryPage: React.FC = () => {
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
   const [newVideos, setNewVideos] = useState<NewReleaseVideo[]>([]);
   const [newPdfReleases, setNewPdfReleases] = useState<NewReleasePdf[]>([]);
+  // Tapping a New Videos Uploaded card (anywhere except the "Click Here to
+  // Watch" link itself, which still opens immediately with no prompt) asks
+  // for confirmation before opening YouTube in a new tab.
+  const [watchConfirmVideo, setWatchConfirmVideo] = useState<NewReleaseVideo | null>(null);
   const hasTriedCachedToken = useRef(false);
 
   // Prev/next scroll buttons for the category scroll-spy row, same pattern
@@ -877,6 +881,47 @@ export const MyLibraryPage: React.FC = () => {
             />
           )}
 
+          {watchConfirmVideo && (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+              onClick={() => setWatchConfirmVideo(null)}
+              role="presentation"
+            >
+              <div
+                className="bg-surface border border-border-hairline rounded-sm p-6 max-w-sm w-full shadow-2xl"
+                role="dialog"
+                aria-modal="true"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <p className="text-text-primary font-medium text-base mb-1">Do you want to watch it?</p>
+                <p className="text-text-secondary text-sm mb-6 line-clamp-1">{watchConfirmVideo.title}</p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWatchConfirmVideo(null)}
+                    className="flex-1 py-2.5 border border-border-hairline rounded-sm text-text-secondary hover:text-text-primary hover:border-border-strong transition-colors text-sm font-semibold"
+                  >
+                    No
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(
+                        `https://www.youtube.com/watch?v=${encodeURIComponent(watchConfirmVideo.youtubeId)}`,
+                        '_blank',
+                        'noopener,noreferrer'
+                      );
+                      setWatchConfirmVideo(null);
+                    }}
+                    className="flex-1 py-2.5 bg-orange-500 text-white rounded-sm hover:bg-orange-400 transition-colors text-sm font-semibold"
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <MessengerJoinDialog open={isMessengerDialogOpen} onClose={() => setIsMessengerDialogOpen(false)} />
           <NoPdfAccessDialog
             open={isNoPdfAccessDialogOpen}
@@ -921,7 +966,16 @@ export const MyLibraryPage: React.FC = () => {
                   {newVideos.map((video) => (
                     <div
                       key={video.id}
-                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setWatchConfirmVideo(video)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setWatchConfirmVideo(video);
+                        }
+                      }}
+                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col cursor-pointer"
                     >
                       <div className="relative aspect-video w-full overflow-hidden bg-surface-secondary">
                         <img
@@ -932,9 +986,6 @@ export const MyLibraryPage: React.FC = () => {
                           decoding="async"
                           referrerPolicy="no-referrer"
                         />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <PlayCircle size={40} className="text-white drop-shadow" strokeWidth={1.5} />
-                        </div>
                       </div>
                       <div className="p-3.5 flex flex-col flex-grow">
                         <p className="text-sm font-medium text-text-primary line-clamp-1">{video.title}</p>
@@ -943,6 +994,7 @@ export const MyLibraryPage: React.FC = () => {
                           href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.youtubeId)}`}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
                           className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-400 transition-colors"
                         >
                           Click Here to Watch <ChevronRight size={14} strokeWidth={2} />

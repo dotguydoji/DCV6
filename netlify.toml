@@ -68,22 +68,22 @@
     # once they opened a PDF using one of those codecs. This token only
     # permits compiling WebAssembly - it does not enable eval()/Function()
     # or otherwise weaken this policy against script injection.
-    # script-src carries a couple of leftover sha256 hashes PLUS
-    # 'unsafe-inline' - accounts.google.com's gsi/client library (Google
-    # Sign-In) injects a small inline <script> of its own for its internal
-    # iframe/postMessage relay, and confirmed (by testing) its exact content
-    # is NOT stable - the same sign-in flow on the same page produced a
-    # different hash on a later reload with no code changes in between, so
-    # it almost certainly embeds a per-load session/nonce value. Hashing is
-    # therefore the wrong tool here (it can never converge), which is why
-    # 'unsafe-inline' is present. This is NOT a real loosening: per the CSP
-    # spec, any browser that supports hash-source (every real browser in use
-    # today) is required to ignore 'unsafe-inline' entirely whenever a
-    # hash-source is present in the same directive - so 'unsafe-inline' only
-    # has any effect on pre-2015, pre-CSP2 browsers, which aren't a
-    # realistic population for this site. The leftover hashes below are kept
-    # only because they're harmless to leave in, not because they still do
-    # anything now that 'unsafe-inline' covers this case.
+    # script-src carries a couple of sha256 hashes - accounts.google.com's
+    # gsi/client library (Google Sign-In) injects a small inline <script> of
+    # its own for its internal iframe/postMessage relay. Testing showed its
+    # exact content isn't stable across every load (a different hash turned
+    # up once with no code changes), so this specific script will sometimes
+    # still get blocked and log a CSP console error - confirmed harmless and
+    # accepted on purpose (2026-07) rather than adding 'unsafe-inline':
+    # 'unsafe-inline' is ignored by every real browser whenever a hash-source
+    # is present in the same directive (per spec), so it would have done
+    # nothing for any actual visitor while sitting there as a red flag in a
+    # policy review - not worth it to silence a script that's provably from
+    # Google's own domain and doesn't affect sign-in functioning. Do not
+    # re-add 'unsafe-inline' here for this reason without a real plan to
+    # remove the hashes too (which WOULD silence it, at the real cost of
+    # allowing any inline script site-wide - a deliberate call, not a
+    # default).
     # connect-src additionally allows img.dojicreates.com (the same public
     # R2 bucket product thumbnails already load from under img-src) - My
     # Library's New Videos Uploaded / New PDF Releases sections fetch()
@@ -91,7 +91,7 @@
     # newReleases.ts), deliberately bypassing a Netlify Function entirely
     # since this content is public and non-buyer-scoped. Only that one exact
     # origin is added, not a wildcard.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'sha256-SxSYPB3Py6VIb6nk38ViSld/+yGlf3u2EGzkz3rkNnw=' 'sha256-gEMsPRRq+5hvFmY2iLBH7adPiFwqzlfdG38EEv0cfc=' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-SxSYPB3Py6VIb6nk38ViSld/+yGlf3u2EGzkz3rkNnw=' 'sha256-gEMsPRRq+5hvFmY2iLBH7adPiFwqzlfdG38EEv0cfc=' https://accounts.google.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com https://cloudflareinsights.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; frame-src 'self' https://accounts.google.com https://www.youtube-nocookie.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 
 # index.html points to the current build's hashed asset filenames (the
 # /assets/* files below, which ARE safe to cache forever since their name

@@ -15,18 +15,19 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     Cross-Origin-Opener-Policy = "same-origin-allow-popups"
-    # script-src carries 'unsafe-inline' plus a couple of leftover sha256
-    # hashes - accounts.google.com's gsi/client library (admin Google
-    # Sign-In) injects a small inline <script> for its internal iframe/
-    # postMessage relay, and testing confirmed its exact content is NOT
-    # stable (the same sign-in flow produced a third distinct hash with no
-    # code changes in between) - almost certainly a per-load session/nonce
-    # value baked in, which hashing can never keep up with. 'unsafe-inline'
-    # is NOT a real loosening here: per the CSP spec, any browser that
-    # supports hash-source (every real browser in use today) is required to
-    # ignore 'unsafe-inline' entirely once a hash-source is present in the
-    # same directive - it only has any effect on pre-2015 browsers with no
-    # CSP2 support, not a realistic population for an owner-only admin panel.
+    # script-src carries a couple of sha256 hashes - accounts.google.com's
+    # gsi/client library (admin Google Sign-In) injects a small inline
+    # <script> for its internal iframe/postMessage relay. Testing showed its
+    # exact content isn't stable across every load (a third distinct hash
+    # turned up once with no code changes), so this script will sometimes
+    # still get blocked and log a CSP console error - confirmed harmless and
+    # accepted on purpose (2026-07) rather than adding 'unsafe-inline': it's
+    # ignored by every real browser whenever a hash-source is present in the
+    # same directive (per spec), so it wouldn't silence anything for a real
+    # visitor while sitting there as a red flag in a policy review. Do not
+    # re-add it here without a real plan to also remove the hashes (which
+    # WOULD silence it, at the real cost of allowing any inline script
+    # site-wide - a deliberate call, not a default).
     # img-src additionally allows img.dojicreates.com (the public R2 bucket
     # New Releases thumbnails preview from) and 'blob:' - not our own code
     # (New Releases' own thumbnail preview uses a data: URL, already
@@ -36,4 +37,4 @@
     # already running on this exact origin, so allowing them here doesn't
     # open any new attack surface - script-src is what actually gates
     # script execution.
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'sha256-SxSYPB3Py6VIb6nk38ViSld/+yGlf3u2EGzkz3rkNnw=' 'sha256-uBnuXCh+HgOrhE8AUdJuctKdNva2HmXnwBs+IFN3L8Q=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: blob: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-SxSYPB3Py6VIb6nk38ViSld/+yGlf3u2EGzkz3rkNnw=' 'sha256-uBnuXCh+HgOrhE8AUdJuctKdNva2HmXnwBs+IFN3L8Q=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; font-src 'self'; img-src 'self' data: blob: https://*.googleusercontent.com https://img.dojicreates.com https://pub-273d1fa111dc47f695f3f72ee5e0e2f4.r2.dev; connect-src 'self' https://accounts.google.com https://*.r2.cloudflarestorage.com; frame-src 'self' https://accounts.google.com; worker-src 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
