@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect, useMemo, useDeferredValue, useCallback } from 'react';
-import { Menu, X, Search, LibraryBig, MessageCircle, NotebookPen, LayoutGrid, ChevronDown, Download } from 'lucide-react';
+import { Menu, X, Search, LibraryBig, MessageCircle, NotebookPen, Keyboard, LayoutGrid, ChevronDown, Download } from 'lucide-react';
 import { PRODUCTS, SITE_CONTENT } from "../constants";
 import { Product } from "../types";
 import { getCachedIdToken, getIdTokenEmail } from '../lib/googleIdentity';
 import { fetchOwnedProductIds } from '../lib/libraryAccess';
+import { useProductivityFeatureLink } from '../lib/useProductivityFeatureLink';
 import { useInstallPrompt } from '../lib/useInstallPrompt';
 import { getInstallGuide } from '../lib/installGuides';
 import { InstallAppButton } from './InstallAppButton';
 import { InstallGuideModal } from './InstallGuideModal';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { NoPdfAccessDialog } from './NoPdfAccessDialog';
+import { ProductivitySubscribeDialog } from './ProductivitySubscribeDialog';
 import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
@@ -52,7 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
   const [noPdfAccessMessage, setNoPdfAccessMessage] = useState<string | undefined>(undefined);
   const [isCheckingMessengerAccess, setIsCheckingMessengerAccess] = useState(false);
-  const [isCheckingNotebookAccess, setIsCheckingNotebookAccess] = useState(false);
+  const [isProductivityDialogOpen, setIsProductivityDialogOpen] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -207,30 +209,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
     }
   }, []);
 
-  // Same "must own at least one PDF" gate as the Messenger button above -
-  // reuses the same server call/cache, just navigates to the Notebook
-  // instead of opening a dialog on success.
-  const handleNotebookClick = useCallback(async () => {
+  // Both Notebook and Typing Speed are Productivity-bundled features -
+  // same gate, same subscribe-prompt dialog, reused via
+  // useProductivityFeatureLink so a future third feature only needs one
+  // more of these two lines, not a new copy of the check/navigate logic.
+  const notebookLink = useProductivityFeatureLink('/notebook');
+  const typingSpeedLink = useProductivityFeatureLink('/typing-speed');
+
+  const handleNotebookClick = useCallback(() => {
     setIsMenuOpen(false);
+    notebookLink.handleClick(() => setIsProductivityDialogOpen(true));
+  }, [notebookLink]);
 
-    const idToken = getCachedIdToken();
-    if (!idToken) {
-      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
-      setIsNoPdfAccessDialogOpen(true);
-      return;
-    }
-
-    setIsCheckingNotebookAccess(true);
-    const result = await fetchOwnedProductIds(idToken, getIdTokenEmail(idToken));
-    setIsCheckingNotebookAccess(false);
-
-    if (result.status === 'ok' && result.productIds.length > 0) {
-      window.location.href = '/notebook';
-    } else {
-      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
-      setIsNoPdfAccessDialogOpen(true);
-    }
-  }, []);
+  const handleTypingSpeedClick = useCallback(() => {
+    setIsMenuOpen(false);
+    typingSpeedLink.handleClick(() => setIsProductivityDialogOpen(true));
+  }, [typingSpeedLink]);
 
   const handleSelect = useCallback((product: Product) => {
     onSearchSelect(product);
@@ -433,11 +427,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
                       setIsMoreMenuOpen(false);
                       handleNotebookClick();
                     }}
-                    disabled={isCheckingNotebookAccess}
-                    className="w-full text-left px-4 py-3 hover:bg-surface-secondary transition-colors text-sm font-medium text-text-primary flex items-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+                    disabled={notebookLink.isChecking}
+                    className="w-full text-left px-4 py-3 hover:bg-orange-500/10 transition-colors text-sm font-medium text-text-primary flex items-center gap-3 border-b border-border-hairline disabled:opacity-50 disabled:pointer-events-none"
                   >
-                    <NotebookPen size={18} strokeWidth={1.5} className="text-text-secondary shrink-0" />
+                    <NotebookPen size={18} strokeWidth={1.5} className="text-orange-500 shrink-0" />
                     Notebook
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleTypingSpeedClick();
+                    }}
+                    disabled={typingSpeedLink.isChecking}
+                    className="w-full text-left px-4 py-3 hover:bg-orange-500/10 transition-colors text-sm font-medium text-text-primary flex items-center gap-3 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <Keyboard size={18} strokeWidth={1.5} className="text-orange-500 shrink-0" />
+                    Typing Speed
                   </button>
                 </div>
               )}
@@ -569,11 +576,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
             <button
               type="button"
               onClick={handleNotebookClick}
-              disabled={isCheckingNotebookAccess}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              disabled={notebookLink.isChecking}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-orange-500/30 text-text-primary font-medium hover:border-orange-500 transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
-              <NotebookPen size={20} strokeWidth={1.5} />
+              <NotebookPen size={20} strokeWidth={1.5} className="text-orange-500" />
               Notebook
+            </button>
+            <button
+              type="button"
+              onClick={handleTypingSpeedClick}
+              disabled={typingSpeedLink.isChecking}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-orange-500/30 text-text-primary font-medium hover:border-orange-500 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Keyboard size={20} strokeWidth={1.5} className="text-orange-500" />
+              Typing Speed
             </button>
           </div>
         </div>
@@ -584,6 +600,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchSelect }) => {
         open={isNoPdfAccessDialogOpen}
         onClose={() => setIsNoPdfAccessDialogOpen(false)}
         message={noPdfAccessMessage}
+      />
+      <ProductivitySubscribeDialog
+        open={isProductivityDialogOpen}
+        onClose={() => setIsProductivityDialogOpen(false)}
       />
 
       {isInstallModalOpen && (

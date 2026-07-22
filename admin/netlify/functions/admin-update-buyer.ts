@@ -4,6 +4,7 @@ import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 import { isValidProductId } from './lib/validation';
 import { productFileExists } from './lib/productExists';
+import { isProductivitySubscriptionProductId } from './lib/productivityFeatures';
 
 // Buyer records are kept for a bounded window rather than indefinitely, to
 // stop the buyers collection from growing forever - each grant refreshes
@@ -90,22 +91,40 @@ export const handler: Handler = async (event) => {
   const validatedProductIds = productIds as string[];
 
   if (action === 'add') {
-    const existsResults = await Promise.all(validatedProductIds.map(productFileExists));
+    // The Productivity subscription id is never backed by an uploaded R2
+    // file, so it's checked against the fixed id instead - anything else
+    // still needs a real file, same as before.
+    const existsResults = await Promise.all(
+      validatedProductIds.map((id) => (isProductivitySubscriptionProductId(id) ? Promise.resolve(true) : productFileExists(id)))
+    );
     const missing = validatedProductIds.filter((_, index) => !existsResults[index]);
     if (missing.length > 0) {
       return jsonResponse(400, { error: `No uploaded file matches: ${missing.join(', ')}` });
     }
-    await docRef.set(
-      {
-        productIds: FieldValue.arrayUnion(...validatedProductIds),
-        expiresAt: Timestamp.fromMillis(Date.now() + RECORD_LIFETIME_MS)
-      },
-      { merge: true }
-    );
+
+    const update: Record<string, unknown> = {
+      productIds: FieldValue.arrayUnion(...validatedProductIds),
+      expiresAt: Timestamp.fromMillis(Date.now() + RECORD_LIFETIME_MS)
+    };
+
+    // Granting the Productivity subscription always resets its start date to
+    // now, whether this is a first-time grant or a manual monthly renewal
+    // (the admin re-granting it after the buyer pays again) - that reset IS
+    // the renewal, since scheduled-expire-productivity.ts always measures
+    // 30 days forward from whatever this field is currently set to.
+    if (validatedProductIds.some(isProductivitySubscriptionProductId)) {
+      update.productivitySubscribedAt = Timestamp.now();
+    }
+
+    await docRef.set(update, { merge: true });
     return jsonResponse(200, { ok: true });
   }
 
   // action === 'remove'
-  await docRef.set({ productIds: FieldValue.arrayRemove(...validatedProductIds) }, { merge: true });
+  const removeUpdate: Record<string, unknown> = { productIds: FieldValue.arrayRemove(...validatedProductIds) };
+  if (validatedProductIds.some(isProductivitySubscriptionProductId)) {
+    removeUpdate.productivitySubscribedAt = FieldValue.delete();
+  }
+  await docRef.set(removeUpdate, { merge: true });
   return jsonResponse(200, { ok: true });
 };

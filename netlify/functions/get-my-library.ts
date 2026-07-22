@@ -1,10 +1,12 @@
 import type { Handler } from '@netlify/functions';
 import { OAuth2Client } from 'google-auth-library';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? '';
+const PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID = 'productivity-subscription';
+const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
 // Was 20/min - raised for the same reason as get-pdf.ts's identical change:
 // real reload-heavy use (not abuse) was hitting this limit too easily.
 const RATE_LIMIT_MAX_REQUESTS = 40;
@@ -68,7 +70,7 @@ export const handler: Handler = async (event) => {
     });
     const payload = ticket.getPayload();
     if (payload?.email && payload.email_verified) {
-      verifiedEmail = payload.email;
+      verifiedEmail = payload.email.toLowerCase();
     }
   } catch {
     return denied(401, 'Invalid sign-in');
@@ -82,11 +84,26 @@ export const handler: Handler = async (event) => {
   const db = getFirestore(app);
 
   const buyerDoc = await db.collection('buyers').doc(verifiedEmail).get();
-  const productIds: string[] = buyerDoc.exists ? (buyerDoc.data()?.productIds ?? []) : [];
+  const data = buyerDoc.data();
+  const productIds: string[] = buyerDoc.exists ? (data?.productIds ?? []) : [];
+
+  // Computed server-side (never trust a client clock) so My Library's
+  // expiring-soon banner is based on the same source of truth the daily
+  // scheduled-expire-productivity.ts cleanup in the admin app uses - this
+  // function never writes anything, it just reports what that job will do.
+  let productivitySubscription: { expiresAt: string; daysRemaining: number } | null = null;
+  const subscribedAt = data?.productivitySubscribedAt as Timestamp | undefined;
+  if (productIds.includes(PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID) && subscribedAt) {
+    const expiresAtMs = subscribedAt.toMillis() + SUBSCRIPTION_PERIOD_MS;
+    productivitySubscription = {
+      expiresAt: new Date(expiresAtMs).toISOString(),
+      daysRemaining: Math.max(0, Math.ceil((expiresAtMs - Date.now()) / (24 * 60 * 60 * 1000)))
+    };
+  }
 
   return {
     statusCode: 200,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ authorized: true, productIds })
+    body: JSON.stringify({ authorized: true, productIds, productivitySubscription })
   };
 };

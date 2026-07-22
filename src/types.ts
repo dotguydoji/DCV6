@@ -31,6 +31,16 @@ export interface Product {
   preOrder?: boolean;
   isCourse?: boolean;
   materials?: CourseMaterial[];
+  /** Recurring price instead of a one-time purchase - shown as "/mo" next to the price. */
+  billingPeriod?: 'month';
+  /**
+   * A feature bundled into a paid category subscription (e.g. the Typing
+   * Speed Test under Productivity) rather than something purchased on its
+   * own - shown in its category listing with no price/add-to-cart button,
+   * since access comes from owning the category's subscription product
+   * instead. See CategorySection.tsx's Productivity-specific rendering.
+   */
+  isBundledFeature?: boolean;
 }
 
 export interface FAQItem {

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Play, Plus } from 'lucide-react';
 import { CourseCard } from './CourseCard';
 import { ProductCard } from './ProductCard';
 import { Product, ProductLanguage, ProductLevel } from '../types';
+import { PRODUCTIVITY_APPS_CATEGORY, PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID } from '../constants';
 import { useScrollReveal } from '../lib/useScrollReveal';
 
 type PendingFocus = {
@@ -18,7 +19,7 @@ interface CategorySectionProps {
   highlightedProductId?: string | null;
   selectedProducts: Product[];
   selectedProductIds: Set<string>;
-  onToggleSelect: (product: Product) => void;
+  onToggleSelect: (product: Product, event?: React.MouseEvent) => void;
   hideCommerce?: boolean;
   index?: number;
   total?: number;
@@ -63,7 +64,7 @@ const getFocusIndex = (products: Product[], focus: PendingFocus | null) => {
 };
 
 export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProps>(
-  ({ name, products, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false, index, total }, ref) => {
+  ({ name, products: allProducts, isOpen, onToggle, highlightedProductId, selectedProducts, selectedProductIds, onToggleSelect, hideCommerce = false, index, total }, ref) => {
     const mobileScrollRef = useRef<HTMLDivElement>(null);
     const desktopScrollRef = useRef<HTMLDivElement>(null);
     const mobileCardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -86,6 +87,23 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
       },
       [ref, revealRef]
     );
+
+    // Productivity gets its own orange accent (matching the logo) instead of
+    // the black/white treatment every other category uses, so its
+    // subscription-based apps read as visually distinct on the main page.
+    const isProductivityCategory = name === PRODUCTIVITY_APPS_CATEGORY;
+
+    // The subscription product itself is never shown as a normal card - it's
+    // pulled out here and rendered as the pricing container above the
+    // feature grid instead (see the JSX below). Every other product in this
+    // category (isBundledFeature: true) still renders as a plain card, just
+    // with no price/add-to-cart of its own.
+    const productivitySubscriptionProduct = isProductivityCategory
+      ? allProducts.find((product) => product.id === PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID) ?? null
+      : null;
+    const products = productivitySubscriptionProduct
+      ? allProducts.filter((product) => product.id !== PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID)
+      : allProducts;
 
     const availableLanguages = useMemo(
       () =>
@@ -283,7 +301,11 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     // which nothing external ever mutates.
     return (
       <section ref={setSectionRefs} className="reveal mt-4 mb-8 lg:mt-5 lg:mb-12 will-change-transform">
-        <div className="blueprint-corners rounded-sm overflow-hidden border bg-surface-secondary border-border-hairline">
+        <div
+          className={`blueprint-corners rounded-sm overflow-hidden border bg-surface-secondary ${
+            isProductivityCategory ? 'border-orange-500/40' : 'border-border-hairline'
+          }`}
+        >
         {/*
           Hover lift/invert lives on the header only (not this outer shell),
           so it keeps responding even while the category is expanded, and
@@ -295,9 +317,19 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
           because the .reveal.is-revealed entrance-animation rule in
           index.css sets `transform: translateY(0)` at equal CSS
           specificity and would otherwise silently win, making the lift
-          never render.
+          never render. Productivity swaps the black/white invert for an
+          orange fill (its own ambient accent, matching the logo) - white
+          text is forced explicitly rather than via text-inverted, since
+          that token flips per light/dark theme and wouldn't reliably read
+          against solid orange in both.
         */}
-        <div className="group relative category-header tilt-row px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b bg-surface-inverted/5 border-border-hairline [transition:background-color_0.3s_ease-out,translate_0.3s_ease-out,box-shadow_0.3s_ease-out,transform_0.3s_ease-out]! hover:bg-surface-inverted hover:-translate-y-1! hover:shadow-2xl">
+        <div
+          className={`group relative category-header tilt-row px-6 lg:px-8 py-3 lg:py-5 laptop:py-6 border-b [transition:background-color_0.3s_ease-out,translate_0.3s_ease-out,box-shadow_0.3s_ease-out,transform_0.3s_ease-out]! hover:-translate-y-1! hover:shadow-2xl ${
+            isProductivityCategory
+              ? 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500'
+              : 'bg-surface-inverted/5 border-border-hairline hover:bg-surface-inverted'
+          }`}
+        >
           <button
             onClick={onToggle}
             className="w-full flex items-center justify-between gap-4 text-left rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-border-strong focus-visible:ring-offset-2 focus-visible:ring-offset-surface-secondary"
@@ -305,7 +337,13 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
             type="button"
           >
             <div className="flex items-center gap-4 min-w-0">
-              <h2 className="f-heading font-normal transition-colors uppercase tracking-tighter text-text-primary group-hover:text-text-inverted">
+              <h2
+                className={`f-heading font-normal transition-colors uppercase tracking-tighter ${
+                  isProductivityCategory
+                    ? 'text-orange-500 group-hover:text-white'
+                    : 'text-text-primary group-hover:text-text-inverted'
+                }`}
+              >
                 {name}
               </h2>
               {/* Content-type label */}
@@ -321,14 +359,24 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
               <div
                 className={`shrink-0 transition-transform duration-300 p-1 border border-transparent rounded-full ${
                   isOpen
-                    ? 'rotate-180 text-text-primary bg-text-primary/10'
-                    : 'text-text-secondary group-hover:text-text-inverted'
+                    ? isProductivityCategory
+                      ? 'rotate-180 text-orange-500 bg-orange-500/10'
+                      : 'rotate-180 text-text-primary bg-text-primary/10'
+                    : isProductivityCategory
+                      ? 'text-orange-500/70 group-hover:text-white'
+                      : 'text-text-secondary group-hover:text-text-inverted'
                 }`}
               >
                 <ChevronDown size={28} strokeWidth={1.5} />
               </div>
               <div className="hidden sm:flex flex-col items-end">
-                <span className="f-small px-3 py-1.5 rounded-sm border font-semibold whitespace-nowrap text-xl bg-surface-inverted/10 text-text-primary group-hover:text-text-inverted border-border-hairline">
+                <span
+                  className={`f-small px-3 py-1.5 rounded-sm border font-semibold whitespace-nowrap text-xl ${
+                    isProductivityCategory
+                      ? 'bg-orange-500/10 text-orange-500 group-hover:text-white border-orange-500/30'
+                      : 'bg-surface-inverted/10 text-text-primary group-hover:text-text-inverted border-border-hairline'
+                  }`}
+                >
                   {itemCount} <span className="opacity-50">ITEMS</span>
                 </span>
               </div>
@@ -341,6 +389,49 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
             isOpen ? 'overflow-visible max-h-[3200px] opacity-100 p-4 lg:p-6' : 'overflow-hidden max-h-0 opacity-0 pointer-events-none'
           }`}
         >
+          {/* The one paid item in this category - every card below is a
+              bundled feature included with it (see productivitySubscriptionProduct
+              above), never priced or added to cart individually. */}
+          {productivitySubscriptionProduct && !hideCommerce && (
+            <div className="mb-4 rounded-sm border border-orange-500/40 bg-orange-500/10 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="text-text-primary text-sm lg:text-base leading-relaxed">
+                Subscribe to <span className="font-bold text-orange-500">Productivity</span> to unlock every feature
+                and tool included in this category.
+              </p>
+              <div className="flex items-center gap-4 shrink-0 self-end sm:self-auto">
+                <span className="f-price font-semibold leading-none text-text-primary whitespace-nowrap">
+                  <span className="text-[0.5em]">P</span> {productivitySubscriptionProduct.price.toLocaleString()}
+                  {productivitySubscriptionProduct.billingPeriod === 'month' && (
+                    <span className="text-[0.55em] font-medium opacity-80">/mo</span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggleSelect(productivitySubscriptionProduct, event);
+                  }}
+                  className={`flex items-center justify-center w-11 h-11 border rounded-none transition-all duration-300 ${
+                    selectedProductIds.has(productivitySubscriptionProduct.id)
+                      ? 'text-white border-orange-500 bg-orange-500'
+                      : 'text-orange-500 border-orange-500/50 hover:border-orange-500 hover:bg-orange-500/10'
+                  }`}
+                  aria-label={
+                    selectedProductIds.has(productivitySubscriptionProduct.id)
+                      ? 'Remove Productivity Subscription from cart'
+                      : 'Add Productivity Subscription to cart'
+                  }
+                >
+                  {selectedProductIds.has(productivitySubscriptionProduct.id) ? (
+                    <Check size={22} strokeWidth={2} />
+                  ) : (
+                    <Plus size={22} strokeWidth={3} />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           {hasVersionToggle && (
             <div className="flex items-center gap-3 mb-3 flex-wrap">
               <span className="w-24 shrink-0 inline-block text-base font-medium text-text-secondary tracking-wide">Versions:</span>

@@ -10,6 +10,8 @@ export interface Buyer {
   email: string;
   productIds: string[];
   expiresAt: string | null;
+  /** When the Productivity subscription was last granted/renewed - null if never subscribed (or since removed). */
+  productivitySubscribedAt: string | null;
 }
 
 export interface AdminFile {

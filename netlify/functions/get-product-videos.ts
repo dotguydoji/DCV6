@@ -51,7 +51,7 @@ export const handler: Handler = async (event) => {
     const ticket = await googleClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
     if (payload?.email && payload.email_verified) {
-      verifiedEmail = payload.email;
+      verifiedEmail = payload.email.toLowerCase();
     }
   } catch {
     return denied(401, 'Invalid sign-in');

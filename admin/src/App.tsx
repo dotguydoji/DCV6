@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Users, Youtube } from 'lucide-react';
+import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Sparkles, Users, Youtube } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
 import { PackagesPanel } from './components/PackagesPanel';
 import { ProductVideosPanel } from './components/ProductVideosPanel';
+import { ProductivityExpiringPanel } from './components/ProductivityExpiringPanel';
+import { ProductivitySubscribersPanel } from './components/ProductivitySubscribersPanel';
 import { BackupsPanel } from './components/BackupsPanel';
 import { AdminCidGate } from './components/AdminCidGate';
 import { InstallAppButton } from './components/InstallAppButton';
@@ -31,7 +33,15 @@ type AuthState =
   | { status: 'error'; message: string; idToken: string }
   | { status: 'ready'; idToken: string };
 
-type Tab = 'buyers' | 'files' | 'inactive' | 'packages' | 'videos' | 'backups';
+type Tab =
+  | 'buyers'
+  | 'files'
+  | 'inactive'
+  | 'packages'
+  | 'videos'
+  | 'backups'
+  | 'productivity-expiring'
+  | 'productivity-subscribers';
 
 const App: React.FC = () => {
   const installPrompt = useInstallPrompt();
@@ -159,6 +169,8 @@ const App: React.FC = () => {
       { key: 'files', label: 'Files', icon: FileText },
       { key: 'packages', label: 'Packages', icon: Box },
       { key: 'videos', label: 'Premium Videos', icon: Youtube },
+      { key: 'productivity-subscribers', label: 'Productivity Subscribers', icon: Sparkles },
+      { key: 'productivity-expiring', label: 'Productivity Expiring', icon: AlertTriangle },
       { key: 'backups', label: 'Backups', icon: Archive },
       { key: 'inactive', label: 'Inactive Accounts', icon: Clock }
     ];
@@ -232,9 +244,13 @@ const App: React.FC = () => {
                     ? 'Packages'
                     : tab === 'videos'
                       ? 'Premium Videos'
-                      : tab === 'backups'
-                        ? 'Backups'
-                        : 'Inactive Accounts'}
+                      : tab === 'productivity-subscribers'
+                        ? 'Productivity Subscribers'
+                        : tab === 'productivity-expiring'
+                          ? 'Productivity Expiring'
+                          : tab === 'backups'
+                            ? 'Backups'
+                            : 'Inactive Accounts'}
             </h2>
             <div className="lg:hidden flex items-center gap-3">
               <InstallAppButton {...installPrompt} />
@@ -288,6 +304,10 @@ const App: React.FC = () => {
                 error={productVideosError}
                 onRefresh={() => refreshProductVideos(auth.idToken)}
               />
+            ) : tab === 'productivity-subscribers' ? (
+              <ProductivitySubscribersPanel buyers={buyers} isLoading={buyersLoading} error={buyersError} />
+            ) : tab === 'productivity-expiring' ? (
+              <ProductivityExpiringPanel buyers={buyers} isLoading={buyersLoading} error={buyersError} />
             ) : tab === 'backups' ? (
               <BackupsPanel idToken={auth.idToken} />
             ) : (

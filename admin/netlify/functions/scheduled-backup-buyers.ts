@@ -5,7 +5,12 @@ import type { Timestamp } from 'firebase-admin/firestore';
 import { getAdminFirestore } from './lib/adminAuth';
 import { r2Client, R2_BUCKET_NAME } from './lib/r2Client';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
-import type { BackupBuyerRecord, BackupPayload } from './lib/backupTypes';
+import {
+  PRODUCTIVITY_SUBSCRIPTION_PERIOD_DAYS,
+  PRODUCTIVITY_SUBSCRIPTION_PERIOD_MS,
+  type BackupBuyerRecord,
+  type BackupPayload
+} from './lib/backupTypes';
 
 // Same private bucket the PDFs themselves live in (no public bucket policy
 // or public r2.dev URL exists for it anywhere in this project - every real
@@ -28,17 +33,44 @@ const backupBuyers: Handler = async (event) => {
   const db = getAdminFirestore();
   const snapshot = await db.collection('buyers').get();
 
+  // One fixed "now" for the whole run, so every buyer's "days remaining"
+  // and the payload's own createdAt agree with each other exactly - calling
+  // Date.now()/new Date() separately per record could let them drift by a
+  // few milliseconds across a large collection.
+  const backupTimeMs = Date.now();
+
   const buyers: BackupBuyerRecord[] = snapshot.docs.map((doc) => {
     const data = doc.data();
     const expiresAt = data.expiresAt as Timestamp | undefined;
+    const productivitySubscribedAt = data.productivitySubscribedAt as Timestamp | undefined;
+
+    // The three fields below are purely derived from productivitySubscribedAt
+    // (the actual source of truth, restored as-is by admin-restore-buyers.ts) -
+    // computed once here so the backup file itself is readable/auditable
+    // without doing the 30-day math by hand every time someone opens it.
+    let productivitySubscriptionExpiresAt: string | null = null;
+    let productivitySubscriptionDaysRemainingAtBackup: number | null = null;
+    if (productivitySubscribedAt) {
+      const expiresAtMs = productivitySubscribedAt.toMillis() + PRODUCTIVITY_SUBSCRIPTION_PERIOD_MS;
+      productivitySubscriptionExpiresAt = new Date(expiresAtMs).toISOString();
+      productivitySubscriptionDaysRemainingAtBackup = Math.max(
+        0,
+        Math.ceil((expiresAtMs - backupTimeMs) / (24 * 60 * 60 * 1000))
+      );
+    }
+
     return {
       email: doc.id,
       productIds: (data.productIds ?? []) as string[],
-      expiresAt: expiresAt ? expiresAt.toDate().toISOString() : null
+      expiresAt: expiresAt ? expiresAt.toDate().toISOString() : null,
+      productivitySubscribedAt: productivitySubscribedAt ? productivitySubscribedAt.toDate().toISOString() : null,
+      productivitySubscriptionExpiresAt,
+      productivitySubscriptionDurationDays: productivitySubscribedAt ? PRODUCTIVITY_SUBSCRIPTION_PERIOD_DAYS : null,
+      productivitySubscriptionDaysRemainingAtBackup
     };
   });
 
-  const createdAt = new Date().toISOString();
+  const createdAt = new Date(backupTimeMs).toISOString();
   const payload: BackupPayload = { createdAt, count: buyers.length, buyers };
 
   // ":" isn't safe in an R2/S3 object key on every client, so the timestamp
@@ -69,7 +101,9 @@ const backupBuyers: Handler = async (event) => {
   };
 };
 
-// Runs once a day at exactly midnight UTC. Netlify's scheduler runs on UTC,
-// not the site owner's local timezone - worth keeping in mind since
-// "midnight" here may not be midnight wherever you are.
-export const handler = schedule('0 0 * * *', backupBuyers);
+// Runs once a day at 19:00 UTC = 3:00 AM Philippine Time (UTC+8) - matches
+// the owner's actual local schedule, same reasoning as
+// scheduled-expire-productivity.ts's 16:00 UTC (= midnight PHT) choice.
+// Netlify's scheduler runs on UTC, not the site owner's local timezone, so
+// this offset is what actually lands the run at 3 AM PHT.
+export const handler = schedule('0 19 * * *', backupBuyers);

@@ -8,6 +8,7 @@ import { InAppBrowserWarning } from './components/InAppBrowserWarning';
 import { ThemeProvider } from './components/ThemeProvider';
 import { THEME_STORAGE_KEY } from './lib/theme';
 import { registerServiceWorker } from './registerServiceWorker';
+import { runPeriodicCacheReset } from './lib/periodicCacheReset';
 import './index.css';
 
 // devOptions.enabled is false (vite.config.ts) - no service worker exists
@@ -15,6 +16,7 @@ import './index.css';
 // explicitly avoids any console noise from virtual:pwa-register in dev.
 if (import.meta.env.PROD) {
   registerServiceWorker();
+  runPeriodicCacheReset();
 }
 
 /**

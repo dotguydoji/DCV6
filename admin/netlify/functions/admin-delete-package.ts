@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './lib/adminAuth';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
+import { isValidFirestoreDocId } from './lib/validation';
 
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -32,8 +33,8 @@ export const handler: Handler = async (event) => {
     throw err;
   }
 
-  if (typeof id !== 'string' || !id) {
-    return jsonResponse(400, { error: 'Missing package id' });
+  if (!isValidFirestoreDocId(id)) {
+    return jsonResponse(400, { error: 'Missing or invalid package id' });
   }
 
   // Deletes the package shortcut only - it never granted anyone anything

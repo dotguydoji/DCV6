@@ -10,7 +10,22 @@ export const AI_COURSES_CATEGORY = 'Courses';
 const AI_TOOLS_CATEGORY = 'Claude Notes';
 const AI_AUTOMATION_CATEGORY = 'AI Tools & Automations';
 const PRODUCTIVITY_CATEGORY = 'ADVANCED STUDY';
+export const PRODUCTIVITY_APPS_CATEGORY = 'Productivity';
 const PREORDER_THUMBNAIL = '/favicon.svg';
+
+// The Productivity category itself is the one paid, subscribable product
+// (₱59/month) - every feature underneath it (Typing Speed, and
+// whatever's added later) is bundled in and gated on owning this single id,
+// never priced or granted individually. Granted through the same
+// buyers/{email}.productIds mechanism as every PDF, but never routed
+// through /view/<id> or listed as a PDF in My Library - see
+// isProductivityFeatureProductId below. The admin grant endpoint also
+// relies on this exact id to skip its "must have an uploaded file" check
+// and to record/refresh the monthly subscription start date.
+export const PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID = 'productivity-subscription';
+
+export const isProductivityFeatureProductId = (id: string): boolean =>
+  id === PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID;
 
 // Product thumbnails are served from a dedicated public R2 bucket
 // (dc-notes-images), not Netlify's own bandwidth - R2 downloads are free
@@ -144,7 +159,8 @@ export const CATEGORIES = [
   FRAMEWORKS_CATEGORY,
   AI_TOOLS_CATEGORY,
   AI_AUTOMATION_CATEGORY,
-  PRODUCTIVITY_CATEGORY
+  PRODUCTIVITY_CATEGORY,
+  PRODUCTIVITY_APPS_CATEGORY
 ];
 
 const PROGRAMMING_LANGUAGES: readonly ProgrammingLanguageMeta[] = [
@@ -756,6 +772,54 @@ export const PRODUCTS: Product[] = [
   desktopUrl: DESKTOP_URL,
   category: PRODUCTIVITY_CATEGORY,
   available: true
+},
+  // The subscription itself - never rendered as a normal card (see
+  // CategorySection.tsx's Productivity-specific rendering, which pulls this
+  // one out of the grid and uses it to build the pricing container instead).
+  // Still a real PRODUCTS entry so cart/checkout works exactly like every
+  // other product.
+  {
+  id: PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID,
+  title: 'Productivity Subscription',
+  description:
+    'One subscription unlocks every Productivity tool - starting with the Typing Speed, with more added over time at no extra cost.',
+  thumbnail: '/favicon.svg',
+  price: 59,
+  billingPeriod: 'month',
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: PRODUCTIVITY_APPS_CATEGORY,
+  available: true
+},
+  // Bundled features - displayed as individual cards under Productivity
+  // (no price/add-to-cart of their own, isBundledFeature: true), but access
+  // is always gated on owning PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID, never
+  // this id. Add future Productivity features here the same way.
+  {
+  id: 'productivity-typing-speed',
+  title: 'Typing Speed',
+  description:
+    'Track your words-per-minute and accuracy in real time, with multiple difficulty levels and a live on-screen keyboard.',
+  thumbnail: '/favicon.svg',
+  price: 0,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: PRODUCTIVITY_APPS_CATEGORY,
+  available: true,
+  isBundledFeature: true
+},
+  {
+  id: 'productivity-notebook',
+  title: 'Notebook',
+  description:
+    'A dedicated space for rich-text notes, saved locally on your device and available anytime as its own standalone page.',
+  thumbnail: '/favicon.svg',
+  price: 0,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: PRODUCTIVITY_APPS_CATEGORY,
+  available: true,
+  isBundledFeature: true
 },
   {
   id: 'ai-claude-notes-en',

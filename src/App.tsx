@@ -10,7 +10,8 @@ const ChatWidget = lazyWithReload(() => import('./components/ChatWidget').then((
 const PdfGatePage = lazyWithReload(() => import('./components/PdfGatePage').then((m) => ({ default: m.PdfGatePage })));
 const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').then((m) => ({ default: m.MyLibraryPage })));
 const NotebookPage = lazyWithReload(() => import('./components/NotebookPage').then((m) => ({ default: m.NotebookPage })));
-import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, getProductById } from "./constants";
+const TypingSpeedPage = lazyWithReload(() => import('./components/TypingSpeedPage').then((m) => ({ default: m.TypingSpeedPage })));
+import { PRODUCTS, CATEGORIES, SITE_CONTENT, AI_COURSES_CATEGORY, PRODUCTIVITY_APPS_CATEGORY, getProductById } from "./constants";
 import { Product } from './types';
 import { ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { useScrollReveal } from './lib/useScrollReveal';
@@ -33,6 +34,7 @@ const normalizePathname = (pathname: string) => {
 const VIEW_PATH_PATTERN = /^\/view\/(.+)$/;
 const MY_LIBRARY_PATH = '/my-library';
 const NOTEBOOK_PATH = '/notebook';
+const TYPING_SPEED_PATH = '/typing-speed';
 
 /**
  * Shown while a lazy-loaded route's code is still downloading. Without
@@ -74,6 +76,14 @@ const App: React.FC = () => {
     return normalizePathname(window.location.pathname) === NOTEBOOK_PATH;
   }, []);
 
+  const isTypingSpeedPath = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return normalizePathname(window.location.pathname) === TYPING_SPEED_PATH;
+  }, []);
+
   const isNotFound = useMemo(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -84,7 +94,12 @@ const App: React.FC = () => {
       return false;
     }
 
-    return !VIEW_PATH_PATTERN.test(pathname) && pathname !== MY_LIBRARY_PATH && pathname !== NOTEBOOK_PATH;
+    return (
+      !VIEW_PATH_PATTERN.test(pathname) &&
+      pathname !== MY_LIBRARY_PATH &&
+      pathname !== NOTEBOOK_PATH &&
+      pathname !== TYPING_SPEED_PATH
+    );
   }, []);
 
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
@@ -431,6 +446,14 @@ const App: React.FC = () => {
     );
   }
 
+  if (isTypingSpeedPath) {
+    return (
+      <Suspense fallback={<RouteLoadingScreen />}>
+        <TypingSpeedPage />
+      </Suspense>
+    );
+  }
+
   return (
     <div className="min-h-screen font-sans selection:bg-surface-inverted selection:text-text-inverted relative">
       <a
@@ -455,6 +478,7 @@ const App: React.FC = () => {
             >
               {CATEGORIES.map(cat => {
                 const isCourseTab = cat === AI_COURSES_CATEGORY;
+                const isProductivityTab = cat === PRODUCTIVITY_APPS_CATEGORY;
                 return (
                   <button
                     key={cat}
@@ -462,10 +486,14 @@ const App: React.FC = () => {
                     onClick={() => jumpToCategory(cat)}
                     className={`inline-flex items-center justify-center px-6 py-3 rounded-sm transition-all border font-poppins text-sm md:text-base ${
                       activeCategory === cat
-                        ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
-                        : isCourseTab
-                          ? 'bg-transparent border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
-                          : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+                        ? isProductivityTab
+                          ? 'bg-orange-500 border-orange-500 text-white'
+                          : 'bg-surface-inverted border-surface-inverted text-text-inverted'
+                        : isProductivityTab
+                          ? 'bg-transparent border-orange-500/40 text-orange-500 hover:border-orange-500 hover:text-orange-500'
+                          : isCourseTab
+                            ? 'bg-transparent border-border-strong text-text-secondary hover:text-text-primary hover:border-border-strong'
+                            : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
                     }`}
                   >
                     {cat}

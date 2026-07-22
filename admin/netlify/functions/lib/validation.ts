@@ -3,6 +3,18 @@ export const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 export const isValidProductId = (value: unknown): value is string =>
   typeof value === 'string' && PRODUCT_ID_PATTERN.test(value);
 
+// Real Firestore auto-generated ids (returned by `.doc()` with no argument,
+// what every package created through the UI actually gets) are alphanumeric
+// only, ~20 characters. This whitelist exists specifically to keep "/" (and
+// any other path-separator-like character) out of any client-supplied id
+// that's about to be passed to `.doc(id)` - Firestore treats "/" as a path
+// separator, so an unvalidated id could otherwise target an unintended
+// nested document instead of a real top-level doc in the collection.
+const FIRESTORE_DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,200}$/;
+
+export const isValidFirestoreDocId = (value: unknown): value is string =>
+  typeof value === 'string' && FIRESTORE_DOC_ID_PATTERN.test(value);
+
 // Every real YouTube video id is exactly 11 characters from this alphabet -
 // used both to validate an id typed in directly and to pull the id back out
 // of a pasted full URL (watch?v=, youtu.be/, embed/, shorts/).

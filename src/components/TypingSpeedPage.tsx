@@ -1,26 +1,25 @@
 import React, { useEffect } from 'react';
 import { ArrowLeft, Keyboard, Lock, RefreshCw } from 'lucide-react';
-import { NotebookWorkspace } from './notebook/NotebookWorkspace';
+import { TypingSpeedTest } from './TypingSpeedTest';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { ThemeToggle } from './ThemeToggle';
 import { setCachedIdToken } from '../lib/googleIdentity';
 import { useOwnsProduct } from '../lib/useOwnsProduct';
+import { useIsDesktopViewport } from '../lib/useIsDesktopViewport';
+import { DesktopOnlyNotice } from './DesktopOnlyNotice';
 import { PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID } from '../constants';
 
-const PAGE_TITLE = "Notebook | Doji's Library";
+const PAGE_TITLE = "Typing Speed | Doji's Library";
 
 /**
- * Dedicated standalone page for the Notebook feature (in addition to being
- * embeddable inside the PDF viewer - that embedded panel is a separate,
- * unrelated usage tied to reading a specific owned PDF and is untouched by
- * this). Gated on the Productivity subscription via useOwnsProduct, same as
- * every other Productivity-bundled feature (see TypingSpeedPage.tsx) - not a
- * real security boundary (notes themselves are just local device storage,
- * nothing sensitive is served here), just keeps the feature scoped to
- * actual subscribers.
+ * Standalone route for the Typing Speed - gated the same way the
+ * Notebook page gates on "owns at least one PDF" (NotebookPage.tsx), except
+ * here it's a specific Productivity grant (see useOwnsProduct) rather than
+ * any PDF at all, since this feature is its own paid subscription.
  */
-export const NotebookPage: React.FC = () => {
+export const TypingSpeedPage: React.FC = () => {
   const { status, recheck } = useOwnsProduct(PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID);
+  const isDesktop = useIsDesktopViewport();
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -36,8 +35,12 @@ export const NotebookPage: React.FC = () => {
   };
 
   if (status === 'owns-it') {
+    if (!isDesktop) {
+      return <DesktopOnlyNotice featureName="Typing Speed" />;
+    }
+
     return (
-      <div className="h-screen bg-surface flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-surface flex flex-col">
         <header className="h-16 border-b border-orange-500/20 flex items-center justify-between px-4 lg:px-6 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <a
@@ -47,12 +50,13 @@ export const NotebookPage: React.FC = () => {
             >
               <ArrowLeft size={18} strokeWidth={1.5} />
             </a>
-            <h1 className="text-base lg:text-lg font-medium text-text-primary truncate">Notebook</h1>
+            <Keyboard size={18} strokeWidth={1.5} className="text-orange-500 shrink-0" />
+            <h1 className="text-base lg:text-lg font-medium text-text-primary truncate">Typing Speed</h1>
           </div>
           <ThemeToggle />
         </header>
         <div className="flex-1 min-h-0">
-          <NotebookWorkspace variant="full" />
+          <TypingSpeedTest />
         </div>
       </div>
     );
@@ -68,7 +72,7 @@ export const NotebookPage: React.FC = () => {
         {status === 'owns-none' ? (
           <>
             <Lock size={44} className="mx-auto text-orange-500 mb-5" strokeWidth={1.5} />
-            <h1 className="f-heading text-text-primary mb-2">Notebook Locked</h1>
+            <h1 className="f-heading text-text-primary mb-2">Typing Speed Locked</h1>
             <p className="text-text-secondary f-body mb-8">
               This is part of the Productivity subscription (₱59/month). Subscribe from Doji's Library and it'll
               unlock here automatically.
@@ -80,7 +84,7 @@ export const NotebookPage: React.FC = () => {
           </>
         ) : status === 'error' ? (
           <>
-            <h1 className="f-heading text-text-primary mb-2">Notebook</h1>
+            <h1 className="f-heading text-text-primary mb-2">Typing Speed</h1>
             <p className="text-red-400 font-medium f-body mb-6">Something went wrong. Please try again.</p>
             <button
               type="button"
@@ -93,9 +97,9 @@ export const NotebookPage: React.FC = () => {
           </>
         ) : status === 'signed-out' ? (
           <>
-            <h1 className="f-heading text-text-primary mb-2">Notebook</h1>
+            <h1 className="f-heading text-text-primary mb-2">Typing Speed</h1>
             <p className="text-text-secondary f-body mb-8">
-              Sign in with the Gmail you used to subscribe to Productivity to unlock the Notebook.
+              Sign in with the Gmail you used to subscribe to Productivity to unlock the Typing Speed.
             </p>
             <div className="flex justify-center">
               <GoogleSignInButton onSignIn={handleSignIn} />

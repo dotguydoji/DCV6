@@ -83,7 +83,14 @@ export const ProductCard = memo(
               isSelected ? 'bg-black dark:bg-white' : 'bg-white dark:bg-black'
             }`}
           >
-            {isAvailable ? (
+            {product.isBundledFeature ? (
+              // Bundled into the category's own subscription (see
+              // CategorySection.tsx's pricing container) rather than
+              // purchased individually - no price, no add-to-cart button.
+              <div className="w-full flex items-center">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">Included</span>
+              </div>
+            ) : isAvailable ? (
               <>
                 {hideCommerce ? (
                   <div className="w-full flex items-center justify-start">
@@ -115,6 +122,9 @@ export const ProductCard = memo(
                         }`}
                       >
                         <span className="text-[0.5em]">P</span> {product.price.toLocaleString()}
+                        {product.billingPeriod === 'month' && (
+                          <span className="text-[0.4em] font-normal opacity-70">/mo</span>
+                        )}
                       </span>
                     </div>
                     <button
@@ -155,6 +165,7 @@ export const ProductCard = memo(
       prevProps.product.id === nextProps.product.id &&
       prevProps.product.available === nextProps.product.available &&
       prevProps.product.preOrder === nextProps.product.preOrder &&
+      prevProps.product.isBundledFeature === nextProps.product.isBundledFeature &&
       prevProps.isHighlighted === nextProps.isHighlighted &&
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.hideCommerce === nextProps.hideCommerce &&

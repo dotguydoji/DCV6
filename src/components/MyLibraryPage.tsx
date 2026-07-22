@@ -2,11 +2,13 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import {
   ArrowLeft,
   ArrowLeftCircle,
+  Bell,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   FileText,
   Heart,
+  Keyboard,
   LibraryBig,
   LogOut,
   MessageCircle,
@@ -20,8 +22,9 @@ import {
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { MessengerJoinDialog } from './MessengerJoinDialog';
 import { NoPdfAccessDialog } from './NoPdfAccessDialog';
+import { ProductivitySubscribeDialog } from './ProductivitySubscribeDialog';
 import { ThemeToggle } from './ThemeToggle';
-import { getProductById } from '../constants';
+import { getProductById, isProductivityFeatureProductId, PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID } from '../constants';
 import { Product } from '../types';
 import {
   clearCachedIdToken,
@@ -44,6 +47,16 @@ import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 import { useGlobalScrollTilt } from '../lib/useScrollTilt';
 
 const LIBRARY_CACHE_TTL_MS = 20 * 60 * 1000;
+// Shorter than the productIds cache above on purpose - this drives a
+// user-facing expiry warning, so it should go stale faster than the
+// ownership list itself does.
+const PRODUCTIVITY_SUBSCRIPTION_CACHE_TTL_MS = 5 * 60 * 1000;
+const PRODUCTIVITY_EXPIRY_WARNING_DAYS = 7;
+
+interface ProductivitySubscriptionInfo {
+  expiresAt: string;
+  daysRemaining: number;
+}
 
 type ViewState =
   | { status: 'restoring' }
@@ -169,6 +182,7 @@ export const MyLibraryPage: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMessengerDialogOpen, setIsMessengerDialogOpen] = useState(false);
   const [isNoPdfAccessDialogOpen, setIsNoPdfAccessDialogOpen] = useState(false);
+  const [isProductivityDialogOpen, setIsProductivityDialogOpen] = useState(false);
   const [noPdfAccessMessage, setNoPdfAccessMessage] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
@@ -178,6 +192,7 @@ export const MyLibraryPage: React.FC = () => {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [recentlyOpened, setRecentlyOpened] = useState<RecentlyOpenedEntry[]>([]);
   const [videoProductIds, setVideoProductIds] = useState<Set<string>>(new Set());
+  const [productivitySubscription, setProductivitySubscription] = useState<ProductivitySubscriptionInfo | null>(null);
   const [premiumVideosByProduct, setPremiumVideosByProduct] = useState<Record<string, PremiumVideoSummary[]>>({});
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
   const hasTriedCachedToken = useRef(false);
@@ -253,6 +268,7 @@ export const MyLibraryPage: React.FC = () => {
 
     const email = getIdTokenEmail(idToken);
     const cacheKey = email ? `my-library:${email}` : null;
+    const subscriptionCacheKey = email ? `my-library-productivity:${email}` : null;
     const cached = cacheKey ? getCachedResponse<string[]>(cacheKey) : null;
 
     if (cached) {
@@ -260,6 +276,9 @@ export const MyLibraryPage: React.FC = () => {
       setProfile(getIdTokenProfile(idToken));
       setFavoriteIds(new Set(getFavoriteIds()));
       setRecentlyOpened(getRecentlyOpened());
+      setProductivitySubscription(
+        subscriptionCacheKey ? getCachedResponse<ProductivitySubscriptionInfo | null>(subscriptionCacheKey) ?? null : null
+      );
       setState({ status: 'ready', productIds: cached });
       return;
     }
@@ -275,11 +294,14 @@ export const MyLibraryPage: React.FC = () => {
 
       if (response.ok && data.authorized) {
         const productIds: string[] = data.productIds ?? [];
+        const subscription: ProductivitySubscriptionInfo | null = data.productivitySubscription ?? null;
         if (cacheKey) setCachedResponse(cacheKey, productIds, LIBRARY_CACHE_TTL_MS);
+        if (subscriptionCacheKey) setCachedResponse(subscriptionCacheKey, subscription, PRODUCTIVITY_SUBSCRIPTION_CACHE_TTL_MS);
         setCachedIdToken(idToken);
         setProfile(getIdTokenProfile(idToken));
         setFavoriteIds(new Set(getFavoriteIds()));
         setRecentlyOpened(getRecentlyOpened());
+        setProductivitySubscription(subscription);
         setState({ status: 'ready', productIds });
       } else if (response.status === 429) {
         // Too many requests in a short window (our own rate limiter) -
@@ -326,10 +348,42 @@ export const MyLibraryPage: React.FC = () => {
     setFavoriteIds(new Set(toggleFavorite(productId)));
   }, []);
 
+  // Productivity feature grants (e.g. the Typing Speed) live in the
+  // same productIds array as PDFs but aren't backed by an uploaded file -
+  // excluded here so they never render as a "PDF" card or count toward the
+  // PDF total; they get their own dedicated nav button instead (below).
   const ownedProducts = useMemo(() => {
     if (state.status !== 'ready') return [];
-    return state.productIds.map((id) => getProductById(id));
+    return state.productIds
+      .filter((id) => !isProductivityFeatureProductId(id))
+      .map((id) => getProductById(id));
   }, [state]);
+
+  const ownsProductivity = state.status === 'ready' && state.productIds.includes(PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID);
+
+  // Shared gate for every Productivity-bundled feature's nav link (Typing
+  // Speed Test, Notebook, and anything added later) - My Library already has
+  // a fresh productIds list in state, so this just reuses `ownsProductivity`
+  // instead of re-fetching like useProductivityFeatureLink does for Navbar's
+  // standalone buttons.
+  const navigateToProductivityFeature = useCallback(
+    (path: string) => {
+      if (ownsProductivity) {
+        window.location.href = path;
+      } else {
+        setIsProductivityDialogOpen(true);
+      }
+    },
+    [ownsProductivity]
+  );
+
+  const handleTypingSpeedClick = useCallback(() => {
+    navigateToProductivityFeature('/typing-speed');
+  }, [navigateToProductivityFeature]);
+
+  const handleNotebookClick = useCallback(() => {
+    navigateToProductivityFeature('/notebook');
+  }, [navigateToProductivityFeature]);
 
   const ownedProductsById = useMemo(() => {
     const map = new Map<string, Product>();
@@ -594,18 +648,19 @@ export const MyLibraryPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (ownedProducts.length > 0) {
-                      window.location.href = '/notebook';
-                    } else {
-                      setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
-                      setIsNoPdfAccessDialogOpen(true);
-                    }
-                  }}
-                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-border-hairline text-sm laptop:text-base font-medium text-text-primary hover:border-border-strong transition-colors"
+                  onClick={handleNotebookClick}
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-orange-500/30 text-sm laptop:text-base font-medium text-text-primary hover:border-orange-500 transition-colors"
                 >
-                  <NotebookPen size={18} strokeWidth={1.5} />
+                  <NotebookPen size={18} strokeWidth={1.5} className="text-orange-500" />
                   Notebook
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTypingSpeedClick}
+                  className="flex items-center gap-2 shrink-0 px-4 laptop:px-5 py-2.5 laptop:py-3 rounded-sm border border-orange-500/30 text-sm laptop:text-base font-medium text-text-primary hover:border-orange-500 transition-colors"
+                >
+                  <Keyboard size={18} strokeWidth={1.5} className="text-orange-500" />
+                  Typing Speed
                 </button>
                 <button
                   type="button"
@@ -675,17 +730,23 @@ export const MyLibraryPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setIsMenuOpen(false);
-                  if (ownedProducts.length > 0) {
-                    window.location.href = '/notebook';
-                  } else {
-                    setNoPdfAccessMessage('You need to have at least one PDF access in order to use the Notebook.');
-                    setIsNoPdfAccessDialogOpen(true);
-                  }
+                  handleNotebookClick();
                 }}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-border-hairline text-text-primary font-medium hover:border-border-strong transition-colors"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-orange-500/30 text-text-primary font-medium hover:border-orange-500 transition-colors"
               >
-                <NotebookPen size={20} strokeWidth={1.5} />
+                <NotebookPen size={20} strokeWidth={1.5} className="text-orange-500" />
                 Notebook
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleTypingSpeedClick();
+                }}
+                className="flex items-center gap-3 px-4 py-3.5 rounded-sm border border-orange-500/30 text-text-primary font-medium hover:border-orange-500 transition-colors"
+              >
+                <Keyboard size={20} strokeWidth={1.5} className="text-orange-500" />
+                Typing Speed
               </button>
               <button
                 type="button"
@@ -715,8 +776,36 @@ export const MyLibraryPage: React.FC = () => {
             onClose={() => setIsNoPdfAccessDialogOpen(false)}
             message={noPdfAccessMessage}
           />
+          <ProductivitySubscribeDialog
+            open={isProductivityDialogOpen}
+            onClose={() => setIsProductivityDialogOpen(false)}
+          />
 
           <main className="max-w-[1600px] mx-auto w-full px-4 lg:px-6 py-10 lg:py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col">
+            {/* Notifications - currently just the Productivity subscription's
+                7-day expiry warning (see PRODUCTIVITY_EXPIRY_WARNING_DAYS
+                above and get-my-library.ts, which computes daysRemaining
+                server-side from the admin-recorded subscription start date).
+                My Library is the buyer's dashboard, so this is where any
+                future account-level notice belongs too. */}
+            {productivitySubscription && productivitySubscription.daysRemaining <= PRODUCTIVITY_EXPIRY_WARNING_DAYS && (
+              <div className="mb-6 flex items-start gap-3 rounded-sm border border-orange-500/40 bg-orange-500/10 px-4 py-3.5 sm:px-5 sm:py-4">
+                <Bell size={20} strokeWidth={1.5} className="text-orange-500 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-text-primary">
+                    {productivitySubscription.daysRemaining === 0
+                      ? 'Your Productivity subscription expires today.'
+                      : productivitySubscription.daysRemaining === 1
+                        ? 'Your Productivity subscription expires tomorrow.'
+                        : `Your Productivity subscription expires in ${productivitySubscription.daysRemaining} days.`}
+                  </p>
+                  <p className="text-xs sm:text-sm text-text-secondary mt-1">
+                    Renews on the same terms (₱59/month) - message us to renew and keep access to the Typing Speed
+                    Test and other Productivity tools without interruption.
+                  </p>
+                </div>
+              </div>
+            )}
             {ownedProducts.length === 0 ? (
               <div className="text-center py-20 lg:py-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center">
                 <FileText size={44} className="mx-auto text-text-secondary mb-4" strokeWidth={1.5} />

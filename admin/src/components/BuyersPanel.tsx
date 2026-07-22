@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Loader2, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import { AlertCircle, Loader2, Search, Sparkles, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { AdminFile, Buyer, Package, updateBuyer } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
 import { GrantSuccessDialog } from './GrantSuccessDialog';
@@ -8,6 +8,11 @@ import { Pagination } from './Pagination';
 import { PasswordGateDialog } from './PasswordGateDialog';
 import { ProductAutocomplete } from './ProductAutocomplete';
 import { getAdminCid } from '../lib/cid';
+import {
+  PRODUCTIVITY_SUBSCRIPTION_LABEL,
+  PRODUCTIVITY_SUBSCRIPTION_PRICE_LABEL,
+  PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID
+} from '../lib/productivityFeatures';
 
 const PAGE_SIZE = 50;
 
@@ -49,6 +54,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
 }) => {
   const [emailInput, setEmailInput] = useState('');
   const [productIdsInput, setProductIdsInput] = useState<string[]>([]);
+  const [grantProductivity, setGrantProductivity] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -64,15 +70,19 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
     async (event: React.FormEvent) => {
       event.preventDefault();
       const email = emailInput.trim().toLowerCase();
-      if (!email || productIdsInput.length === 0) {
-        setFormError('Enter an email and pick at least one product.');
+      const allProductIds = grantProductivity
+        ? [...productIdsInput, PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID]
+        : productIdsInput;
+      if (!email || allProductIds.length === 0) {
+        setFormError('Enter an email and pick at least one product, or check Productivity Subscription.');
         return;
       }
 
       // The product field allows free typing (for search), so a selection
-      // could in principle be stale - only ever grant products that match a
+      // could in principle be stale - only ever grant PDFs that match a
       // real uploaded file, otherwise a typo could silently grant access to
-      // a nonexistent product id.
+      // a nonexistent product id. The Productivity subscription id is fixed
+      // (never freely typed), so it needs no such check.
       const validFileIds = new Set(files.map((file) => file.productId));
       if (!productIdsInput.every((id) => validFileIds.has(id))) {
         setFormError('Select products from the list - one of those product ids was not found.');
@@ -83,9 +93,10 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
       setFormError('');
 
       try {
-        await updateBuyer(idToken, email, 'add', productIdsInput);
+        await updateBuyer(idToken, email, 'add', allProductIds);
         setEmailInput('');
         setProductIdsInput([]);
+        setGrantProductivity(false);
         onRefresh();
         setShowGrantSuccess(true);
       } catch (err) {
@@ -94,7 +105,7 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
         setIsSubmitting(false);
       }
     },
-    [emailInput, productIdsInput, idToken, onRefresh, files]
+    [emailInput, productIdsInput, grantProductivity, idToken, onRefresh, files]
   );
 
   const handleRemoveProduct = useCallback(
@@ -142,9 +153,14 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
     [files, alreadyGrantedIds]
   );
 
+  const alreadyHasProductivity = alreadyGrantedIds.has(PRODUCTIVITY_SUBSCRIPTION_PRODUCT_ID);
+
   // If the typed email already owns a product that's still sitting selected
   // from before the email was changed, drop it - it's no longer a valid
-  // choice to grant again.
+  // choice to grant again. The Productivity checkbox is deliberately left
+  // alone here even if already granted - re-checking and granting it again
+  // is exactly how a monthly renewal is recorded (see admin-update-buyer.ts,
+  // which always resets the subscription start date on every 'add').
   useEffect(() => {
     setProductIdsInput((current) => current.filter((id) => !alreadyGrantedIds.has(id)));
   }, [alreadyGrantedIds]);
@@ -225,6 +241,27 @@ export const BuyersPanel: React.FC<BuyersPanelProps> = ({
             {isSubmitting ? 'Granting…' : 'Grant'}
           </button>
         </div>
+
+        <label className="mt-4 flex items-start gap-3 rounded-lg border border-brand-border bg-brand-black px-3.5 py-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={grantProductivity}
+            onChange={(event) => setGrantProductivity(event.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-orange-500 shrink-0"
+          />
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5 font-bold text-sm">
+              <Sparkles size={14} className="text-orange-500 shrink-0" />
+              {PRODUCTIVITY_SUBSCRIPTION_LABEL} ({PRODUCTIVITY_SUBSCRIPTION_PRICE_LABEL})
+            </span>
+            <span className="block text-xs text-brand-muted mt-0.5">
+              Unlocks every Productivity feature (Typing Speed, and more added later) as one bundle - not
+              picked individually.
+              {alreadyHasProductivity && ' This buyer already has it - checking this again renews it for another month.'}
+            </span>
+          </span>
+        </label>
+
         {files.length === 0 && (
           <p className="text-sm text-brand-muted mt-3">
             No PDFs uploaded yet — upload one in the Files tab first, then it'll appear here.

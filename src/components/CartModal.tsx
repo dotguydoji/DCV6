@@ -16,7 +16,8 @@ const getLanguageLabel = (product: Product) => {
   return '';
 };
 
-const formatPrice = (value: number) => `P ${value.toLocaleString()}`;
+const formatPrice = (value: number, billingPeriod?: 'month') =>
+  `P ${value.toLocaleString()}${billingPeriod === 'month' ? '/mo' : ''}`;
 
 const PriceLabel: React.FC<{ value: number }> = ({ value }) => (
   <>
@@ -26,9 +27,10 @@ const PriceLabel: React.FC<{ value: number }> = ({ value }) => (
 
 const formatOrderLine = (product: Product) => {
   const languageLabel = getLanguageLabel(product);
+  const price = formatPrice(product.price, product.billingPeriod);
   return languageLabel
-    ? `${product.title} (${languageLabel}) - ${formatPrice(product.price)}`
-    : `${product.title} - ${formatPrice(product.price)}`;
+    ? `${product.title} (${languageLabel}) - ${price}`
+    : `${product.title} - ${price}`;
 };
 
 export const CartModal: React.FC<CartModalProps> = ({

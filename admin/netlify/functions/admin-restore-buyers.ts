@@ -104,7 +104,14 @@ export const handler: Handler = async (event) => {
       const docRef = db.collection('buyers').doc(buyer.email);
       batch.set(docRef, {
         productIds: buyer.productIds,
-        expiresAt: buyer.expiresAt ? Timestamp.fromDate(new Date(buyer.expiresAt)) : null
+        expiresAt: buyer.expiresAt ? Timestamp.fromDate(new Date(buyer.expiresAt)) : null,
+        // Only the raw source-of-truth field is restored - the derived
+        // productivitySubscriptionExpiresAt/DurationDays/DaysRemainingAtBackup
+        // fields in the backup are informational only (see backupTypes.ts)
+        // and are never written back to Firestore.
+        productivitySubscribedAt: buyer.productivitySubscribedAt
+          ? Timestamp.fromDate(new Date(buyer.productivitySubscribedAt))
+          : null
       });
     }
     await batch.commit();

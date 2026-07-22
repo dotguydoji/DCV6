@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import { AdminAuthError, getAdminFirestore, jsonResponse, verifyAdmin } from './lib/adminAuth';
 import { checkRateLimit, rateLimitedResponse } from './lib/rateLimit';
-import { isValidProductId } from './lib/validation';
+import { isValidFirestoreDocId, isValidProductId } from './lib/validation';
 import { productFileExists } from './lib/productExists';
 
 const MAX_NAME_LENGTH = 100;
@@ -58,6 +58,10 @@ export const handler: Handler = async (event) => {
   const missing = uniqueProductIds.filter((_, index) => !existsResults[index]);
   if (missing.length > 0) {
     return jsonResponse(400, { error: `No uploaded file matches: ${missing.join(', ')}` });
+  }
+
+  if (id !== undefined && id !== null && !isValidFirestoreDocId(id)) {
+    return jsonResponse(400, { error: 'Invalid package id' });
   }
 
   const db = getAdminFirestore();

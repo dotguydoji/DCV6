@@ -1,19 +1,26 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
-import { AdminFile } from '../lib/api';
+
+// Structural, not AdminFile-specific - also reused for the fixed
+// Productivity feature list (see productivityFeatures.ts), which has no
+// file/size/lastModified fields of its own.
+interface AutocompleteEntry {
+  productId: string;
+}
 
 interface ProductAutocompleteProps {
-  products: AdminFile[];
+  products: AutocompleteEntry[];
   value: string[];
   onChange: (productIds: string[]) => void;
   placeholder?: string;
 }
 
 /**
- * A searchable combobox over the existing `files` list, letting several
- * products be picked at once (each click toggles that product in/out of
- * `value`) - so one Grant action can hand a buyer multiple PDFs. Selections
- * show as removable chips above the search input.
+ * A searchable combobox over a list of { productId }-shaped entries, letting
+ * several be picked at once (each click toggles that product in/out of
+ * `value`) - so one Grant action can hand a buyer multiple PDFs or
+ * Productivity features. Selections show as removable chips above the
+ * search input.
  */
 export const ProductAutocomplete: React.FC<ProductAutocompleteProps> = ({
   products,

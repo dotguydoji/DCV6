@@ -35,10 +35,12 @@ export const handler: Handler = async (event) => {
   const buyers = snapshot.docs.map((doc) => {
     const data = doc.data();
     const expiresAt = data.expiresAt as Timestamp | undefined;
+    const productivitySubscribedAt = data.productivitySubscribedAt as Timestamp | undefined;
     return {
       email: doc.id,
       productIds: (data.productIds ?? []) as string[],
-      expiresAt: expiresAt ? expiresAt.toDate().toISOString() : null
+      expiresAt: expiresAt ? expiresAt.toDate().toISOString() : null,
+      productivitySubscribedAt: productivitySubscribedAt ? productivitySubscribedAt.toDate().toISOString() : null
     };
   });
 
