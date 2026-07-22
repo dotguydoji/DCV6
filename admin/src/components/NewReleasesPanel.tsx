@@ -62,6 +62,11 @@ const EditorCard: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [pendingThumbnail, setPendingThumbnail] = useState<File | null>(null);
+  // A data: URL, not URL.createObjectURL()'s blob: URL - "data:" is already
+  // allowed by both sites' img-src CSP (nothing to add there), whereas
+  // blob: isn't, and adding it just for a local file preview isn't worth
+  // widening the policy for.
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -72,6 +77,7 @@ const EditorCard: React.FC<{
   const resetForm = () => {
     setForm(EMPTY_FORM);
     setPendingThumbnail(null);
+    setPreviewDataUrl(null);
     setFormError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -86,6 +92,7 @@ const EditorCard: React.FC<{
       productId: kind === 'pdf' ? (entry as NewReleasePdf).productId : ''
     });
     setPendingThumbnail(null);
+    setPreviewDataUrl(null);
     setFormError('');
   };
 
@@ -93,6 +100,9 @@ const EditorCard: React.FC<{
     const file = event.target.files?.[0];
     if (!file) return;
     setPendingThumbnail(file);
+    const reader = new FileReader();
+    reader.onload = () => setPreviewDataUrl(typeof reader.result === 'string' ? reader.result : null);
+    reader.readAsDataURL(file);
   }, []);
 
   const handleSubmit = useCallback(
@@ -174,8 +184,8 @@ const EditorCard: React.FC<{
               <label className="block text-sm text-brand-muted mb-1.5">Thumbnail</label>
               <div className="flex items-center gap-3">
                 <div className="w-24 h-16 rounded-lg overflow-hidden bg-brand-black border border-brand-border flex items-center justify-center shrink-0">
-                  {pendingThumbnail ? (
-                    <img src={URL.createObjectURL(pendingThumbnail)} alt="" className="w-full h-full object-cover" />
+                  {previewDataUrl ? (
+                    <img src={previewDataUrl} alt="" className="w-full h-full object-cover" />
                   ) : form.thumbnailKey ? (
                     <img src={thumbnailUrl(form.thumbnailKey)} alt="" className="w-full h-full object-cover" />
                   ) : (
