@@ -450,5 +450,30 @@ export const CHATBOT_PRODUCT_INDEX: ChatbotProductIndexEntry[] = [
     "id": "ai-claude-notes-tl",
     "title": "Claude Notes",
     "category": "Claude Notes"
+  },
+  {
+    "id": "ai-claude-skills-beginner-en",
+    "title": "Claude Skills Beginner",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "ai-claude-skills-intermediate-en",
+    "title": "Claude Skills Intermediate",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "ai-claude-skills-advanced-en",
+    "title": "Claude Skills Advanced",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "ai-claude-skills-activities-en",
+    "title": "Claude Skills Activities",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "ai-claude-skills-package-en",
+    "title": "Claude Skill Package",
+    "category": "Claude Notes"
   }
 ];

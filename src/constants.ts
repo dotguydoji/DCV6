@@ -845,6 +845,75 @@ export const PRODUCTS: Product[] = [
   language: 'tl',
   available: true
 },
+// Claude Skills - English only for now (no Tagalog version yet), so these
+// are standalone entries rather than routed through AI_ITEMS/aiProducts,
+// which always generates both languages for every item - same pattern as
+// ai-claude-notes-en/tl above being hand-written instead of generated.
+{
+  id: 'ai-claude-skills-beginner-en',
+  title: 'Claude Skills Beginner',
+  description: 'Beginner-friendly Claude Skills notes covering the basics of setting up and creating your own custom skills.',
+  price: 120,
+  thumbnail: `${IMAGE_BASE_URL}/images/ai-tools/claude-skills-beg-en.webp`,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
+  available: true
+},
+{
+  id: 'ai-claude-skills-intermediate-en',
+  title: 'Claude Skills Intermediate',
+  description: 'Intermediate Claude Skills notes with deeper examples for building more capable, structured custom skills.',
+  price: 150,
+  thumbnail: `${IMAGE_BASE_URL}/images/ai-tools/claude-skills-int-en.webp`,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
+  available: true
+},
+{
+  id: 'ai-claude-skills-advanced-en',
+  title: 'Claude Skills Advanced',
+  description: 'Advanced Claude Skills notes for building complex, production-ready skills and extending what Claude can do.',
+  price: 180,
+  thumbnail: `${IMAGE_BASE_URL}/images/ai-tools/claude-skills-adv-en.webp`,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
+  available: true
+},
+{
+  id: 'ai-claude-skills-activities-en',
+  title: 'Claude Skills Activities',
+  description: 'Hands-on Claude Skills activities and exercises to practice building and testing your own skills.',
+  price: 99,
+  thumbnail: `${IMAGE_BASE_URL}/images/ai-tools/claude-skills-act-en.webp`,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
+  available: true
+},
+{
+  id: 'ai-claude-skills-package-en',
+  title: 'Claude Skill Package',
+  description: 'Bundled Claude Skills package covering Beginner, Intermediate, and Advanced notes, with Activities included for free.',
+  price: 450,
+  // No dedicated package thumbnail was provided alongside the 4 individual
+  // ones - guessed this filename to match their exact naming pattern
+  // (claude-skills-{beg,int,adv,act}-en.webp -> claude-skills-package-en.webp).
+  // Upload a thumbnail to this exact path in dc-notes-images/images/ai-tools/
+  // if that guess is wrong, or tell me the real filename to swap in.
+  thumbnail: `${IMAGE_BASE_URL}/images/ai-tools/claude-skills-package-en.webp`,
+  mobileUrl: MOBILE_URL,
+  desktopUrl: DESKTOP_URL,
+  category: AI_TOOLS_CATEGORY,
+  language: 'en',
+  available: true
+},
 ];
 
 const humanizeProductId = (id: string): string =>
