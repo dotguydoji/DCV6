@@ -128,7 +128,13 @@ export const CategorySection = React.forwardRef<HTMLElement, CategorySectionProp
     const filterProducts = (language: ProductLanguage | null, level: ProductLevel | null) =>
       products.filter((product) => {
         if (language && product.language !== language) return false;
-        if (hasLevelToggle && level && product.level !== level) return false;
+        // Only filters out a product whose level is SET and doesn't match -
+        // a product with no level at all (e.g. Claude Notes' older
+        // stand-alone topics like Claude MCP, which predate the tiered
+        // Beginner/Intermediate/Advanced Claude Skills structure) stays
+        // visible under every level tab instead of vanishing once the
+        // category gains its first leveled items.
+        if (hasLevelToggle && level && product.level && product.level !== level) return false;
         return true;
       });
 

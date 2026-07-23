@@ -367,6 +367,31 @@ export const CHATBOT_PRODUCT_INDEX: ChatbotProductIndexEntry[] = [
     "category": "Web Dev & Tools"
   },
   {
+    "id": "claude-skills-beg-en",
+    "title": "Claude Skills Beginner",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "claude-skills-int-en",
+    "title": "Claude Skills Intermediate",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "claude-skills-adv-en",
+    "title": "Claude Skills Advanced",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "claude-skills-act-en",
+    "title": "Claude Skills Activities",
+    "category": "Claude Notes"
+  },
+  {
+    "id": "claude-skills-package-en",
+    "title": "Claude Skill Package",
+    "category": "Claude Notes"
+  },
+  {
     "id": "ai-claude-mcp-en",
     "title": "Claude MCP",
     "category": "Claude Notes"
@@ -449,31 +474,6 @@ export const CHATBOT_PRODUCT_INDEX: ChatbotProductIndexEntry[] = [
   {
     "id": "ai-claude-notes-tl",
     "title": "Claude Notes",
-    "category": "Claude Notes"
-  },
-  {
-    "id": "ai-claude-skills-beginner-en",
-    "title": "Claude Skills Beginner",
-    "category": "Claude Notes"
-  },
-  {
-    "id": "ai-claude-skills-intermediate-en",
-    "title": "Claude Skills Intermediate",
-    "category": "Claude Notes"
-  },
-  {
-    "id": "ai-claude-skills-advanced-en",
-    "title": "Claude Skills Advanced",
-    "category": "Claude Notes"
-  },
-  {
-    "id": "ai-claude-skills-activities-en",
-    "title": "Claude Skills Activities",
-    "category": "Claude Notes"
-  },
-  {
-    "id": "ai-claude-skills-package-en",
-    "title": "Claude Skill Package",
     "category": "Claude Notes"
   }
 ];

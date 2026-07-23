@@ -510,6 +510,19 @@
   box-shadow: var(--shadow-card);
 }
 
+/*
+ * For large, always-visible section containers (My Library's All PDFs/New
+ * Videos Uploaded/New PDF Releases/Members Only Tutorials boxes) rather
+ * than small interactive cards - those use .card-elevated's resting shadow
+ * (subtle on purpose) and only escalate to this stronger one on :hover via
+ * .card-tilt. A big static container sitting on the page's own dark
+ * ambient background needs that stronger shadow permanently to actually
+ * read as "lifted off the page" instead of disappearing into it.
+ */
+.section-elevated {
+  box-shadow: var(--shadow-card-hover);
+}
+
 .hr-line {
   height: 1px;
   background: var(--border-hairline);

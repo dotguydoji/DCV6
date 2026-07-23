@@ -484,10 +484,11 @@ export const MyLibraryPage: React.FC = () => {
   );
 
   // The single "Continue Reading" hero replaced the separate "Recently
-  // Opened" shelf below it - showing the 3 most recent items here (newest
+  // Opened" shelf below it - showing the 2 most recent items here (newest
   // first, same ordering recentlyOpenedProducts already provides) covers
-  // what that shelf used to do without a second, redundant section.
-  const topRecentProducts = recentlyOpenedProducts.slice(0, 3);
+  // what that shelf used to do without a second, redundant section. Capped
+  // at 2 (not 3) so the pair splits the All PDFs column's width evenly.
+  const topRecentProducts = recentlyOpenedProducts.slice(0, 2);
 
   // Only fetches titles for products the buyer both owns AND that actually
   // have videos - never the full catalog. Each fetchProductVideos call
@@ -639,6 +640,102 @@ export const MyLibraryPage: React.FC = () => {
     cardPositionsRef.current = nextPositions;
   }, [visibleProducts]);
 
+  // Rendered in two different DOM positions depending on breakpoint (mobile:
+  // between Recently Opened and All PDFs; desktop: stacked in the right
+  // column above Members Only Tutorials) - computed once here as plain JSX
+  // values rather than duplicated markup, since which one is actually
+  // visible is controlled purely by the lg:hidden/hidden lg:contents
+  // wrappers around each usage below, not by rendering different content.
+  const newVideosSection = newVideos.length > 0 && (
+    <section className="shrink-0 lg:flex-1 lg:min-h-0 flex flex-col bg-surface border border-border-hairline rounded-sm overflow-hidden section-elevated">
+      <div className="p-4 pb-3 shrink-0">
+        <h2 className="f-small text-text-secondary">New Videos Uploaded</h2>
+      </div>
+      <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto px-4 pb-4">
+        <div className="flex flex-col gap-2.5">
+          {newVideos.map((video) => (
+            <div
+              key={video.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setWatchConfirmVideo(video)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setWatchConfirmVideo(video);
+                }
+              }}
+              className="flex items-stretch gap-0 bg-surface-secondary border border-border-hairline rounded-sm overflow-hidden cursor-pointer hover:border-border-strong transition-colors"
+            >
+              <div className="w-1/2 aspect-video shrink-0 bg-surface overflow-hidden">
+                <img
+                  src={video.thumbnailUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="w-1/2 min-w-0 flex flex-col justify-start gap-1.5 p-3">
+                <p className="text-base font-medium text-text-primary line-clamp-2">{video.title}</p>
+                <p className="text-xs text-text-secondary line-clamp-2">{video.description}</p>
+                <a
+                  href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.youtubeId)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                >
+                  Click Here to Watch <ChevronRight size={14} strokeWidth={2} />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  const newPdfReleasesSection = newPdfReleases.length > 0 && (
+    <section className="shrink-0 lg:flex-1 lg:min-h-0 bg-surface border border-border-hairline rounded-sm overflow-hidden section-elevated flex flex-col max-h-[320px] lg:max-h-none">
+      <div className="p-4 pb-3 shrink-0">
+        <h2 className="f-small text-text-secondary">New PDF Releases</h2>
+      </div>
+      <div className="min-h-0 overflow-y-auto lg:flex-1 px-4 pb-4">
+        <div className="flex flex-col gap-2.5">
+          {newPdfReleases.map((release) => (
+            <div
+              key={release.id}
+              className="flex items-stretch gap-0 bg-orange-500/10 border border-border-hairline rounded-sm overflow-hidden"
+            >
+              <div className="w-1/2 aspect-video shrink-0 bg-surface overflow-hidden">
+                <img
+                  src={release.thumbnailUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div className="w-1/2 min-w-0 flex flex-col justify-start gap-1.5 p-3">
+                <p className="text-base font-medium text-text-primary line-clamp-2">{release.title}</p>
+                <p className="text-xs text-text-secondary line-clamp-2">{release.description}</p>
+                <a
+                  href={`/?product=${encodeURIComponent(release.productId)}`}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-orange-500 hover:text-orange-400 transition-colors"
+                >
+                  Click Here to View <ChevronRight size={14} strokeWidth={2} />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
   if (state.status === 'ready') {
     return (
       <div className="min-h-screen font-sans selection:bg-surface-inverted selection:text-text-inverted relative">
@@ -647,15 +744,14 @@ export const MyLibraryPage: React.FC = () => {
           <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] ambient-glow opacity-30 rotate-180"></div>
         </div>
 
-        {/* lg+ turns this into a fixed-viewport-height shell (header/main
-            split the full 100vh between them, nothing here causes the page
-            itself to scroll) so the two-column section below can flex to
-            fill whatever's actually left, rather than sitting at a fixed px
-            height that leaves a growing gap of empty space on taller
-            screens. Below `lg` this stays plain block flow (unchanged) -
-            the two columns stack full-width there anyway, where a rigid
-            "fill the screen" shell would fight normal mobile scrolling
-            instead of helping. */}
+        {/* lg+ locks this shell to exactly 100vh (header/main split it
+            between them, nothing here causes the page itself to scroll) so
+            All PDFs / the right column's three equal sections can each fill
+            their own share of that fixed budget with their own internal
+            scrollbar, rather than the page growing taller than one screen.
+            Below `lg` this stays plain block flow - the columns stack
+            full-width there anyway, where a rigid "fill the screen" shell
+            would fight normal mobile scrolling instead of helping. */}
         <div className="relative z-10 lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
           <header className="sticky top-0 z-[60] bg-surface border-b border-border-hairline h-20 laptop:h-22 xl:h-24 transition-all shrink-0">
             <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-full flex items-center justify-between gap-4">
@@ -959,88 +1055,6 @@ export const MyLibraryPage: React.FC = () => {
               </div>
             )}
 
-            {newVideos.length > 0 && (
-              <section className="mb-6">
-                <h2 className="f-small text-text-secondary mb-3">New Videos Uploaded</h2>
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-                  {newVideos.map((video) => (
-                    <div
-                      key={video.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setWatchConfirmVideo(video)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          setWatchConfirmVideo(video);
-                        }
-                      }}
-                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col cursor-pointer"
-                    >
-                      <div className="relative aspect-video w-full overflow-hidden bg-surface-secondary">
-                        <img
-                          src={video.thumbnailUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="p-3.5 flex flex-col flex-grow">
-                        <p className="text-sm font-medium text-text-primary line-clamp-1">{video.title}</p>
-                        <p className="text-xs text-text-secondary mt-1 line-clamp-2 flex-grow">{video.description}</p>
-                        <a
-                          href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.youtubeId)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-400 transition-colors"
-                        >
-                          Click Here to Watch <ChevronRight size={14} strokeWidth={2} />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {newPdfReleases.length > 0 && (
-              <section className="mb-6">
-                <h2 className="f-small text-text-secondary mb-3">New PDF Releases</h2>
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-                  {newPdfReleases.map((release) => (
-                    <div
-                      key={release.id}
-                      className="flex-shrink-0 w-[260px] sm:w-[300px] bg-surface border border-border-hairline rounded-sm overflow-hidden card-elevated card-tilt flex flex-col"
-                    >
-                      <div className="relative aspect-video w-full overflow-hidden bg-surface-secondary">
-                        <img
-                          src={release.thumbnailUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="p-3.5 flex flex-col flex-grow">
-                        <p className="text-sm font-medium text-text-primary line-clamp-1">{release.title}</p>
-                        <p className="text-xs text-text-secondary mt-1 line-clamp-2 flex-grow">{release.description}</p>
-                        <a
-                          href={`/?product=${encodeURIComponent(release.productId)}`}
-                          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-400 transition-colors"
-                        >
-                          Click Here to View <ChevronRight size={14} strokeWidth={2} />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
             {ownedProducts.length === 0 ? (
               <div className="text-center py-20 lg:py-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center">
                 <FileText size={44} className="mx-auto text-text-secondary mb-4" strokeWidth={1.5} />
@@ -1054,88 +1068,97 @@ export const MyLibraryPage: React.FC = () => {
               </div>
             ) : (
               <>
-                {topRecentProducts.length > 0 && (
-                  <section className="mb-4 lg:mb-5">
-                    <h2 className="f-small text-text-secondary mb-3">Recently Opened</h2>
-                    {/* Fixed 3-column row (never a taller stacked list) -
-                        topRecentProducts is already ordered most-recent-first
-                        and capped at 3, so it drops directly into 3 equal
-                        columns with the most recent on the left. Keeping this
-                        section short is deliberate: it leaves enough
-                        viewport height for All PDFs / Members Only Tutorials
-                        below to still show a card or two without scrolling. */}
-                    <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
-                      {topRecentProducts.map((product) => (
-                        <a
-                          key={product.id}
-                          href={`/view/${encodeURIComponent(product.id)}`}
-                          className="group flex items-center gap-2 sm:gap-3 bg-surface border border-border-hairline rounded-sm p-2 sm:p-2.5 hover:border-border-strong transition-colors card-elevated min-w-0"
-                        >
-                          <div className="w-11 h-8 sm:w-16 sm:h-11 rounded-sm overflow-hidden shrink-0 bg-surface-secondary">
-                            <img
-                              src={product.thumbnail}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              decoding="async"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs sm:text-sm text-text-primary truncate">{product.title}</p>
-                            <p className="hidden sm:block text-xs text-text-secondary truncate">
-                              {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
-                            </p>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </section>
+                {/* Mobile only - New Videos Uploaded / New PDF Releases sit
+                    between Recently Opened and All PDFs here; on lg+ they
+                    move into the right column instead (see hidden lg:contents
+                    wrapper below), so this wrapper is lg:hidden. */}
+                {(newVideosSection || newPdfReleasesSection) && (
+                  <div className="lg:hidden flex flex-col gap-4 mb-4">
+                    {newVideosSection}
+                    {newPdfReleasesSection}
+                  </div>
                 )}
 
-                {/* All PDFs (left) + Members Only Tutorials (right) - equal
-                    fixed height, each managing its own vertical scroll
-                    independently, so neither column's list length affects the
-                    other's height or the page's overall height. */}
+                {/* All PDFs (left, Recently Opened folded into its top) +
+                    right column (New Videos Uploaded / New PDF Releases /
+                    Members Only Tutorials, each an equal 1/3 share of the
+                    column's height) - lg+ is locked to exactly 100vh (see
+                    the shell above), so both columns stretch to match that
+                    fixed row height (items-stretch) and each section
+                    manages its own internal scroll instead of the page
+                    growing taller than one screen. */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch lg:flex-1 lg:min-h-0">
-                  <section className="flex flex-col h-[460px] sm:h-[560px] lg:h-full bg-surface border border-border-hairline rounded-sm overflow-hidden">
+                  <section className="flex flex-col lg:h-full bg-orange-500/10 border border-border-hairline rounded-sm overflow-hidden section-elevated">
+                    {topRecentProducts.length > 0 && (
+                      <div className="p-4 lg:p-5 pb-0 shrink-0">
+                        <h2 className="f-small text-text-secondary mb-3">Recently Opened</h2>
+                        {/* Capped at 2 (topRecentProducts) so the pair splits
+                            this column's width evenly, 50/50. */}
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                          {topRecentProducts.map((product) => (
+                            <a
+                              key={product.id}
+                              href={`/view/${encodeURIComponent(product.id)}`}
+                              className="group flex items-center gap-2 sm:gap-3 bg-surface border border-border-hairline rounded-sm p-2 sm:p-2.5 hover:border-border-strong transition-colors card-elevated min-w-0"
+                            >
+                              <div className="w-11 h-8 sm:w-16 sm:h-11 rounded-sm overflow-hidden shrink-0 bg-surface-secondary">
+                                <img
+                                  src={product.thumbnail}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs sm:text-sm text-text-primary truncate">{product.title}</p>
+                                <p className="hidden sm:block text-xs text-text-secondary truncate">
+                                  {formatRelativeDate(openedAtById.get(product.id) ?? Date.now())}
+                                </p>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="p-4 lg:p-5 pb-0 shrink-0">
                       <h2 className="f-small text-text-secondary mb-4">All PDFs</h2>
 
                       <div className="flex flex-col gap-3">
-                        <div className="relative">
-                          <Search
-                            size={18}
-                            strokeWidth={1.5}
-                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-                          />
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                            placeholder="Search your library..."
-                            aria-label="Search your library"
-                            className="w-full bg-surface border border-border-hairline rounded-sm pl-10 pr-9 py-2.5 f-body text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors"
-                          />
-                          {searchQuery && (
-                            <button
-                              type="button"
-                              onClick={() => setSearchQuery('')}
-                              aria-label="Clear search"
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                            >
-                              <X size={17} strokeWidth={1.5} />
-                            </button>
-                          )}
-                        </div>
-
                         <div className="flex gap-2 sm:gap-3">
-                          <div className="relative flex-1 sm:flex-none">
+                          <div className="relative flex-1">
+                            <Search
+                              size={18}
+                              strokeWidth={1.5}
+                              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+                            />
+                            <input
+                              type="text"
+                              value={searchQuery}
+                              onChange={(event) => setSearchQuery(event.target.value)}
+                              placeholder="Search your library..."
+                              aria-label="Search your library"
+                              className="w-full bg-surface border border-border-hairline rounded-sm pl-10 pr-9 py-2.5 f-body text-text-primary placeholder:text-text-secondary outline-none focus:border-border-strong transition-colors"
+                            />
+                            {searchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                aria-label="Clear search"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                              >
+                                <X size={17} strokeWidth={1.5} />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="relative flex-1">
                             <select
                               value={sortBy}
                               onChange={(event) => setSortBy(event.target.value as SortOption)}
                               aria-label="Sort by"
-                              className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                              className="appearance-none w-full min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
                             >
                               <option value="recent">Recents</option>
                               <option value="title-asc">Title A–Z</option>
@@ -1145,12 +1168,12 @@ export const MyLibraryPage: React.FC = () => {
                           </div>
 
                           {languages.length > 1 && (
-                            <div className="relative flex-1 sm:flex-none">
+                            <div className="relative flex-1">
                               <select
                                 value={languageFilter}
                                 onChange={(event) => setLanguageFilter(event.target.value)}
                                 aria-label="Filter by language"
-                                className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                                className="appearance-none w-full min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
                               >
                                 <option value={ALL_LANGUAGES}>Languages</option>
                                 {languages.map((language) => (
@@ -1164,12 +1187,12 @@ export const MyLibraryPage: React.FC = () => {
                           )}
 
                           {levels.length > 1 && (
-                            <div className="relative flex-1 sm:flex-none">
+                            <div className="relative flex-1">
                               <select
                                 value={levelFilter}
                                 onChange={(event) => setLevelFilter(event.target.value)}
                                 aria-label="Filter by level"
-                                className="appearance-none w-full sm:w-auto min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
+                                className="appearance-none w-full min-w-0 bg-surface border border-border-hairline rounded-sm pl-4 pr-9 py-2.5 f-body text-text-primary outline-none focus:border-border-strong transition-colors"
                               >
                                 <option value={ALL_LEVELS}>Levels</option>
                                 {levels.map((level) => (
@@ -1197,7 +1220,7 @@ export const MyLibraryPage: React.FC = () => {
                                   className={`shrink-0 px-4 py-2.5 rounded-sm f-small transition-all border ${
                                     activeCategory === category
                                       ? 'bg-surface-inverted border-surface-inverted text-text-inverted'
-                                      : 'bg-transparent border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+                                      : 'bg-surface border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
                                   }`}
                                 >
                                   {category}
@@ -1252,7 +1275,18 @@ export const MyLibraryPage: React.FC = () => {
                     </div>
                   </section>
 
-                  <section className="flex flex-col h-[460px] sm:h-[560px] lg:h-full bg-surface border border-border-hairline rounded-sm overflow-hidden">
+                  <div className="flex flex-col gap-4 lg:gap-6 lg:h-full lg:min-h-0">
+                    {/* Desktop only - same two sections rendered above for
+                        mobile; lg:contents makes this wrapper transparent to
+                        the flex-col layout so New Videos Uploaded/New PDF
+                        Releases still stack directly as this column's first
+                        two items instead of being nested one level deeper. */}
+                    <div className="hidden lg:contents">
+                      {newVideosSection}
+                      {newPdfReleasesSection}
+                    </div>
+
+                    <section className="flex flex-col h-[460px] sm:h-[560px] lg:h-auto lg:flex-1 lg:min-h-0 bg-surface border border-border-hairline rounded-sm overflow-hidden section-elevated">
                     <div className="p-4 lg:p-5 pb-4 shrink-0">
                       <h2 className="f-small text-text-secondary mb-4">Members Only Tutorials</h2>
                       <div className="relative">
@@ -1296,7 +1330,7 @@ export const MyLibraryPage: React.FC = () => {
                           {ownedProducts
                             .filter((product) => (filteredTutorialsByProduct[product.id]?.length ?? 0) > 0)
                             .map((product) => (
-                              <div key={product.id} className="bg-surface-secondary border border-border-hairline rounded-sm p-4">
+                              <div key={product.id} className="bg-orange-500/10 border border-border-hairline rounded-sm p-4">
                                 <a
                                   href={`/view/${encodeURIComponent(product.id)}`}
                                   className="text-sm font-medium text-text-primary hover:underline underline-offset-2"
@@ -1322,6 +1356,7 @@ export const MyLibraryPage: React.FC = () => {
                       )}
                     </div>
                   </section>
+                  </div>
                 </div>
               </>
             )}
