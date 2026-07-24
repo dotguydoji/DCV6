@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, Check, Clock, ExternalLink, Loader2, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, Check, Clock, Maximize2, Loader2, RefreshCw, X } from 'lucide-react';
 import { Order, listOrders, reviewOrder } from '../lib/api';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -24,6 +24,16 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({ idToken }) => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectMessage, setRejectMessage] = useState('');
   const [approveTarget, setApproveTarget] = useState<Order | null>(null);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewingImageUrl) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setViewingImageUrl(null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [viewingImageUrl]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -113,9 +123,13 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({ idToken }) => {
               <div className="flex flex-col sm:flex-row gap-4 p-4">
                 <div className="w-full sm:w-40 h-32 shrink-0 rounded-lg overflow-hidden bg-brand-black border border-brand-border">
                   {order.screenshotUrl ? (
-                    <a href={order.screenshotUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                    <button
+                      type="button"
+                      onClick={() => setViewingImageUrl(order.screenshotUrl)}
+                      className="block w-full h-full"
+                    >
                       <img src={order.screenshotUrl} alt="Payment screenshot" className="w-full h-full object-contain" />
-                    </a>
+                    </button>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-brand-muted text-xs">
                       Unavailable
@@ -135,14 +149,13 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({ idToken }) => {
                   </div>
 
                   {order.screenshotUrl && (
-                    <a
-                      href={order.screenshotUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setViewingImageUrl(order.screenshotUrl)}
                       className="inline-flex items-center gap-1 text-xs text-brand-yellow hover:underline mb-3"
                     >
-                      <ExternalLink size={12} /> View full size
-                    </a>
+                      <Maximize2 size={12} /> View full size
+                    </button>
                   )}
 
                   {rejectingId === order.id ? (
@@ -202,6 +215,29 @@ export const OrdersPanel: React.FC<OrdersPanelProps> = ({ idToken }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {viewingImageUrl && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+          role="presentation"
+          onClick={() => setViewingImageUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setViewingImageUrl(null)}
+            aria-label="Close"
+            className="absolute top-4 right-4 p-2 rounded-full bg-brand-surface/80 border border-brand-border text-white hover:bg-brand-surface transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={viewingImageUrl}
+            alt="Payment screenshot, full size"
+            onClick={(event) => event.stopPropagation()}
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          />
         </div>
       )}
 

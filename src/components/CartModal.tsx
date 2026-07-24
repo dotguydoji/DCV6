@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowLeft, Check, Copy, ImagePlus, Loader2, MessageCircle, ShoppingCart, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Copy, ImagePlus, Loader2, ShoppingCart, X } from 'lucide-react';
 import { Product } from '../types';
-import { DESKTOP_URL } from '../constants';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { getCachedIdToken, setCachedIdToken } from '../lib/googleIdentity';
 import { submitPaymentScreenshot } from '../lib/orders';
@@ -178,7 +177,7 @@ export const CartModal: React.FC<CartModalProps> = ({
               {step === 'payment' ? 'Checkout' : 'Your Cart'}
             </h2>
             {step === 'cart' && selectedProducts.length > 0 && (
-              <span className="bg-surface-inverted/10 text-text-primary px-2.5 py-1 rounded-sm text-base font-black shrink-0">
+              <span className="bg-surface-inverted/10 text-text-primary px-2.5 py-1 rounded-sm text-base font-medium shrink-0">
                 {selectedProducts.length} ITEMS
               </span>
             )}
@@ -198,7 +197,7 @@ export const CartModal: React.FC<CartModalProps> = ({
           ) : step === 'cart' ? (
             <>
               <div className="space-y-4">
-                <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">Selected Items</h3>
+                <h3 className="text-lg font-medium text-text-primary uppercase tracking-wider">Selected Items</h3>
                 <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                   {selectedProducts.map((product) => (
                     <div
@@ -215,11 +214,11 @@ export const CartModal: React.FC<CartModalProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-text-primary text-lg font-medium truncate">{product.title}</p>
-                        <p className="text-text-secondary text-sm font-black uppercase tracking-[0.16em] truncate">
+                        <p className="text-text-secondary text-sm font-medium uppercase tracking-[0.16em] truncate">
                           {product.category}
                           {getLanguageLabel(product) ? ` | ${getLanguageLabel(product)}` : ''}
                         </p>
-                        <p className="text-text-primary text-lg font-bold"><PriceLabel value={product.price} /></p>
+                        <p className="text-text-primary text-lg font-medium"><PriceLabel value={product.price} /></p>
                       </div>
                       <button
                         onClick={(event) => {
@@ -237,15 +236,15 @@ export const CartModal: React.FC<CartModalProps> = ({
                 </div>
 
                 <div className="flex justify-between items-center pt-5 border-t border-border-hairline">
-                  <span className="text-text-secondary text-xl font-bold tracking-wider">TOTAL</span>
-                  <span className="text-2xl font-bold text-text-primary"><PriceLabel value={total} /></span>
+                  <span className="text-text-secondary text-xl font-medium tracking-wider">TOTAL</span>
+                  <span className="text-2xl font-medium text-text-primary"><PriceLabel value={total} /></span>
                 </div>
               </div>
 
               <button
                 onClick={() => setStep('payment')}
                 type="button"
-                className="w-full mt-7 py-5 rounded-sm font-bold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all touch-manipulation active:scale-[0.98]"
+                className="w-full mt-7 py-5 rounded-sm font-semibold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all touch-manipulation active:scale-[0.98]"
                 style={{ minHeight: '56px' }}
               >
                 Checkout
@@ -285,7 +284,7 @@ export const CartModal: React.FC<CartModalProps> = ({
               </div>
 
               <div className="bg-surface border border-border-hairline rounded-sm p-5">
-                <h4 className="text-xl font-bold text-text-primary uppercase tracking-wider mb-3">
+                <h4 className="text-xl font-medium text-text-primary uppercase tracking-wider mb-3">
                   Upload Payment Screenshot
                 </h4>
 
@@ -325,7 +324,7 @@ export const CartModal: React.FC<CartModalProps> = ({
                       onClick={handleSubmitScreenshot}
                       disabled={!pendingFile || submitState === 'uploading'}
                       type="button"
-                      className="w-full flex items-center justify-center gap-2 py-4 rounded-sm font-bold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 py-4 rounded-sm font-semibold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {submitState === 'uploading' ? (
                         <>
@@ -338,15 +337,6 @@ export const CartModal: React.FC<CartModalProps> = ({
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => window.open(DESKTOP_URL, '_blank', 'noopener,noreferrer')}
-                type="button"
-                className="w-full flex items-center justify-center gap-2 mt-4 py-3.5 rounded-sm font-semibold text-text-secondary border border-border-hairline hover:text-text-primary hover:border-border-strong transition-colors"
-              >
-                <MessageCircle size={18} strokeWidth={1.5} />
-                Talk to an Admin
-              </button>
             </>
           )}
         </div>

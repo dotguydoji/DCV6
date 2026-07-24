@@ -82,7 +82,7 @@ export const OrderSubmittedModal: React.FC<OrderSubmittedModalProps> = ({ open, 
           <X size={22} className="text-text-secondary hover:text-text-primary" />
         </button>
 
-        <h2 id="order-submitted-title" className="text-2xl font-bold text-text-primary mb-2 pr-8">
+        <h2 id="order-submitted-title" className="text-2xl font-medium text-text-primary mb-2 pr-8">
           Screenshot of Payment Submitted
         </h2>
         <p className="text-text-secondary text-base mb-5">
@@ -96,7 +96,7 @@ export const OrderSubmittedModal: React.FC<OrderSubmittedModalProps> = ({ open, 
         <button
           onClick={copyMessage}
           type="button"
-          className={`w-full flex items-center justify-center gap-2 py-4 rounded-sm font-bold text-lg transition-all touch-manipulation active:scale-[0.98] mb-4 ${
+          className={`w-full flex items-center justify-center gap-2 py-4 rounded-sm font-semibold text-lg transition-all touch-manipulation active:scale-[0.98] mb-4 ${
             copied
               ? 'bg-green-600 text-white cursor-default'
               : 'bg-surface-inverted text-text-inverted hover:opacity-90 cursor-pointer'
@@ -109,7 +109,7 @@ export const OrderSubmittedModal: React.FC<OrderSubmittedModalProps> = ({ open, 
           <button
             onClick={() => handleNotify('mobile')}
             type="button"
-            className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-bold"
+            className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-semibold"
           >
             <Smartphone size={18} strokeWidth={1.5} className="hidden sm:block" />
             <span>Notify through Mobile</span>
@@ -117,7 +117,7 @@ export const OrderSubmittedModal: React.FC<OrderSubmittedModalProps> = ({ open, 
           <button
             onClick={() => handleNotify('desktop')}
             type="button"
-            className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-bold"
+            className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-semibold"
           >
             <Monitor size={18} strokeWidth={1.5} className="hidden sm:block" />
             <span>Notify through Desktop</span>
