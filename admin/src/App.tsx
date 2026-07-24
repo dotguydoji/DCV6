@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, ShieldCheck, Sparkles, Star, Users, Youtube } from 'lucide-react';
+import { AlertTriangle, Archive, Box, Clock, FileText, Loader2, LogOut, Receipt, ShieldCheck, Sparkles, Star, Users, Youtube } from 'lucide-react';
 import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { BuyersPanel } from './components/BuyersPanel';
 import { FilesPanel } from './components/FilesPanel';
 import { InactiveAccountsPanel } from './components/InactiveAccountsPanel';
+import { OrdersPanel } from './components/OrdersPanel';
 import { PackagesPanel } from './components/PackagesPanel';
 import { ProductVideosPanel } from './components/ProductVideosPanel';
 import { NewReleasesPanel } from './components/NewReleasesPanel';
@@ -41,6 +42,7 @@ type Tab =
   | 'buyers'
   | 'files'
   | 'inactive'
+  | 'orders'
   | 'packages'
   | 'videos'
   | 'new-releases'
@@ -51,7 +53,7 @@ type Tab =
 const App: React.FC = () => {
   const installPrompt = useInstallPrompt();
   const [auth, setAuth] = useState<AuthState>({ status: 'restoring' });
-  const [tab, setTab] = useState<Tab>('files');
+  const [tab, setTab] = useState<Tab>('orders');
   const [cidPassed, setCidPassed] = useState(false);
   const hasTriedCache = useRef(false);
 
@@ -192,6 +194,7 @@ const App: React.FC = () => {
 
   if (auth.status === 'ready') {
     const navItems: { key: Tab; label: string; icon: typeof FileText }[] = [
+      { key: 'orders', label: 'Orders', icon: Receipt },
       { key: 'buyers', label: 'Buyers', icon: Users },
       { key: 'files', label: 'Files', icon: FileText },
       { key: 'packages', label: 'Packages', icon: Box },
@@ -264,7 +267,9 @@ const App: React.FC = () => {
               <p className="font-bold">DC Notes Admin</p>
             </div>
             <h2 className="hidden lg:block text-lg font-bold">
-              {tab === 'files'
+              {tab === 'orders'
+                ? 'Orders'
+                : tab === 'files'
                 ? 'Files'
                 : tab === 'buyers'
                   ? 'Buyers'
@@ -297,7 +302,9 @@ const App: React.FC = () => {
           </header>
 
           <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 pb-24 lg:pb-8 max-w-4xl w-full mx-auto animate-fade-in">
-            {tab === 'files' ? (
+            {tab === 'orders' ? (
+              <OrdersPanel idToken={auth.idToken} />
+            ) : tab === 'files' ? (
               <FilesPanel
                 idToken={auth.idToken}
                 files={files}

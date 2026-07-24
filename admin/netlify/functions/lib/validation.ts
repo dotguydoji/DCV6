@@ -1,4 +1,7 @@
-export const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+// Length-capped to match netlify/functions/lib/validation.ts - defense in
+// depth, kept in sync by hand for the same reason noted in
+// productivityFeatures.ts (this file can't import across the two apps).
+export const PRODUCT_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,99}$/;
 
 export const isValidProductId = (value: unknown): value is string =>
   typeof value === 'string' && PRODUCT_ID_PATTERN.test(value);
@@ -14,6 +17,26 @@ const FIRESTORE_DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,200}$/;
 
 export const isValidFirestoreDocId = (value: unknown): value is string =>
   typeof value === 'string' && FIRESTORE_DOC_ID_PATTERN.test(value);
+
+// A real email can never contain "/" (Firestore path separator), can't have
+// whitespace, and has exactly one "@". Used to guard any email about to be
+// passed to `.doc(email)` (buyers/{email}) - defense in depth, even though
+// the value already came from a verified Google token upstream.
+const EMAIL_PATTERN = /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/;
+
+export const isValidEmail = (value: unknown): value is string =>
+  typeof value === 'string' && EMAIL_PATTERN.test(value.trim());
+
+// A payment-proof screenshot's R2 object key: the payment-proofs/ prefix,
+// a server-generated UUID (never client-chosen), and an image extension.
+// Re-validated before this key is ever fed into an R2 command, so a value
+// from Firestore can never be coerced into targeting another prefix (e.g.
+// pdfs/) even in the impossible case it were tampered with.
+const PAYMENT_PROOF_KEY_PATTERN =
+  /^payment-proofs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpe?g|png|webp)$/;
+
+export const isValidPaymentProofKey = (value: unknown): value is string =>
+  typeof value === 'string' && PAYMENT_PROOF_KEY_PATTERN.test(value);
 
 // Every real YouTube video id is exactly 11 characters from this alphabet -
 // used both to validate an id typed in directly and to pull the id back out

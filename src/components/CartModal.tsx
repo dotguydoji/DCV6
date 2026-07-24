@@ -1,6 +1,10 @@
-import React, { useEffect } from 'react';
-import { Copy, Monitor, ShoppingCart, Smartphone, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertCircle, ArrowLeft, Check, Copy, ImagePlus, Loader2, MessageCircle, ShoppingCart, X } from 'lucide-react';
 import { Product } from '../types';
+import { DESKTOP_URL } from '../constants';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import { getCachedIdToken, setCachedIdToken } from '../lib/googleIdentity';
+import { submitPaymentScreenshot } from '../lib/orders';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -8,6 +12,7 @@ interface CartModalProps {
   selectedProducts: Product[];
   onToggleSelect: (product: Product, event?: React.MouseEvent) => void;
   hideCommerce?: boolean;
+  onOrderSubmitted: () => void;
 }
 
 const getLanguageLabel = (product: Product) => {
@@ -16,21 +21,34 @@ const getLanguageLabel = (product: Product) => {
   return '';
 };
 
-const formatPrice = (value: number, billingPeriod?: 'month') =>
-  `P ${value.toLocaleString()}${billingPeriod === 'month' ? '/mo' : ''}`;
-
 const PriceLabel: React.FC<{ value: number }> = ({ value }) => (
   <>
     <span className="text-[0.5em]">P</span> {value.toLocaleString()}
   </>
 );
 
-const formatOrderLine = (product: Product) => {
-  const languageLabel = getLanguageLabel(product);
-  const price = formatPrice(product.price, product.billingPeriod);
-  return languageLabel
-    ? `${product.title} (${languageLabel}) - ${price}`
-    : `${product.title} - ${price}`;
+// Displayed with dashes for readability, but only the 11 raw digits are ever
+// copied to the clipboard (see copyGcashNumber below) - that's the format
+// GCash/Messenger apps actually expect when pasted in.
+const GCASH_NUMBER_DISPLAY = '0985-972-4805';
+const GCASH_NUMBER_DIGITS = GCASH_NUMBER_DISPLAY.replace(/-/g, '');
+const GCASH_NAME = 'Re••a An•••a S.';
+
+const fallbackCopyText = (text: string) => {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+  } catch {
+    // Ignored on purpose - copying is a convenience, not a required step.
+  } finally {
+    document.body.removeChild(textArea);
+  }
 };
 
 export const CartModal: React.FC<CartModalProps> = ({
@@ -38,9 +56,28 @@ export const CartModal: React.FC<CartModalProps> = ({
   onClose,
   selectedProducts,
   onToggleSelect,
-  hideCommerce = false
+  hideCommerce = false,
+  onOrderSubmitted
 }) => {
-  const [copied, setCopied] = React.useState(false);
+  const [step, setStep] = useState<'cart' | 'payment'>('cart');
+  const [gcashCopied, setGcashCopied] = useState(false);
+
+  // Screenshot submission - only readable/writable while this modal is
+  // open; nothing here is a global auth state. getCachedIdToken() re-reads
+  // localStorage fresh on every open, so signing in elsewhere on the site
+  // (e.g. My Library) already signs the buyer in here too.
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [submitState, setSubmitState] = useState<'idle' | 'uploading' | 'error'>('idle');
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep('cart');
+      setIdToken(getCachedIdToken());
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,114 +104,51 @@ export const CartModal: React.FC<CartModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const buildOrderText = () => {
-    const orderList = selectedProducts
-      .map((product, index) => `${index + 1}. ${formatOrderLine(product)}`)
-      .join('\n');
-
-    const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
-    return `My Order:\n${orderList}\n\nTotal: ${formatPrice(total)}`;
-  };
-
-  const fallbackCopy = (text: string, showFeedback = true) => {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.width = '2em';
-    textArea.style.height = '2em';
-    textArea.style.padding = '0';
-    textArea.style.border = 'none';
-    textArea.style.outline = 'none';
-    textArea.style.boxShadow = 'none';
-    textArea.style.background = 'transparent';
-    textArea.style.opacity = '0';
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful && showFeedback) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } else {
-        if (!successful) {
-          console.error('execCommand copy failed');
-        }
-      }
-    } catch (error) {
-      console.error('execCommand copy error:', error);
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  };
-
-  const copyOrderToClipboard = (showFeedback = true) => {
-    if (selectedProducts.length === 0) return;
-
-    const fullText = buildOrderText();
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
+  const copyGcashNumber = () => {
+    if (navigator.clipboard?.writeText) {
       navigator.clipboard
-        .writeText(fullText)
-        .then(() => {
-          if (showFeedback) {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }
-        })
-        .catch((error) => {
-          console.error('Clipboard API failed:', error);
-          fallbackCopy(fullText, showFeedback);
-        });
+        .writeText(GCASH_NUMBER_DIGITS)
+        .then(() => setGcashCopied(true))
+        .catch(() => fallbackCopyText(GCASH_NUMBER_DIGITS));
     } else {
-      fallbackCopy(fullText, showFeedback);
+      fallbackCopyText(GCASH_NUMBER_DIGITS);
     }
+    setGcashCopied(true);
+    setTimeout(() => setGcashCopied(false), 2000);
   };
 
-  const copyOrderBeforeRedirect = () => {
-    if (selectedProducts.length === 0) return;
+  const handleFilePick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setPendingFile(file ?? null);
+    setSubmitError('');
+  };
 
-    const fullText = buildOrderText();
+  const handleSubmitScreenshot = async () => {
+    if (!idToken || !pendingFile || selectedProducts.length === 0) return;
+
+    setSubmitState('uploading');
+    setSubmitError('');
 
     try {
-      fallbackCopy(fullText, false);
+      await submitPaymentScreenshot(
+        idToken,
+        pendingFile,
+        selectedProducts.map((product) => product.id)
+      );
+      setPendingFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setSubmitState('idle');
+      onOrderSubmitted();
     } catch (error) {
-      console.error('Synchronous copy before redirect failed:', error);
-      copyOrderToClipboard(false);
+      setSubmitState('error');
+      setSubmitError(error instanceof Error ? error.message : 'Could not submit your screenshot. Please try again.');
     }
-  };
-
-  const handleCopyOrder = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    event.preventDefault();
-    copyOrderToClipboard(true);
-  };
-
-  const handleBuyNow = (platform: 'mobile' | 'desktop') => {
-    if (selectedProducts.length === 0) return;
-
-    copyOrderBeforeRedirect();
-
-    const url =
-      platform === 'mobile'
-        ? (selectedProducts[0]?.mobileUrl ?? 'https://m.me/103186496068437')
-        : (selectedProducts[0]?.desktopUrl ?? 'https://www.facebook.com/share/p/1HMaPSeaty/');
-
-    if (platform === 'mobile') {
-      window.location.assign(url);
-      return;
-    }
-
-    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   if (!isOpen || hideCommerce) return null;
 
   const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
+  const isEmpty = selectedProducts.length === 0;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -187,32 +161,45 @@ export const CartModal: React.FC<CartModalProps> = ({
         className="relative bg-surface-secondary border border-border-hairline rounded-lg w-full max-w-xl mx-4 max-h-[92vh] overflow-hidden flex flex-col shadow-2xl"
       >
         <div className="flex items-center justify-between px-7 py-5 border-b border-border-hairline bg-surface">
-          <div className="flex items-center gap-3">
-            <ShoppingCart size={28} className="text-text-primary" strokeWidth={1.5} />
-            <h2 id="cart-modal-title" className="text-3xl font-light text-text-primary">Your Cart</h2>
-            {selectedProducts.length > 0 && (
-              <span className="bg-surface-inverted/10 text-text-primary px-2.5 py-1 rounded-sm text-base font-black">
+          <div className="flex items-center gap-3 min-w-0">
+            {step === 'payment' ? (
+              <button
+                onClick={() => setStep('cart')}
+                aria-label="Back to cart"
+                type="button"
+                className="p-1.5 -ml-1.5 hover:bg-surface-inverted/5 rounded-full transition-colors shrink-0"
+              >
+                <ArrowLeft size={22} className="text-text-secondary hover:text-text-primary" />
+              </button>
+            ) : (
+              <ShoppingCart size={28} className="text-text-primary shrink-0" strokeWidth={1.5} />
+            )}
+            <h2 id="cart-modal-title" className="text-3xl font-light text-text-primary truncate">
+              {step === 'payment' ? 'Checkout' : 'Your Cart'}
+            </h2>
+            {step === 'cart' && selectedProducts.length > 0 && (
+              <span className="bg-surface-inverted/10 text-text-primary px-2.5 py-1 rounded-sm text-base font-black shrink-0">
                 {selectedProducts.length} ITEMS
               </span>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close cart" type="button" className="p-2 hover:bg-surface-inverted/5 rounded-full transition-colors">
+          <button onClick={onClose} aria-label="Close cart" type="button" className="p-2 hover:bg-surface-inverted/5 rounded-full transition-colors shrink-0">
             <X size={24} className="text-text-secondary hover:text-text-primary" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-7">
-          {selectedProducts.length === 0 ? (
+          {isEmpty ? (
             <div className="text-center py-16">
               <ShoppingCart size={56} className="mx-auto text-text-secondary/30 mb-5" strokeWidth={1.5} />
               <p className="text-text-secondary text-xl font-medium">Your cart is empty</p>
               <p className="text-text-secondary text-lg mt-2">Select items to add them to your cart</p>
             </div>
-          ) : (
+          ) : step === 'cart' ? (
             <>
-              <div className="space-y-4 mb-7">
+              <div className="space-y-4">
                 <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">Selected Items</h3>
-                <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                   {selectedProducts.map((product) => (
                     <div
                       key={product.id}
@@ -255,63 +242,111 @@ export const CartModal: React.FC<CartModalProps> = ({
                 </div>
               </div>
 
-              <div className="bg-surface border border-border-hairline rounded-sm p-5 mb-7">
-                <h4 className="text-xl font-bold text-text-primary uppercase tracking-wider mb-3">
-                  How to Purchase
-                </h4>
-                <p className="text-text-primary text-xl leading-relaxed">
-                  Click the copy button to copy your order. Then, send it to our Facebook page. You can click the
-                  button below if you&apos;re using mobile or desktop.
+              <button
+                onClick={() => setStep('payment')}
+                type="button"
+                className="w-full mt-7 py-5 rounded-sm font-bold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all touch-manipulation active:scale-[0.98]"
+                style={{ minHeight: '56px' }}
+              >
+                Checkout
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-text-primary text-lg leading-relaxed mb-5">
+                Your selected items will appear in your My Library using the Gmail account you signed in with once
+                your payment has been verified.
+              </p>
+
+              <div className="bg-surface border border-border-hairline rounded-sm p-5 mb-6 space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-text-primary text-lg">
+                    <span className="font-bold">GCash:</span> {GCASH_NUMBER_DISPLAY}
+                  </p>
+                  <button
+                    onClick={copyGcashNumber}
+                    type="button"
+                    aria-label="Copy GCash number"
+                    className={`flex items-center justify-center w-9 h-9 rounded-sm border transition-colors shrink-0 ${
+                      gcashCopied
+                        ? 'bg-green-600 border-green-600 text-white'
+                        : 'border-border-hairline text-text-secondary hover:text-text-primary hover:border-border-strong'
+                    }`}
+                  >
+                    {gcashCopied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+                <p className="text-text-primary text-lg">
+                  <span className="font-bold">Name:</span> {GCASH_NAME}
+                </p>
+                <p className="text-text-primary text-lg">
+                  <span className="font-bold">Total:</span> <PriceLabel value={total} />
                 </p>
               </div>
 
-              <div className="space-y-3.5">
-                <button
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    handleCopyOrder(event);
-                  }}
-                  className={`w-full flex items-center justify-center gap-2.5 py-5 rounded-sm font-bold text-lg transition-all touch-manipulation active:scale-[0.98] ${
-                    copied
-                      ? 'bg-green-600 text-white cursor-default'
-                      : 'bg-surface-inverted text-text-inverted hover:opacity-90 cursor-pointer'
-                  }`}
-                  style={{ minHeight: '56px' }}
-                  type="button"
-                >
-                  {copied ? (
-                    <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      COPIED!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={20} strokeWidth={1.5} />
-                      COPY ORDER LIST
-                    </>
-                  )}
-                </button>
+              <div className="bg-surface border border-border-hairline rounded-sm p-5">
+                <h4 className="text-xl font-bold text-text-primary uppercase tracking-wider mb-3">
+                  Upload Payment Screenshot
+                </h4>
 
-                <div className="grid grid-cols-2 gap-3.5">
-                  <button
-                    onClick={() => handleBuyNow('mobile')}
-                    className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-bold"
-                  >
-                    <Smartphone size={18} strokeWidth={1.5} className="hidden sm:block" />
-                    <span className="text-lg">BUY WITH MOBILE</span>
-                  </button>
-                  <button
-                    onClick={() => handleBuyNow('desktop')}
-                    className="flex items-center justify-center gap-2 bg-surface-inverted text-text-inverted border border-surface-inverted py-4 rounded-sm transition-all duration-300 hover:opacity-90 active:scale-95 font-bold"
-                  >
-                    <Monitor size={18} strokeWidth={1.5} className="hidden sm:block" />
-                    <span className="text-lg">BUY WITH DESKTOP</span>
-                  </button>
-                </div>
+                {!idToken ? (
+                  <div className="flex justify-center py-2">
+                    <GoogleSignInButton
+                      onSignIn={(token) => {
+                        setCachedIdToken(token);
+                        setIdToken(token);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center justify-center gap-2 border border-dashed border-border-hairline rounded-sm py-6 cursor-pointer hover:border-border-strong transition-colors text-text-secondary">
+                      <ImagePlus size={20} strokeWidth={1.5} />
+                      <span className="text-base font-medium">
+                        {pendingFile ? pendingFile.name : 'Choose a screenshot to upload'}
+                      </span>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFilePick}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {submitState === 'error' && (
+                      <p className="flex items-center gap-1.5 text-red-400 text-sm">
+                        <AlertCircle size={14} className="shrink-0" />
+                        {submitError}
+                      </p>
+                    )}
+
+                    <button
+                      onClick={handleSubmitScreenshot}
+                      disabled={!pendingFile || submitState === 'uploading'}
+                      type="button"
+                      className="w-full flex items-center justify-center gap-2 py-4 rounded-sm font-bold text-lg bg-surface-inverted text-text-inverted hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {submitState === 'uploading' ? (
+                        <>
+                          <Loader2 size={20} className="animate-spin" /> Submitting…
+                        </>
+                      ) : (
+                        'Submit Screenshot'
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
+
+              <button
+                onClick={() => window.open(DESKTOP_URL, '_blank', 'noopener,noreferrer')}
+                type="button"
+                className="w-full flex items-center justify-center gap-2 mt-4 py-3.5 rounded-sm font-semibold text-text-secondary border border-border-hairline hover:text-text-primary hover:border-border-strong transition-colors"
+              >
+                <MessageCircle size={18} strokeWidth={1.5} />
+                Talk to an Admin
+              </button>
             </>
           )}
         </div>

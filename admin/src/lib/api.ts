@@ -266,3 +266,24 @@ export const uploadFileToR2 = async (uploadUrl: string, file: File): Promise<voi
   // freshly uploaded file wouldn't show up until the cache naturally expires.
   clearCachedResponse(FILES_CACHE_KEY);
 };
+
+export interface Order {
+  id: string;
+  email: string;
+  productIds: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: number | null;
+  reviewedAt: number | null;
+  reviewMessage: string | null;
+  screenshotUrl: string | null;
+}
+
+// Deliberately never cached - this is the one list in the admin panel that
+// specifically should NOT show stale data (see project notes: the buyer's
+// only real-time notification is a Messenger message, so opening/refreshing
+// this tab is the moment the admin actually expects to see what's new).
+export const listOrders = (idToken: string, status: Order['status'] = 'pending') =>
+  call<{ orders: Order[] }>('admin-list-orders', idToken, { status });
+
+export const reviewOrder = (idToken: string, orderId: string, action: 'approve' | 'reject', message?: string) =>
+  call<{ ok: true }>('admin-review-order', idToken, { orderId, action, message });

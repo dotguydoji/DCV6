@@ -6,6 +6,9 @@ import { lazyWithReload } from './lazyWithReload';
 
 const FAQSection = lazyWithReload(() => import('./components/FAQSection').then((m) => ({ default: m.FAQSection })));
 const CartModal = lazyWithReload(() => import('./components/CartModal').then((m) => ({ default: m.CartModal })));
+const OrderSubmittedModal = lazyWithReload(() =>
+  import('./components/OrderSubmittedModal').then((m) => ({ default: m.OrderSubmittedModal }))
+);
 const ChatWidget = lazyWithReload(() => import('./components/ChatWidget').then((m) => ({ default: m.ChatWidget })));
 const PdfGatePage = lazyWithReload(() => import('./components/PdfGatePage').then((m) => ({ default: m.PdfGatePage })));
 const MyLibraryPage = lazyWithReload(() => import('./components/MyLibraryPage').then((m) => ({ default: m.MyLibraryPage })));
@@ -116,6 +119,7 @@ const App: React.FC = () => {
   const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isOrderSubmittedOpen, setIsOrderSubmittedOpen] = useState(false);
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [cartBounceKey, setCartBounceKey] = useState(0);
   const [isAdminRecordingMode, setIsAdminRecordingMode] = useState(false);
@@ -716,7 +720,17 @@ const App: React.FC = () => {
             selectedProducts={selectedProducts}
             onToggleSelect={handleToggleSelect}
             hideCommerce={isAdminRecordingMode}
+            onOrderSubmitted={() => {
+              setIsCartOpen(false);
+              setIsOrderSubmittedOpen(true);
+            }}
           />
+        </Suspense>
+      )}
+
+      {isOrderSubmittedOpen && !isAdminRecordingMode && (
+        <Suspense fallback={null}>
+          <OrderSubmittedModal open={isOrderSubmittedOpen} onClose={() => setIsOrderSubmittedOpen(false)} />
         </Suspense>
       )}
     </div>

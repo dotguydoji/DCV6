@@ -1,7 +1,11 @@
 import { CourseMaterial, FAQItem, Product, ProductLanguage, ProductLevel, SiteContent } from './types';
 
-const MOBILE_URL = 'https://m.me/103186496068437';
-const DESKTOP_URL = 'https://www.facebook.com/share/p/1HMaPSeaty/';
+// Exported so the order-submission flow (OrderSubmittedModal.tsx, the
+// "Talk to an Admin" button) reuses the exact same links every product's
+// own mobileUrl/desktopUrl already falls back to, instead of a second
+// hardcoded copy that could drift out of sync.
+export const MOBILE_URL = 'https://m.me/103186496068437';
+export const DESKTOP_URL = 'https://www.facebook.com/share/p/1HMaPSeaty/';
 
 const PROGRAMMING_LANGUAGES_CATEGORY = 'Programming Languages';
 const WEB_DEVELOPMENT_CATEGORY = 'Web Dev & Tools';

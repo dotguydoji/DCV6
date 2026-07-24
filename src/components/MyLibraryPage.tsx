@@ -43,6 +43,7 @@ import {
 } from '../lib/libraryPreferences';
 import { getReadingProgress } from '../lib/pdfViewerPreferences';
 import { fetchNewPdfReleases, fetchNewVideos, NewReleasePdf, NewReleaseVideo } from '../lib/newReleases';
+import { fetchMyOrders, OrderSummary } from '../lib/orders';
 import { fetchProductVideos, fetchVideoProductIds, PremiumVideoSummary } from '../lib/premiumVideos';
 import { getCachedResponse, setCachedResponse } from '../lib/requestCache';
 import { useGlobalScrollTilt } from '../lib/useScrollTilt';
@@ -516,6 +517,32 @@ export const MyLibraryPage: React.FC = () => {
       cancelled = true;
     };
   }, [ownedProducts, videoProductIds]);
+
+  // Order status (pending/rejected screenshot submissions) - see
+  // src/lib/orders.ts. This is the one-way admin -> buyer message channel:
+  // fetched once on load, not polled, matching the project's "no unnecessary
+  // requests" rule - a buyer checking back after a refresh is enough, since
+  // the actual "you have an update" signal already happened over Messenger
+  // (OrderSubmittedModal) or is something they're actively waiting on.
+  const [myOrders, setMyOrders] = useState<OrderSummary[]>([]);
+  useEffect(() => {
+    const idToken = getCachedIdToken();
+    if (!idToken) {
+      setMyOrders([]);
+      return;
+    }
+    let cancelled = false;
+    fetchMyOrders(idToken)
+      .then((orders) => {
+        if (!cancelled) setMyOrders(orders.filter((order) => order.status !== 'approved'));
+      })
+      .catch(() => {
+        if (!cancelled) setMyOrders([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [state.status]);
 
   // The Members Only Tutorials column's own search - filters by tutorial
   // title only (never touches the main library search/filters on the left,
@@ -1054,6 +1081,33 @@ export const MyLibraryPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {myOrders.map((order) => (
+              <div
+                key={order.id}
+                className={`mb-6 flex items-start gap-3 rounded-sm border px-4 py-3.5 sm:px-5 sm:py-4 ${
+                  order.status === 'rejected'
+                    ? 'border-red-500/40 bg-red-500/10'
+                    : 'border-orange-500/40 bg-orange-500/10'
+                }`}
+              >
+                <Bell
+                  size={20}
+                  strokeWidth={1.5}
+                  className={`shrink-0 mt-0.5 ${order.status === 'rejected' ? 'text-red-500' : 'text-orange-500'}`}
+                />
+                <div className="min-w-0">
+                  <p className="text-sm sm:text-base font-medium text-text-primary">
+                    {order.status === 'rejected'
+                      ? 'Your payment screenshot was not approved.'
+                      : 'Your payment screenshot is awaiting review.'}
+                  </p>
+                  {order.reviewMessage && (
+                    <p className="text-xs sm:text-sm text-text-secondary mt-1">{order.reviewMessage}</p>
+                  )}
+                </div>
+              </div>
+            ))}
 
             {ownedProducts.length === 0 ? (
               <div className="text-center py-20 lg:py-0 lg:flex-1 lg:flex lg:flex-col lg:items-center lg:justify-center">
