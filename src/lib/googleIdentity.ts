@@ -238,6 +238,90 @@ export const attemptSilentSignIn = (): boolean => {
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
+type SignInListener = (idToken: string) => void;
+
+// Google's identity client is a single global singleton - calling
+// initialize() more than once doesn't create separate independent clients,
+// it just silently reconfigures the same one and logs a console warning
+// ("initialize() is called multiple times... only the last initialized
+// instance will be used"). Before this, GoogleSignInButton re-called
+// initialize() on every mount AND the keep-alive renewal below had its own
+// separate initialize() call - whichever ran most recently silently won,
+// so an earlier-rendered button could end up wired to a DIFFERENT page's
+// callback. This single guarded init (shared by every caller below) is
+// what makes that a non-issue: initialize() itself truly runs once, ever,
+// and each button registers/unregisters only *which callback* the one
+// shared client should currently notify.
+let clientInitialized = false;
+let activeSignInListener: SignInListener | null = null;
+
+const ensureClientInitialized = (): boolean => {
+  if (clientInitialized) return true;
+  if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) return false;
+
+  window.google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    // Always caches the fresh token regardless of who's listening (this is
+    // what keeps a background renewal - see the keep-alive system below -
+    // useful even when no button happens to be mounted), then additionally
+    // notifies whichever page currently registered interest via
+    // setActiveSignInListener, so its own UI (e.g. My Library's product
+    // list) updates immediately after an explicit, user-initiated sign-in.
+    callback: (response: GoogleCredentialResponse) => {
+      setCachedIdToken(response.credential);
+      activeSignInListener?.(response.credential);
+    },
+    auto_select: true,
+    cancel_on_tap_outside: false,
+    itp_support: true
+  });
+  clientInitialized = true;
+  return true;
+};
+
+/**
+ * Registers the callback that should receive the credential the next time
+ * this shared client obtains one (an explicit button click, or a background
+ * renewal landing while this component happens to be mounted) - returns an
+ * unregister function to call on unmount. Only one listener is ever active
+ * at a time, matching the client itself being a single global singleton;
+ * in the rare case two sign-in surfaces are mounted simultaneously, only
+ * one is ever interactable at once in this app (a modal's own opaque
+ * backdrop blocks pointer events on whatever's behind it), so this never
+ * meaningfully differs from "the one the visitor can actually click".
+ */
+export const setActiveSignInListener = (listener: SignInListener | null): (() => void) => {
+  activeSignInListener = listener;
+  return () => {
+    if (activeSignInListener === listener) activeSignInListener = null;
+  };
+};
+
+/**
+ * Loads the script, ensures the single shared client is initialized, and
+ * renders a real "Sign in with Google" button into `container` - the one
+ * and only sign-in UI this app shows. Deliberately does NOT also call
+ * prompt() (Google's automatic "One Tap" popup) - doing both at once (the
+ * previous behavior) showed two redundant invitations to sign in on the
+ * same page, and each extra automatic prompt() call was another chance to
+ * hit the FedCM/COOP fallback failure that could strand a visitor on a
+ * blank reload instead of actually signing them in. Returns false if the
+ * script/client couldn't be readied, so the caller can show a fallback message.
+ */
+export const renderGoogleSignInButton = async (
+  container: HTMLElement,
+  options: GoogleButtonOptions
+): Promise<boolean> => {
+  try {
+    await loadGoogleIdentityScript();
+  } catch {
+    return false;
+  }
+  if (!ensureClientInitialized() || !window.google?.accounts?.id) return false;
+  window.google.accounts.id.renderButton(container, options);
+  return true;
+};
+
 // Every Google ID token expires exactly 1 hour after it's issued, no matter
 // how active the buyer is, and Google doesn't offer a way to mint a
 // longer-lived one - before this, nothing renewed it ahead of that, so
@@ -279,47 +363,24 @@ const KEEP_ALIVE_GRACE_AFTER_EXPIRY_MS = 15 * 60 * 1000;
 // polling, since nothing about the token's state changes faster than that.
 const KEEP_ALIVE_RETRY_DELAY_MS = 2 * 60 * 1000;
 
-let keepAliveClientInitialized = false;
-
-const ensureKeepAliveClientInitialized = (): boolean => {
-  if (keepAliveClientInitialized) return true;
-  if (!GOOGLE_CLIENT_ID || !window.google?.accounts?.id) return false;
-
-  window.google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    // Silent renewal only, so it just needs to update the cached token -
-    // nothing here needs to react to a fresh sign-in (no page-specific UI
-    // transition), unlike GoogleSignInButton's own separate initialize()
-    // call/callback for the visible, click-driven sign-in flow.
-    callback: (response: GoogleCredentialResponse) => {
-      setCachedIdToken(response.credential);
-    },
-    auto_select: true,
-    cancel_on_tap_outside: false
-    // Deliberately NOT setting itp_support here (unlike GoogleSignInButton's
-    // own client) - that flag's whole purpose is switching Safari/Firefox to
-    // a *visible* welcome-page + popup flow instead of a silent one, since
-    // those browsers block the third-party cookies the silent flow needs.
-    // That's the right tradeoff for an explicit, user-initiated sign-in
-    // click, but this client only ever calls prompt() from an unattended
-    // background timer - showing a surprise sign-in popup while someone is
-    // just reading a PDF would be worse than the current behavior, which is
-    // that this quietly no-ops on those browsers. On Safari/Firefox, a
-    // buyer's session there still gets renewed the same way it always has:
-    // reactively, via GoogleSignInButton's own itp-aware flow, the next
-    // time something actually needs a valid token.
-  });
-  keepAliveClientInitialized = true;
-  return true;
-};
-
+// Renewal shares the same single client as the visible sign-in button
+// (ensureClientInitialized above) instead of keeping its own separate one -
+// two independently-initialized clients was what caused Google's own
+// "initialize() is called multiple times" warning, and worse, meant
+// whichever one initialized most recently silently won, regardless of
+// which page's button a visitor actually clicked. The client is now always
+// itp_support: true; in practice that only matters on the rare Safari/
+// Firefox background renewal, and even then just means a very occasional
+// visible Google popup during an unattended renewal instead of a silent
+// no-op - a minor tradeoff against getting the "last initialize() wins"
+// class of bug reliably fixed.
 const attemptRenewal = async (): Promise<void> => {
   try {
     await loadGoogleIdentityScript();
   } catch {
     return;
   }
-  if (!ensureKeepAliveClientInitialized()) return;
+  if (!ensureClientInitialized()) return;
   attemptSilentSignIn();
 };
 
